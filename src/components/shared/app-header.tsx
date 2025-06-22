@@ -67,10 +67,10 @@ const notifications = notification(user?.uid);
     <Bell className="h-5 w-5" />
     <span className="sr-only">Notifications</span>
 
-    {notifications.length > 0 && (
+    {/* {notifications.length > 0 && (
       <span className="absolute top-0 right-0 block h-4 w-4 animate-ping rounded-full bg-red-500 opacity-75"></span>
-    )}
-    {notifications.length > 0 && (
+    )} */}
+    {notifications.some((i) => i.read === false) && notifications.length > 0 && (
       <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
         {notifications?.length > 9 ? "9+" : notifications.length}
       </span>

@@ -12,12 +12,15 @@ import { BlabzioLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
 const {user} = useAuth()
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -117,16 +120,30 @@ function BlabzioLoader() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+
+ <div className="space-y-2">
+    <Label htmlFor="password"> Password</Label>
+    <div className="relative">
+    
+      <Input
+        id="password"
+        type={showPassword ? "text" : "password"}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-2 top-2 text-gray-500"
+      >
+        {showPassword ? "🙈" : "👁️"}
+      </button>
+    </div>
+  </div>
+
+
+           
             {error && <p className="text-red-500 text-sm">{error}</p>}
           
       <Button type="submit" className="w-full" disabled={loading}>
@@ -140,7 +157,10 @@ function BlabzioLoader() {
         )}
       </Button>
           </form>
+
         </CardContent>
+
+
         <CardFooter className="flex flex-col items-center space-y-2">
           <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
             Login with Google
@@ -151,6 +171,13 @@ function BlabzioLoader() {
               Sign up
             </Link>
           </p>
+
+            <p style={{float:"right" , marginRight:"auto"}} className="text-sm text-muted-foreground float-right">
+            <Link href="/PasswordRecovery" className="font-medium text-primary hover:underline">
+            forgot  password ?{" "}
+            </Link>
+          </p>
+
         </CardFooter>
       </Card>
     </div>

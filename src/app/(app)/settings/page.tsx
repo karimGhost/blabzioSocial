@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Lock, Bell, Shield, Palette, UserCircle, LogOut, Loader2 } from "lucide-react";
+import { Lock, Bell, Shield, Palette, UserCircle, LogOut, Loader2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,7 +17,7 @@ import { signOut } from "firebase/auth";
 import { doc, getDoc,setDoc, collection, getDocs, query, where, updateDoc } from "firebase/firestore";
 import { db , dbb} from "@/lib/firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-
+import Link from "next/link";
 export default function SettingsPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -617,11 +617,39 @@ const notificationItems: {
   </CardContent>
 </Card>
 
-      <Separator />
+
+  
+
+
+
+      <Card className="shadow-lg">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <ShieldCheck className="h-6 w-6 text-primary" /> Legal & Support
+    </CardTitle>
+    <CardDescription>Learn more about your rights and our policies.</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-2">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <p className="text-sm text-muted-foreground">Read our legal documents and policies:</p>
+      <div className="flex flex-wrap gap-4">
+        <Link href="/privacy" className="text-sm text-primary hover:underline">Privacy Policy</Link>
+        <Link href="/terms" className="text-sm text-primary hover:underline">Terms of Service</Link>
+        <Link href="/cookies" className="text-sm text-primary hover:underline">Cookies Policy</Link>
+        <Link href="/support" className="text-sm text-primary hover:underline">Support</Link>
+      </div>
+    </div>
+  </CardContent>
+
+</Card>
+
+  <Separator />
       
       <Button variant="destructive" className="w-full sm:w-auto" onClick={handleLogout}>
         <LogOut className="mr-2 h-5 w-5" /> Logout
       </Button>
+
+
     </div>
   );
 }

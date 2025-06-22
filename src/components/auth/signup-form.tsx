@@ -14,21 +14,34 @@ import { Label } from "@/components/ui/label";
 import { BlabzioLogo } from "@/components/icons";
 import { db } from "@/lib/firebase"; // Ensure db is exported from lib/firebase
 import { useToast } from "@/hooks/use-toast";
+import { Terms } from "../Terms/page";
 export function SignupForm() {
   const router = useRouter();
   const [fullname, setFullname] = useState("");
+  const [UserName, setUserName] = useState("")
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+const [showPassword, setShowPassword] = useState(false);
+const [repeatPassword, setRepeatPassword] = useState("");
+const [agreedToTerms, setAgreedToTerms] = useState(false);
+const [terms,setTerms] = useState(false);
 
       const {toast} = useToast();
 
 const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 
 
+  if (password !== repeatPassword) {
+    return setError("Passwords do not match.");
+  }
   event.preventDefault();
   setError("");
 
+    if (!agreedToTerms) {
+    setError("You must agree to the Terms and Conditions.");
+    return;
+  }
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -43,6 +56,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         fullName: fullname,
+        username: UserName,
         email: email,
         createdAt: Date.now(),
         postsCount: 0,
@@ -129,6 +143,10 @@ const handleGoogleSignup = async () => {
   }
 };
 
+
+if(terms){
+  return <Terms setTerms={setTerms} />
+}
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
@@ -149,15 +167,30 @@ const handleGoogleSignup = async () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="fullname">Full Name</Label>
+
               <Input
                 id="fullname"
                 type="text"
-                placeholder="John Doe"
+                placeholder="YourName"
                 value={fullname}
                 onChange={(e) => setFullname(e.target.value)}
                 required
               />
             </div>
+
+     <div className="space-y-2">
+              <Label htmlFor="fullname">UserName</Label>
+
+              <Input
+                id="UserName"
+                type="text"
+                placeholder="UserName"
+                value={UserName}
+                onChange={(e) => setUserName(e.target.value)}
+                required
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -169,16 +202,64 @@ const handleGoogleSignup = async () => {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+
+
+         
+        
+
+
+  <div className="space-y-2">
+    <Label htmlFor="password"> Password</Label>
+    <div className="relative">
+      
+      <Input
+        id="password"
+        type={showPassword ? "text" : "password"}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-2 top-2 text-gray-500"
+      >
+        {showPassword ? "🙈" : "👁️"}
+      </button>
+    </div>
+  </div>
+
+  <div className="space-y-2">
+    <Label htmlFor="repeat_password">Repeat Password</Label>
+    <Input
+      id="repeat_password"
+      type={showPassword ? "text" : "password"}
+      value={repeatPassword}
+      onChange={(e) => setRepeatPassword(e.target.value)}
+    />
+  </div>
+
+
+<div className="flex items-center space-x-2">
+<input
+  id="terms"
+  type="checkbox"
+  checked={agreedToTerms}
+  onChange={(e) => setAgreedToTerms(e.target.checked)}
+  className="w-4 h-4 accent-orange-300"
+  required
+/>
+
+  <label htmlFor="terms" className="text-sm text-gray-700 flex">
+    I agree to the <p onClick={()=> setTerms(pre => !pre)} 
+        className="text-primary hover:underline ml-1"
+>
+  Terms&Conditions
+
+</p>
+  </label>
+</div>
+         
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <Button type="submit" className="w-full">
               Sign Up

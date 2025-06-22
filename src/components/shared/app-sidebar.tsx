@@ -3,7 +3,6 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { collection, doc, getDocs, query, where } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
@@ -20,6 +19,8 @@ import {
   LogOut,
   Search,
   Bell,
+  ShieldCheck,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { notification } from "../notifications/notifications";
-
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { collection,doc, getDocs, orderBy, query, where, writeBatch } from "firebase/firestore";
+import { dbe } from '@/lib/firebase';
 const navItems = [
   { href: "/feed", icon: Home, label: "Feed" },
   { href: "/videos", icon: Video, label: "Videos" },
@@ -186,6 +189,32 @@ useEffect(() => {
               <Link href="/settings">Settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+
+
+  <Card className="shadow-lg">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <ShieldCheck className="h-6 w-6 text-primary" /> Legal & Support
+    </CardTitle>
+    <CardDescription>Learn more about your rights and our policies.</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-2">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <p className="text-sm text-muted-foreground">Read our legal documents and policies:</p>
+      <div className="flex flex-wrap gap-4">
+        <Link href="/privacy" className="text-sm text-primary hover:underline">Privacy Policy</Link>
+        <Link href="/terms" className="text-sm text-primary hover:underline">Terms of Service</Link>
+        <Link href="/cookies" className="text-sm text-primary hover:underline">Cookies Policy</Link>
+        <Link href="/support" className="text-sm text-primary hover:underline">Support</Link>
+      </div>
+    </div>
+  </CardContent>
+
+</Card>
+
+
+
+
             <DropdownMenuItem asChild>
                 <button
       onClick={handleLogout}
@@ -207,7 +236,12 @@ export function MobileAppHeader() {
   const router = useRouter();
   const {user} = useAuth()
 const notifications = notification(user?.uid);
-
+ const [querys, setQuerys] = useState("");
+const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!querys.trim()) return;
+    router.push(`/search?q=${encodeURIComponent(querys.trim())}`);
+  };
 const unreadCount = useUnreadMessages(user?.uid);
 
 
@@ -217,6 +251,9 @@ const unreadCount = useUnreadMessages(user?.uid);
 
 
 
+ const [showInput, setShowInput] = useState(false);
+
+  const toggleInput = () => setShowInput(!showInput);
 
 
 useEffect(() => {
@@ -242,6 +279,26 @@ useEffect(() => {
       console.error("Logout failed:", error);
     }
   };
+const userId = user?.uid;
+
+    const markAllAsRead = async () => {
+    const q = query(
+      collection(dbe, "notifications"),
+      where("toUser", "==", userId),
+      where("read", "==", false) // Only unread ones
+    );
+  
+    const snapshot = await getDocs(q);
+  
+    const batch = writeBatch(dbe);
+    snapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { read: true });
+    });
+  
+    await batch.commit();
+    console.log("All notifications marked as read.");
+  };
+
    return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:hidden">
         <DropdownMenu>
@@ -334,21 +391,44 @@ useEffect(() => {
            </Link>
         </div>
 
-        <Button variant="ghost" size="icon" className="rounded-full">
-            <Search className="h-5 w-5" />
+
+  <div className="relative flex items-center w-full md:w-auto">
+            <form className="w-ful"style={{width:"90%",margin:"auto",zIndex:"99", position:"fixed",top:"50px",left:"0", right:"0" }}  onSubmit={handleSearch}>
+
+      {/* Search Input */}
+      <Input
+        type="search"
+        value={querys}
+        onChange={(e) => setQuerys(e.target.value)}
+        placeholder="Search Blabzio..."
+        className={cn(
+          "bg-muted pl-9 rounded-full transition-all shadow-none",
+          "absolute left-0 top-0 w-full", // mobile
+          "md:static md:w-64 md:opacity-100", // desktop
+          showInput ? "opacity-100" : "opacity-0 pointer-events-none md:opacity-100"
+        )}
+      />
+</form>
+
+
+        <Button         onClick={toggleInput}
+ variant="ghost" size="icon" className="rounded-full">
+          
+          {showInput ?  <X className="h-5 w-5" />  :  <Search className="h-5 w-5" /> }
+      
             <span className="sr-only">Search</span>
         </Button>
+      </div>
       
-      
-         <Button variant="ghost" size="icon" className="relative rounded-full">
+         <Button onClick={() => markAllAsRead()} variant="ghost" size="icon" className="relative rounded-full">
   <Link href="/notification" className="relative inline-block">
     <Bell className="h-5 w-5" />
     <span className="sr-only">Notifications</span>
 
-    {notifications.length > 0 && (
+    {notifications.some((i) => i.read === false) && notifications.length > 0 && (
       <span className="absolute top-0 right-0 block h-4 w-4 animate-ping rounded-full bg-red-500 opacity-75"></span>
     )}
-    {notifications.length > 0 && (
+    {notifications.some((i) => i.read === false) && notifications.length > 0 && (
       <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
         {notifications?.length > 9 ? "9+" : notifications.length}
 
