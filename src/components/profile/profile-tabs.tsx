@@ -1,0 +1,112 @@
+"use client";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PostItem } from "@/components/feed/post-item";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Post, User } from "@/lib/types";
+import Link from "next/link";
+import Image from "next/image";
+
+interface ProfileTabsProps {
+  Blocked: boolean;
+  userData: User;
+  userPosts: Post[];
+  followers: User[];
+  following: User[];
+}
+
+export function ProfileTabs({Blocked, userPosts, followers, following }: ProfileTabsProps) {
+
+
+  if(Blocked){
+     return (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <Image 
+              src="https://placehold.co/400x300.png?text=Nothing+Shown" 
+              alt="Not Able to view Blocked user items" 
+              width={400} 
+              height={300} 
+              className="mb-8 rounded-lg shadow-md"
+            />
+            <h1 className="text-3xl font-bold"> Not Found</h1>
+            <p className="text-lg text-muted-foreground">
+              Sorry, Not ABle to show you anything <strong>{}</strong>.
+            </p>
+          </div>
+        );
+  }
+
+
+  return (
+    <Tabs defaultValue="posts" className="w-full">
+      <TabsList className="grid w-full grid-cols-3 bg-muted/50 rounded-none sm:rounded-md border-y sm:border">
+        <TabsTrigger value="posts">Posts</TabsTrigger>
+        <TabsTrigger value="followers">Followers</TabsTrigger>
+        <TabsTrigger value="following">Following</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="posts" className="mt-6 space-y-6">
+        {userPosts.length > 0 ? (
+          userPosts.map((post) => <PostItem key={post.id} post={post} />)
+        ) : (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Image src="https://placehold.co/300x200.png?text=No+Posts+Yet" alt="No posts illustration" width={300} height={200} className="mx-auto mb-4 rounded-md" />
+              <h3 className="text-xl font-semibold">No Posts Yet</h3>
+              <p className="text-muted-foreground">This user hasn&apos;t shared any posts.</p>
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+
+      <TabsContent value="followers" className="mt-6">
+        <UserList users={followers} emptyMessage="This user doesn't have any followers yet." />
+      </TabsContent>
+    
+      <TabsContent value="following" className="mt-6">
+        <UserList users={following} emptyMessage="This user isn't following anyone yet." />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+interface UserListProps {
+  users: User[];
+  emptyMessage: string;
+}
+
+function UserList({ users, emptyMessage }: UserListProps) {
+  if (users.length === 0) {
+    return (
+      <Card className="text-center py-12">
+        <CardContent>
+          <Image src="https://placehold.co/300x200.png?text=Nothing+Here" alt="No users illustration" width={300} height={200} className="mx-auto mb-4 rounded-md" />
+          <h3 className="text-xl font-semibold">Nothing to see here</h3>
+          <p className="text-muted-foreground">{emptyMessage}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {users.map((u) => (
+        <Card key={u.id} className="overflow-hidden shadow-md">
+          <CardContent className="p-4 flex items-center space-x-4">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={u.avatarUrl} alt={u.fullName} />
+              <AvatarFallback>{u.fullName?.charAt(0) ?? "?"}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <Link href={`/profile/${u.id}`} className="font-semibold hover:underline">{u.fullName}</Link>
+              <p className="text-sm text-muted-foreground">@{u.fullName}</p>
+            </div>
+            <Button variant="outline" size="sm">View</Button>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
