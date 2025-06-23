@@ -54,7 +54,7 @@ const [users, setUsers] = useState<User[]>([]);
       try {
         if (["All", "Posts"].includes(filter)) {
           const ps = await getDocs(
-            query(collection(dbb, "posts"), where("content", "array-contains", q))
+            query(collection(dbb, "posts"), where("keywords", "array-contains", q))
           );
           setPosts(ps.docs.map(d => ({ id: d.id, ...d.data() })));
         } else {
@@ -63,7 +63,7 @@ const [users, setUsers] = useState<User[]>([]);
 
         if (["All", "Videos"].includes(filter)) {
           const vs = await getDocs(
-            query(collection(dbd, "videos"), where("description", "array-contains", q))
+            query(collection(dbd, "videos"), where("keywords", "array-contains", q))
           );
           setVideos(vs.docs.map(d => ({ id: d.id, ...d.data() })));
         } else {
@@ -74,10 +74,9 @@ const [users, setUsers] = useState<User[]>([]);
           const us = await getDocs(
             query(
               collection(db, "users"),
-              where("fullName", ">=", q),
-              where("fullName", "<=", q + "\uf8ff")
-            )
-          );
+    where("keywords", "array-contains", q.toLowerCase())
+  )
+                   );
           setUsers(us.docs.map(d => ({ id: d.id, ...d.data() })));
 // us.docs.forEach((doc) => {
 //   console.log("User ID:", doc.id);

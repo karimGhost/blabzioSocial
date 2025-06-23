@@ -63,14 +63,14 @@ const getFriendlyError = (code: string) => {
           router.push("/feed");
 
    }else{
-    return BlabzioLoader()
+    return BlabzioLoader();
    }
 
     } catch (err: any) {
       const errorCode = err.code || "";
   const friendlyMessage = getFriendlyError(errorCode);
   setError(friendlyMessage);
-
+ setLoading(false);
 
     }
   };
@@ -88,11 +88,15 @@ const handleGoogleLogin = async () => {
     const userDocSnap = await getDoc(userDocRef);
 
     if (!userDocSnap.exists()) {
+      
+          const keywords = user?.displayName?.toLowerCase().split(" ")
+
       await setDoc(userDocRef, {
         uid: user.uid,
         fullName: user.displayName || "",
         username: user.email?.split("@")[0] || "",
         email: user.email || "",
+        keywords:keywords,
         avatarUrl: user.photoURL || "",
         createdAt: serverTimestamp(),
         postsCount: 0,

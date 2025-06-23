@@ -104,15 +104,19 @@ if (!user) return toast({title:"Please login first"});
       mediaUrl = uploadData.secure_url;
     }
 
+              const keywords = content.trim().toLowerCase().split(" ")
+
+
   
     // 2. Save post to Firestore
    const newPost = {
-  content: content.trim(),
+  content: content.trim() || null,
   createdAt: Date.now(),
   mediaUrl: mediaUrl || null,
-  mediaType: mediaType,
-  feeling: feeling,
-  location:location,
+  mediaType: mediaType || null,
+  feeling: feeling || null,
+  keywords:keywords || null,
+  location:location || null,
   uid: user?.uid,   // Make sure this exists and matches the authenticated user!
   author: {
     uid: user?.uid,
@@ -127,6 +131,7 @@ if (!user) return toast({title:"Please login first"});
 
 };
 console.log("User UID:", user?.uid);
+console.log("dataB", newPost);
 
     await addDoc(collection(dbb, "posts"), newPost);
 
@@ -266,7 +271,7 @@ useEffect(() => {
             setLocationQuery("");
             setSearchResults([]);
           }}
-          className="p-2 hover:bg-gray-100 cursor-pointer"
+          className="p-2 hover:bg-gray-100 cursor-pointer text-muted"
         >
           {loc}
         </li>
@@ -295,7 +300,7 @@ useEffect(() => {
       <button
         key={f}
         onClick={() => handleSelectFeeling(f)}
-        className="block w-full text-left hover:bg-gray-100 p-1"
+        className="block w-full text-muted text-left hover:bg-gray-100 p-1"
       >
         {f}
       </button>

@@ -338,10 +338,13 @@ const handleSaveNotifications = async () => {
     return;
   }
 
+
   try {
     const userRef = doc(db, "users", user?.uid as string);
+     const keywords =name.toLowerCase().split(" ")
     await updateDoc(userRef, {
       fullName: name,
+      keywords:keywords,
       username,
       bio,
       updatedAt: Date.now(),

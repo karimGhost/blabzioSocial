@@ -125,7 +125,11 @@ const [lastSeen, setLastSeen] = useState<number | null>(null);
     }
   }, [messages]);
 
+
+
+
  const handleTyping = () => {
+
   if (!user?.uid || !conversation?.id) return;
 
   const typingRef = doc(dbc, "conversations", conversation.id, "typingStatus", user.uid);
@@ -138,6 +142,9 @@ const [lastSeen, setLastSeen] = useState<number | null>(null);
     setDoc(typingRef, { isTyping: false }, { merge: true });
   }, 3000);
 };
+
+
+
   const repliesMap = useMemo(() => {
     const map = new Map();
     messages.forEach((msg) => map.set(msg.id, msg));
@@ -202,12 +209,13 @@ const [lastSeen, setLastSeen] = useState<number | null>(null);
   const handleFileUpload = async (file: File) => {
     const url = await uploadToCloudinary(file);
     if (!url) return;
+
     await addDoc(collection(dbc, "conversations", conversation.id, "messages"), {
       senderId: user?.uid,
       receiverId: conversation.participant.id,
       content: url,
       type: "image",
-      timestamp: serverTimestamp(),
+      timestamp: new Date().toISOString(),
       isRead: false,
       conversationId: conversation.id,
     });
@@ -229,7 +237,27 @@ const handleBlockUser = async (username: string) => {
   }
 };
 
+useEffect(() => {
+  const handleUnload = () => {
+    if (!user?.uid || !conversation?.id) return;
+   
+    const typingRef = doc(dbc, "conversations", conversation.id, "typingStatus", user.uid);
+    setDoc(typingRef, { isTyping: false, updatedAt: serverTimestamp()  }, { merge: true });
+  };
 
+
+  window.addEventListener("beforeunload", handleUnload);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      handleUnload();
+    }
+  });
+
+  return () => {
+    window.removeEventListener("beforeunload", handleUnload);
+    document.removeEventListener("visibilitychange", handleUnload);
+  };
+}, [conversation?.id, user?.uid]);
  
 const handleMuteUser = async (username: string) => {
   if (!user) return;
@@ -258,11 +286,14 @@ const handleMuteUser = async (username: string) => {
           <AvatarFallback>{conversation?.participant?.fullName?.charAt(0)}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
-               <Link href={'/profile/conversation?.participant?.id'} className="sm:hidden">
+
+               <Link href={'/profile/conversation?.participant?.id'} >
+
    <p className="font-semibold">{conversation?.participant?.fullName}</p> </Link>
+
 <p className="text-xs text-muted-foreground">
-  {isTyping
-    ? "Typing..."
+  { isTyping
+    ? isOnline ? "Typing..." : lastSeen
     : isOnline
       ? "Online"
       : lastSeen
@@ -351,7 +382,24 @@ const handleMuteUser = async (username: string) => {
                 onChange={(e) => {
                   handleTyping();
                   setNewMessage(e.target.value);
+                  
                 }}
+
+
+
+                onBlur={() => {
+  if (!user?.uid || !conversation?.id) return;
+
+  const typingRef = doc(
+    dbc,
+    "conversations",
+    conversation.id,
+    "typingStatus",
+    user.uid
+  );
+
+  setDoc(typingRef, { isTyping: false,updatedAt: serverTimestamp()  }, { merge: true });
+}}
                 className="flex-1 rounded-full bg-muted border-transparent focus-visible:ring-primary focus-visible:ring-1 px-4 py-2"
               />
               <Button type="submit" size="icon" className="rounded-full bg-primary hover:bg-primary/90">

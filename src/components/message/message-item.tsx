@@ -74,7 +74,7 @@ useEffect(() => {
        {!isOwnMessage && (
         <Avatar className="h-8 w-8 self-start">
           <AvatarImage src={sender.avatarUrl} alt={sender.name} />
-          <AvatarFallback>{sender?.name?.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{sender?.fullName?.charAt(0)}</AvatarFallback>
         </Avatar>
       )}
 
@@ -119,17 +119,17 @@ useEffect(() => {
   />
 ) : (
   <>
-    {repliedTo && (
-          <div className="mb-1 p-2 border-l-4 border-blue-500 bg-background rounded text-sm text-muted-foreground">
-            <p className="font-semibold">
-              {repliedTo.senderId === sender.id ? sender.fullName : "You"}
-            </p>
-            <p>{repliedTo.content}</p>
-          </div>
-        )}
+  {repliedTo && (
+    <div className="mb-1 p-2 border-l-4 border-blue-500 bg-background rounded text-sm text-muted-foreground">
+      <p className="font-semibold">
+        {repliedTo.senderId === sender.id ? sender.fullName : "You"}
+      </p>
+      <p>{repliedTo.content}</p>
+    </div>
+  )}
     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
 
-  </>
+</>
 )}
 
 

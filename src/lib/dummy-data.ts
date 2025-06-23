@@ -18,7 +18,8 @@ export type Post = {
   id: string;
   userId: string;
   user: User;
-  
+  feeling: string;
+  location:string;
   content: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'video';
@@ -41,6 +42,7 @@ export type Video = {
 };
 
 export type Message = {
+  replyToId: any;
   type: string;
   id: string;
   senderId: string;

@@ -64,10 +64,12 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
       displayName: fullname,
     });
 
+    const keywords = fullname.toLowerCase().split(" ")
     // Firestore user creation
     try {
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
+        keywords:keywords,
         fullName: fullname,
         username: UserName,
         email: email,
@@ -119,11 +121,14 @@ const handleGoogleSignup = async () => {
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
+          const keywords = user?.displayName?.toLowerCase().split(" ")
+
       try {
         await setDoc(userRef, {
           uid: user.uid,
           fullName: user.displayName || "",
           email: user.email || "",
+          keywords:keywords,
           createdAt: Date.now(),
           postsCount: 0,
           followersCount: 0,

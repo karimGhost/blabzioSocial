@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Post } from "@/lib/dummy-data";
+import { Dialog, DialogContent,  DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
 
 interface Comment {
   id: string;
@@ -60,6 +61,8 @@ interface RepliesListProps {
 }
 
 function RepliesList({ postId, commentId }: RepliesListProps) {
+
+
   const [replies, setReplies] = useState<Reply[]>([]);
  const { user, userData } = useAuth();
   useEffect(() => {
@@ -98,6 +101,8 @@ interface PostItemProps {
 
 export function PostItem({ post }: PostItemProps) {
   const router = useRouter();
+const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
 const {toast} = useToast();
   const [textToCopy, setTextToCopy] = useState('');
@@ -385,9 +390,32 @@ const handleReportPost = async (id: string) => {
 
 
 
+const [previewUrl, setPreviewUrl] = useState<any | null>(null);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreviewUrl(null);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
 
+const ConfirmDelete = async (post: Post) => {
+  if (!post?.id) {
+    console.error("Post ID is missing");
+    return;
+  }
 
+  try {
+    await deleteDoc(doc(dbb, "posts", post.id));
+    console.log("Post deleted successfully");
+  } catch (error) {
+    console.error("Error deleting post:", error);
+  }
+};
+
+ 
   return (
     <Card className="overflow-hidden shadow-lg">
       <CardHeader className="flex flex-row items-center gap-3 p-4">
@@ -398,15 +426,34 @@ const handleReportPost = async (id: string) => {
           </Avatar>
         </Link>
         <div className="grid gap-0.5">
-         <Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline">
+    
+<div style={{display:"flex"}}>
+     <Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline mr-2">
   {post.author.name}
 </Link>
 
+{(post?.feeling || post?.location) && (
+  <p className="text-sm text-muted-foreground mt-1">
+    {post.feeling && (
+      <>
+        is feeling{" "}
+        <span className="font-semibold text-orange-400">{post.feeling}</span>
+      </>
+    )}
+    {post.feeling && post.location && " At "}
+    {post.location && (
+      <span className="font-semibold text muted text-orange-250">{post.location} 🌍</span>
+    )}
+  </p>
+)}
 
-
-          <span className="text-xs text-muted-foreground">
+</div>
+ 
+  <span className="text-xs text-muted-foreground">
             @{post.author.name} · {timeAgo}
           </span>
+
+        
         </div>
       <DropdownMenu>
   <DropdownMenuTrigger asChild>
@@ -422,8 +469,24 @@ const handleReportPost = async (id: string) => {
 </DropdownMenuItem>
     <DropdownMenuItem onClick={() => handleShareToFeed(post)}>
       Share to Feed
+
     </DropdownMenuItem>
  
+
+
+{post?.author.uid === user?.uid && (
+  <DropdownMenuItem
+    onClick={() => {
+      setSelectedPost(post);
+      setShowConfirmDialog(true);
+    }}
+  >
+    Delete
+  </DropdownMenuItem>
+)}
+
+
+
   {post?.author.uid !== user?.uid &&
 <>
     <DropdownMenuItem onClick={() => handleSendMessage(post)}>
@@ -457,8 +520,8 @@ const handleReportPost = async (id: string) => {
       <CardContent className="p-4 pt-0">
         <p className="whitespace-pre-wrap text-sm">{post.content}</p>
         {post.mediaUrl && post.mediaType === "image" && (
-          <div className="mt-3 h-64 -mx-4 sm:mx-0 sm:rounded-lg overflow-hidden aspect-video relative">
-            <Image src={post.mediaUrl} alt="Post media" fill className="object-cover" />
+          <div className="mt-3 h-64 -mx-4 sm:mx-0 sm:rounded-lg overflow-hidden aspect-video relative" style={{margin:"auto"}}>
+            <Image     onClick={() => setPreviewUrl(post.mediaUrl)} src={post.mediaUrl} alt="Post media" fill className="object-cover" />
           </div>
         )}
       </CardContent>
@@ -562,6 +625,47 @@ const handleReportPost = async (id: string) => {
           </div>
         )}
       </CardFooter>
+
+   {previewUrl && (
+  <div
+    onClick={() => setPreviewUrl(null)}
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+  >
+    {previewUrl.endsWith(".mp4") || previewUrl.includes("video") ? (
+      <video src={previewUrl} controls autoPlay className="max-h-full max-w-full rounded" />
+    ) : (
+      <img src={previewUrl} alt="preview" className="max-h-full max-w-full rounded" />
+    )}
+  </div>
+)}
+
+
+<Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Are you sure?</DialogTitle>
+      <DialogDescription>
+        This will permanently delete your post.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="flex justify-end gap-2">
+      <Button variant="ghost" onClick={() => setShowConfirmDialog(false)}>
+        Cancel
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={() => {
+          if (selectedPost) ConfirmDelete(selectedPost);
+          setShowConfirmDialog(false);
+        }}
+      >
+        Confirm Delete
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
     </Card>
   );
 }

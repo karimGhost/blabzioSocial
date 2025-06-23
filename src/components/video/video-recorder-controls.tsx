@@ -225,9 +225,12 @@ const stopRecording = () => {
   const saveVideoToFirestore = async (videoUrl: string) => {
     if (!user || !userData) return;
 
+                  const keywords = description.trim().toLowerCase().split(" ")
+
     const videoDoc = {
       url: videoUrl,
       description,
+      keywords:keywords,
       timestamp: serverTimestamp(),
       user: {
         uid: user.uid,
