@@ -28,7 +28,20 @@ const [agreedToTerms, setAgreedToTerms] = useState(false);
 const [terms,setTerms] = useState(false);
 
       const {toast} = useToast();
-
+const getFriendlyError = (code: string) => {
+  switch (code) {
+    case "auth/email-already-in-use":
+      return "This email is already registered. Please log in instead.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/weak-password":
+      return "Password is too weak. It must be at least 6 characters.";
+    case "auth/operation-not-allowed":
+      return "This type of signup is currently disabled.";
+    default:
+      return "Something went wrong. Please try again.";
+  }
+};
 const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 
 
@@ -73,6 +86,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 
     } catch (firestoreError) {
       await deleteUser(user); // Roll back auth if Firestore fails
+
       toast({
         title: "Account creation failed",
         description: "Could not save your data. Please try again.",
@@ -83,12 +97,15 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     }
 
   } catch (err: any) {
-    toast({
-     
-      title: "Signup error",
-      description: err.message,
-      variant: "destructive",
-    });
+      const errorCode = err.code || "";
+
+    const friendlyMessage = getFriendlyError(errorCode);
+
+  toast({
+    title: "Signup Error",
+    description: friendlyMessage,
+    variant: "destructive",
+  });
   }
 };
 

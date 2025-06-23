@@ -19,11 +19,23 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
+ 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+
+ 
+useEffect(() => {
+        document.documentElement.classList.toggle("dark", localStorage.getItem("darkMode") === "true");
+
+
+},[])
+   
+
+
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
@@ -35,9 +47,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUserData(docSnap.data());
         });
 
+     
         return () => unsubUserDoc();
       } else {
         setUserData(null);
+
+
       }
     });
 

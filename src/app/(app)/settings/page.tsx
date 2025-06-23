@@ -100,6 +100,9 @@ useEffect(() => {
       if (savedTheme === "dark" || savedTheme === "light") {
         setTheme(savedTheme);
         document.documentElement.classList.toggle("dark", savedTheme === "dark");
+        
+                localStorage.setItem("darkMode",  savedTheme === "dark" ? "true" : "false")
+
       }
 
       // Notifications

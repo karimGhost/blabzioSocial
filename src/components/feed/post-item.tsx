@@ -394,7 +394,7 @@ const handleReportPost = async (id: string) => {
         <Link href={`/profile/${post.author.uid}`}>
           <Avatar className="h-11 w-11 border-2 border-primary">
             <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
-            <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{post.author.name.substring(0, 3)}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="grid gap-0.5">

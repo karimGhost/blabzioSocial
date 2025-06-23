@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, fetchSignInMethodsForEmail } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,8 @@ import { BlabzioLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
-
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -21,7 +22,32 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-const {user} = useAuth()
+const {user} = useAuth();
+
+const getFriendlyError = (code: string) => {
+ 
+   switch (code) {
+     case "auth/user-not-found":
+      return "No account found with this email.";
+    case "auth/wrong-password":
+      return "Incorrect password. Please try again.";
+    case "auth/too-many-requests":
+      return "Too many login attempts. Please try again later.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/popup-closed-by-user":
+      return "You closed the Google sign-in popup before finishing.";
+    case "auth/cancelled-popup-request":
+      return "Another sign-in popup is already open.";
+    case "auth/popup-blocked":
+      return "Popup was blocked by the browser. Please enable popups.";
+    case "auth/account-exists-with-different-credential":
+      return "This email is already registered with a different method.";
+    default:
+      return "Something went wrong. Please try again.";
+  
+  }
+};
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
    setError("");
@@ -41,28 +67,55 @@ const {user} = useAuth()
    }
 
     } catch (err: any) {
-      setError(err.message);
-          setLoading(false);
+      const errorCode = err.code || "";
+  const friendlyMessage = getFriendlyError(errorCode);
+  setError(friendlyMessage);
+
 
     }
   };
+const handleGoogleLogin = async () => {
+  const provider = new GoogleAuthProvider();
+  setLoading(true);
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-        setLoading(true);
+  try {
+    // Step 1: Sign in with Google
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
 
-    try {
-      await signInWithPopup(auth, provider);
-          setLoading(true);
+    // Step 2: Check if user exists in Firestore
+    const userDocRef = doc(db, "users", user.uid);
+    const userDocSnap = await getDoc(userDocRef);
 
-      router.push("/feed");
-
-    } catch (err: any) {
-          setLoading(false);
-
-      setError(err.message);
+    if (!userDocSnap.exists()) {
+      await setDoc(userDocRef, {
+        uid: user.uid,
+        fullName: user.displayName || "",
+        username: user.email?.split("@")[0] || "",
+        email: user.email || "",
+        avatarUrl: user.photoURL || "",
+        createdAt: serverTimestamp(),
+        postsCount: 0,
+        followersCount: 0,
+        followingCount: 0
+      });
     }
-  };
+
+    // ✅ Navigate to feed
+    router.push("/feed");
+
+  } catch (err: any) {
+    const errorCode = err.code || "";
+  const friendlyMessage = getFriendlyError(errorCode);
+  setError(friendlyMessage);
+
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
 // useEffect(() => {
 //     if (!loading && user) {
@@ -177,6 +230,7 @@ function BlabzioLoader() {
             forgot  password ?{" "}
             </Link>
           </p>
+
 
         </CardFooter>
       </Card>
