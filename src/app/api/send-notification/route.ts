@@ -2,7 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import admin from "firebase-admin";
-import serviceAccount from "@/service-account/firebase-adminsdk.json";
+import serviceAccount from "@/config/firebase-adminsdk.json";
 
 if (!admin.apps.length) {
   admin.initializeApp({
