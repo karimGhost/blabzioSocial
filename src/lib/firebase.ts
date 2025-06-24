@@ -6,6 +6,7 @@ import { getFirestore } from "firebase/firestore";
 import { Anonymous_Pro } from "next/font/google";
 import { useEffect } from "react";
 import { getStorage } from 'firebase/storage';
+import { getMessaging, isSupported } from "firebase/messaging";
 const firebaseConfig = {
   apiKey: "AIzaSyAd1h_AoSP8N7tv0FE5dOQu4H5oeCPsC6I",
   authDomain: "my-mneti.firebaseapp.com",

@@ -1,15 +1,6 @@
 // pages/api/send-notification.ts
-
 import type { NextApiRequest, NextApiResponse } from "next";
-import admin from "firebase-admin";
-import serviceAccount from "@/config/firebase-adminsdk.json";
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-  });
-}
-
+import {admin} from "@/lib/firebase-adminsdk"
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -30,8 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       webpush: {
         notification: {
-          icon: "/icon-192x192.png", // Your PWA icon
-          click_action: "https://your-site.com/messages", // Optional
+          icon: "/icon-192x192.png",
+          click_action: "https://your-site.com/messages",
         },
       },
     };
