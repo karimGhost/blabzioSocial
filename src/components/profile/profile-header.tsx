@@ -16,13 +16,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus } from "lucide-react"; // Assuming you're using lucide-react
+import { Loader2, Plus } from "lucide-react"; 
 
 import { useState, useRef } from "react";
 
 import { doc, updateDoc, deleteDoc, setDoc, getDoc, addDoc, collection } from "firebase/firestore";
 import { db, dbe } from "@/lib/firebase";
-import { useAuth } from "@/hooks/useAuth";  // Your auth hook to get current user
+import { useAuth } from "@/hooks/useAuth";  
 import { MessageButton } from "../MessageButton";
 interface ProfileHeaderProps {
     Blocked: boolean;
@@ -133,8 +133,8 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", "profilePic"); // Your preset
-  formData.append("folder", "profiledp"); // Optional folder
+  formData.append("upload_preset", "profilePic"); //  preset
+  formData.append("folder", "profiledp"); //  folder
 
   setUploading(true);
 
@@ -172,15 +172,23 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   }
 };
 
-  // Trigger file input click to select image
+
   const triggerFileSelect = () => {
     fileInputRef.current?.click();
   };
 
 
 
-const profileUrl = `https://blabzio.com/profile/${userData.uid}`; // Replace `id` with the profile user ID
+const profileUrl = `https://blabzio.com/profile/${userData.uid}`; 
 
+
+
+useEffect(() => {
+        document.documentElement.classList.toggle("dark", localStorage.getItem("darkMode") === "true");
+
+
+},[])
+   
 
 
   useEffect(() => {

@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "orange",
   "theme_color": "#000000",
-   "description": "Blabzio Social",
+   "description": "Blabzio",
   "icons": [
     {
       "src": "/icons/android-chrome-192x192.png",
@@ -18,5 +18,6 @@
       "type": "image/png"
     }
   ]
+
 }
 

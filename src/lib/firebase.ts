@@ -102,7 +102,13 @@ const dbe =getFirestore(app5)
 
 
 
-
+export const getFirebaseMessaging = async () => {
+  const supported = await isSupported();
+  if (supported) {
+    return getMessaging(app);
+  }
+  return null;
+};
 
 
 // ✅ Export both

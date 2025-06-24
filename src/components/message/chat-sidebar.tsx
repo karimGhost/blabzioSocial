@@ -17,6 +17,8 @@ interface ChatSidebarProps {
   selectedConversationId?: string;
 }
 
+
+
 interface UserMeta {
   firstName: any;
   fullName: any;
@@ -101,10 +103,48 @@ useEffect(() => {
 console.log("conversations", convs)
 
 setConversations(convs.filter(Boolean) as ConversationWithMeta[]);
+
+const conv = (convs.filter(Boolean) as ConversationWithMeta[])
+
+ const filteredConversations = conv.filter((conv) =>
+  conv?.participant?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+);
+const listToRender = searchTerm.length > 0 ? filteredConversations : conversations;
+
+
+
+
+if (!listToRender.length) return;
+
+// Pick the first one (or loop through them if needed)
+const recipient = listToRender[0]?.participant;
+
+if (!recipient?.id) return;
+
+// Get FCM token
+const recipientDoc = await getDoc(doc(db, "fcmTokens", recipient.id));
+const recipientFCMToken = recipientDoc.data()?.token;
+
+// Send the notification
+if (recipientFCMToken) {
+  await fetch("/api/send-notification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      token: recipientFCMToken,
+      title: `New message from ${user?.displayName || "Someone"}`,
+      body: listToRender[0]?.lastMessage?.content || "You have a new message!",
+    }),
   });
+}
+
+
+  })
+
 
   return () => unsubscribe();
 }, [user]);
+
 
 
 
@@ -117,6 +157,9 @@ const filteredConversations = conversations.filter((conv) =>
   conv?.participant?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
 );
 const listToRender = searchTerm.length > 0 ? filteredConversations : conversations;
+
+
+
 
   return (
     <div className="flex flex-col border-r bg-muted/20 h-full">

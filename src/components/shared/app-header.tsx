@@ -19,20 +19,63 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { notification } from '../notifications/notifications';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from "next/navigation";
-
-import { useState } from 'react';
+import { collection, getDocs, orderBy, query, where, writeBatch } from "firebase/firestore";
+import { dbe } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
+import { useFCMPush } from '@/hooks/useFCMPush';
+import { getMessaging, onMessage } from 'firebase/messaging';
+import { useToast } from '@/hooks/use-toast';
 export function AppHeader() {
+
   const {user} = useAuth();
-  // const { toggleSidebar } = useSidebar(); // If using shadcn sidebar for mobile
+const {toast} = useToast();
+  useFCMPush(user);
+
+
+  useEffect(() => {
+  const messaging = getMessaging();
+
+  const unsubscribe = onMessage(messaging, (payload) => {
+    toast({
+      title: payload.notification?.title,
+      description: payload.notification?.body,
+    });
+  });
+
+  return unsubscribe;
+}, []);
+  // const { toggleSidebar } = useSidebar(); // If using shadcn sidebar for mobile  useFCMPush(user)
 const notifications = notification(user?.uid);
- const [query, setQuery] = useState("");
+ const [querys, setQuerys] = useState("");
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    if (!querys.trim()) return;
+    router.push(`/search?q=${encodeURIComponent(querys.trim())}`);
   };
+const userId = user?.uid;
+
+  const markAllAsRead = async () => {
+  const q = query(
+    collection(dbe, "notifications"),
+    where("toUser", "==", userId),
+    where("read", "==", false) // Only unread ones
+  );
+
+  const snapshot = await getDocs(q);
+
+  const batch = writeBatch(dbe);
+  snapshot.docs.forEach((doc) => {
+    batch.update(doc.ref, { read: true });
+  });
+
+  await batch.commit();
+  console.log("All notifications marked as read.");
+};
+
+
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 " style={{zIndex:"1"}}>
       {/* Mobile nav toggle - if you add a collapsible sidebar using shadcn/ui Sidebar component */}
@@ -51,8 +94,8 @@ const notifications = notification(user?.uid);
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-               value={query}
-          onChange={(e) => setQuery(e.target.value)}
+               value={querys}
+          onChange={(e) => setQuerys(e.target.value)}
               placeholder="Search Blabzio..."
               className="w-full appearance-none bg-muted pl-9 shadow-none md:w-2/3 lg:w-1/3 rounded-full"
             />
@@ -62,7 +105,7 @@ const notifications = notification(user?.uid);
 
       {/* Right side: Notifications & User Menu */}
       <div className="flex items-center gap-4 ml-auto">
-         <Button variant="ghost" size="icon" className="relative rounded-full">
+         <Button onClick={() => markAllAsRead()} variant="ghost" size="icon" className="relative rounded-full">
   <Link href="/notification" className="relative inline-block">
     <Bell className="h-5 w-5" />
     <span className="sr-only">Notifications</span>
@@ -71,7 +114,7 @@ const notifications = notification(user?.uid);
       <span className="absolute top-0 right-0 block h-4 w-4 animate-ping rounded-full bg-red-500 opacity-75"></span>
     )} */}
     {notifications.some((i) => i.read === false) && notifications.length > 0 && (
-      <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+      <span  className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
         {notifications?.length > 9 ? "9+" : notifications.length}
       </span>
     )}

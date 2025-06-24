@@ -287,7 +287,7 @@ const handleMuteUser = async (username: string) => {
         </Avatar>
         <div className="flex-1">
 
-               <Link href={'/profile/conversation?.participant?.id'} >
+               <Link href={`/profile/${conversation?.participant?.id}`} >
 
    <p className="font-semibold">{conversation?.participant?.fullName}</p> </Link>
 
