@@ -1,21 +1,38 @@
 {
   "name": "Blabzio",
-  "short_name": "Blabzio",
+  "short_name": "B",
   "start_url": "/",
+  "id":"/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#ff5c00",
-  "orientation": "portrait",
+  "theme_color": "#000000",
+  "description": "Blabzio Social",
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "/icons/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icons/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshoots/mobile1.png",
+      "sizes": "512x1024",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshoots/desktop1.png",
+      "sizes": "1891x831",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
   ]
 }
+
+

@@ -1,17 +1,19 @@
-// next-pwa.ts
-import { WithPWA } from "next-pwa";
+declare module 'next-pwa' {
+  import type { NextConfig } from 'next';
 
-// next-pwa.ts
-// Use require() because next-pwa doesn't support ESM cleanly
-// next-pwa.ts
-// Use require() because next-pwa doesn't support ESM cleanly
-const withPWA = require("next-pwa");
+  type PWAOptions = {
+    dest: string;
+    register?: boolean;
+    skipWaiting?: boolean;
+    disable?: boolean;
+    scope?: string;
+    sw?: string;
+    runtimeCaching?: any[];
+    buildExcludes?: string[];
+    [key: string]: any;
+  };
 
-const withPWAConfig = withPWA({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
-});
+  const withPWA: (options: PWAOptions) => (nextConfig: NextConfig) => NextConfig;
 
-module.exports = withPWAConfig;
+  export default withPWA;
+}
