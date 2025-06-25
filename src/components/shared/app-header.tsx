@@ -32,7 +32,9 @@ export function AppHeader() {
 
   const {user} = useAuth();
 const {toast} = useToast();
+
   useFCMPush(user);
+
 
   // const { toggleSidebar } = useSidebar(); // If using shadcn sidebar for mobile  useFCMPush(user)
 const notifications = notification(user?.uid);

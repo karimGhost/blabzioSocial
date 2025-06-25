@@ -7,6 +7,7 @@ import { MoreHorizontal, UserPlus, UserCheck, MessageCircle, Bell } from "lucide
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import type { User } from "@/lib/dummy-data";
+import { useFCMPush } from "@/hooks/useFCMPush";
 import QRCode from "react-qr-code";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
@@ -44,7 +45,6 @@ const [uploading, setUploading] = useState(false);
 
 const {toast} = useToast();
   
-
 
 // const messaging = getMessaging();
 
