@@ -7,7 +7,7 @@ declare module 'next-pwa' {
     skipWaiting?: boolean;
     disable?: boolean;
     scope?: string;
-   // sw?: string;
+   sw?: string;
     runtimeCaching?: any[];
     buildExcludes?: string[];
     [key: string]: any;
