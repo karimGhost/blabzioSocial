@@ -15,7 +15,6 @@ export default function RootLayout({
 
 
 
-
   
   return (
     <html lang="en">
@@ -42,9 +41,18 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       
           <link rel="manifest" href="/manifest.json" />
-      
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
-          <title>Blabzio</title>
+  
+
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+          <title>
+
+    Blabzio
+  </title>
+
+              <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
   <meta name="description" content="Messaging connect Social." />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://magnetics-social.vercel.app" />
