@@ -1,23 +1,21 @@
 {
   "name": "Blabzio",
-  "short_name": "B",
-  "start_url": "/feed",
+  "short_name": "Blabzio",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "orange",
-  "theme_color": "#000000",
-   "description": "Blabzio",
+  "background_color": "#ffffff",
+  "theme_color": "#ff5c00",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/android-chrome-192x192.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/android-chrome-512x512.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
-
 }
-

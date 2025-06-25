@@ -23,27 +23,42 @@ import { collection, getDocs, orderBy, query, where, writeBatch } from "firebase
 import { dbe } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 import { useFCMPush } from '@/hooks/useFCMPush';
-import { getMessaging, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 export function AppHeader() {
+  const { isInstallable, promptInstall } = useInstallPrompt();
+
 
   const {user} = useAuth();
 const {toast} = useToast();
   useFCMPush(user);
 
+useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
 
-  useEffect(() => {
-  const messaging = getMessaging();
+    try {
+      const messaging = getMessaging();
 
-  const unsubscribe = onMessage(messaging, (payload) => {
-    toast({
-      title: payload.notification?.title,
-      description: payload.notification?.body,
-    });
-  });
+      // Optionally request permission
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY })
+            .then((token) => {
+              console.log("Push Token:", token);
+            })
+            .catch(console.error);
+        }
+      });
 
-  return unsubscribe;
-}, []);
+      // Listen for messages
+      onMessage(messaging, (payload) => {
+        console.log("Foreground FCM message: ", payload);
+      });
+    } catch (err) {
+      console.warn("FCM not supported on this browser or environment:", err);
+    }
+  }, []);
   // const { toggleSidebar } = useSidebar(); // If using shadcn sidebar for mobile  useFCMPush(user)
 const notifications = notification(user?.uid);
  const [querys, setQuerys] = useState("");
@@ -76,6 +91,7 @@ const userId = user?.uid;
 
 
 
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 " style={{zIndex:"1"}}>
       {/* Mobile nav toggle - if you add a collapsible sidebar using shadcn/ui Sidebar component */}
@@ -87,6 +103,10 @@ const userId = user?.uid;
       </Button>
        */}
      
+   { isInstallable ? (
+  <button onClick={promptInstall}>Install App</button>
+) : null}
+
       {/* Desktop: Search Bar */}
       <div className="hidden flex-1 sm:flex">
         <form className="w-full"  onSubmit={handleSearch}>
