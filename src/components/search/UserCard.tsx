@@ -15,7 +15,7 @@ export default function UserCard({ user }: { user: any }) {
           className="rounded-full"
         />
         <div>
-          <p className="font-semibold">{user?.fullName || "User"}</p>
+          <p className="font-semibold">{ user?.fullName|| "User"}</p>
           <p className="text-muted-foreground text-sm">@{user?.username || "username"}</p>
         </div>
       </Card>

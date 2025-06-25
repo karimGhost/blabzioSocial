@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import type { User } from "@/lib/dummy-data";
 import QRCode from "react-qr-code";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 import {
   DropdownMenu,
@@ -43,6 +44,32 @@ const [uploading, setUploading] = useState(false);
 
 const {toast} = useToast();
   
+
+
+// const messaging = getMessaging();
+
+const requestPermission = async () => {
+  try {
+    const token = await getToken(messaging, {
+      vapidKey: "YOUR_PUBLIC_VAPID_KEY",
+    });
+    console.log("Notification token:", token);
+    // Save this token to Firestore under the user document
+  } catch (err) {
+    console.error("Notification permission denied", err);
+  }
+};
+
+
+useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/firebase-messaging-sw.js')
+      .then((reg) => console.log('✅ SW registered', reg))
+      .catch((err) => console.error('❌ SW error', err));
+  }
+}, [user]);
+
 
 const fileInputRef = useRef<HTMLInputElement>(null);
 

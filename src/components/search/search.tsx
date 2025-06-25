@@ -7,7 +7,7 @@ import { Heart, MessageCircle, Play } from "lucide-react";
 export function UserCard({ user }: { user: any }) {
   return (
     <Link
-      href={`/profile/${user.username}`}
+      href={`/profile/${user.uid}`}
       className="flex items-center gap-4 p-4 rounded-xl bg-white shadow hover:shadow-md transition"
     >
       <Image

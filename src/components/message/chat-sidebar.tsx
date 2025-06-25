@@ -106,25 +106,22 @@ setConversations(convs.filter(Boolean) as ConversationWithMeta[]);
 
 const conv = (convs.filter(Boolean) as ConversationWithMeta[])
 
- const filteredConversations = conv.filter((conv) =>
-  conv?.participant?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-);
-const listToRender = searchTerm.length > 0 ? filteredConversations : conversations;
 
 
 
 
-if (!listToRender.length) return;
+if (!conv.length) return;
+console.log("token", conv)
 
 // Pick the first one (or loop through them if needed)
-const recipient = listToRender[0]?.participant;
+const recipient = conv[0]?.participant;
 
 if (!recipient?.id) return;
+console.log("conv", recipient)
 
 // Get FCM token
-const recipientDoc = await getDoc(doc(db, "fcmTokens", recipient.id));
+const recipientDoc = await getDoc(doc(db, recipient.id, "fcmTokens"));
 const recipientFCMToken = recipientDoc.data()?.token;
-
 // Send the notification
 if (recipientFCMToken) {
   await fetch("/api/send-notification", {

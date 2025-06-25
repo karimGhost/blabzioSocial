@@ -34,31 +34,6 @@ export function AppHeader() {
 const {toast} = useToast();
   useFCMPush(user);
 
-useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-
-    try {
-      const messaging = getMessaging();
-
-      // Optionally request permission
-      Notification.requestPermission().then((permission) => {
-        if (permission === "granted") {
-          getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY })
-            .then((token) => {
-              console.log("Push Token:", token);
-            })
-            .catch(console.error);
-        }
-      });
-
-      // Listen for messages
-      onMessage(messaging, (payload) => {
-        console.log("Foreground FCM message: ", payload);
-      });
-    } catch (err) {
-      console.warn("FCM not supported on this browser or environment:", err);
-    }
-  }, []);
   // const { toggleSidebar } = useSidebar(); // If using shadcn sidebar for mobile  useFCMPush(user)
 const notifications = notification(user?.uid);
  const [querys, setQuerys] = useState("");

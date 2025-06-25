@@ -7,8 +7,14 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  workboxOpts: {
+  exclude: [/firebase-messaging-sw.js/], // protect this file from overwrite
+},
+
+ 
+
   images: {
-    domains: ['placehold.co', 'res.cloudinary.com'],
+    domains: ['placehold.co', 'res.cloudinary.com', 'lh3.googleusercontent.com'],
     remotePatterns: [
       {
         protocol: 'https',

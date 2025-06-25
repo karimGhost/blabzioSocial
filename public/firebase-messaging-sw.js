@@ -8,23 +8,28 @@ firebase.initializeApp({
   authDomain: "blaz-43c61.firebaseapp.com",
   databaseURL: "https://blaz-43c61-default-rtdb.firebaseio.com",
   projectId: "blaz-43c61",
-  storageBucket: "blaz-43c61.firebasestorage.app",
+  storageBucket: "blaz-43c61.appspot.com",
   messagingSenderId: "9929303497",
   appId: "1:9929303497:web:6f32f68135acda6e807418",
-  measurementId: "G-RH8JTLJ59E"
+  measurementId: "G-RH8JTLJ59E",
 });
-
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function (payload) {
-  console.log("[firebase-messaging-sw.js] Received background message", payload);
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
+// ✅ Handle background messages
+messaging.onBackgroundMessage((payload) => {
+  console.log("[firebase-messaging-sw.js] Background message:", payload);
+
+  const { title, body } = payload.notification;
+  const options = {
+    body,
     icon: "/icon-192x192.png",
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  self.registration.showNotification(title, options);
 });
 
+// ✅ Add this to allow fetch handling (required for some FCM APIs and PWA installability)
+self.addEventListener("fetch", function (event) {
+  // noop fetch handler to make service worker "active" and keep alive
+});
