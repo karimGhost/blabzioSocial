@@ -33,7 +33,7 @@ interface ChatAreaProps {
 }
 
 export function ChatArea({ conversation }: ChatAreaProps) {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const { toast } = useToast();
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -175,7 +175,31 @@ const [lastSeen, setLastSeen] = useState<number | null>(null);
       },
       updatedAt: new Date().toISOString(),
     });
+       
 
+      
+          const otherUserSnap = await getDoc(doc(db, "users", conversation.participant.id));
+
+                  const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+
+if (recipientFCMToken) {
+  try {
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: recipientFCMToken,
+        title: `New message from ${userData?.fullName || "Someone"}`,
+        body: newMessage || "You have a new message!",
+        clickAction: `https://blabzio-social.vercel.app/messages`,
+
+      }),
+    });
+    console.log("📩 Notification sent to:", recipientFCMToken);
+  } catch (err) {
+    console.error("🔥 Failed to send notification:", err);
+  }
+}
     setReplyTo(null);
     localStorage.removeItem("feed");
     setNewMessage("");

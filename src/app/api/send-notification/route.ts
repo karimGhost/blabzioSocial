@@ -1,18 +1,14 @@
-// pages/api/send-notification.ts
-import type { NextApiRequest, NextApiResponse } from "next";
-import {admin} from "@/lib/firebase-adminsdk"
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+import { messaging } from "@/lib/firebase-adminsdk";
+import { NextResponse } from "next/server";
 
-  const { token, title, body } = req.body;
-
-  if (!token || !title || !body) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
+export async function POST(req: Request) {
   try {
+    const { token, title, body, clickAction } = await req.json();
+
+    if (!token || !title || !body) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+
     const message = {
       token,
       notification: {
@@ -21,17 +17,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       webpush: {
         notification: {
-          icon: "/icon-192x192.png",
-          click_action: "https://your-site.com/messages",
+          icon: "/icons/android-chrome-192x192.png",
+          click_action: clickAction || "https://blabzio-social.vercel.app",
         },
       },
     };
 
-    await admin.messaging().send(message);
 
-    res.status(200).json({ success: true });
-  } catch (err: any) {
-    console.error("FCM Error:", err);
-    res.status(500).json({ error: "Failed to send notification" });
+    
+
+    await messaging.send(message);
+
+    console.log("✅ Sent message:", message);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("🔥 FCM API error:", error);
+    return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
   }
 }

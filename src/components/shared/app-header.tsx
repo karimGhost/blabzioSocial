@@ -81,7 +81,7 @@ const userId = user?.uid;
        */}
      
    { isInstallable ? (
-  <button onClick={promptInstall}>Install App</button>
+  <Button className='bg-primary' onClick={promptInstall}>Install App</Button>
 ) : null}
 
       {/* Desktop: Search Bar */}

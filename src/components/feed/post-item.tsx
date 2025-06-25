@@ -185,6 +185,31 @@ const postId = post.id;
     timestamp:  Date.now(),
     read: false,
   });
+
+
+
+  const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
+
+                  const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+
+if (recipientFCMToken) {
+  try {
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: recipientFCMToken,
+        title: ` ${userData?.fullName   || "Someone"} liked on your post`,
+        body:   "Tap to see it!",
+       clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
+
+      }),
+    });
+    console.log("📩 Notification sent to:", recipientFCMToken);
+  } catch (err) {
+    console.error("🔥 Failed to send notification:", err);
+  }
+}
       }
     } catch (err) {
       console.error("Error toggling like:", err);
@@ -266,6 +291,7 @@ toast({
 
   
   const handleCommentSubmit = async () => {
+
     if (!user || !commentText.trim()) return;
 const   commentId = crypto.randomUUID();
 
@@ -297,6 +323,32 @@ const CommentTexts = commentText.trim();
     timestamp:  Date.now(),
     read: false,
   });
+
+
+
+  const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
+
+                  const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+
+if (recipientFCMToken) {
+  try {
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: recipientFCMToken,
+        title: ` ${userData?.fullName   || "Someone"} commented on your post`,
+        body:   commentText.length > 9 ? commentText.slice(0, 9) + "..." : commentText || "You have a new comment !",
+       clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
+
+      }),
+    });
+    console.log("📩 Notification sent to:", recipientFCMToken);
+  } catch (err) {
+    console.error("🔥 Failed to send notification:", err);
+  }
+}
+
 
     } catch (err) {
       console.error("Failed to send comment:", err);
@@ -338,6 +390,31 @@ const postId = post.id;
     read: false,
   });
     setReplyMap((prev) => ({ ...prev, [commentId]: "" }));
+
+
+
+  const otherUserSnap = await getDoc(doc(db, "users", commentuid));
+
+                  const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+
+if (recipientFCMToken) {
+  try {
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: recipientFCMToken,
+        title: ` ${userData?.fullName   || "Someone"} replied  on your comment`,
+        body:   replyTexts.length > 9 ? replyTexts.slice(0, 9) + "..." : replyTexts || "You have a new reply on your comment !",
+       clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
+
+      }),
+    });
+    console.log("📩 Notification sent to:", recipientFCMToken);
+  } catch (err) {
+    console.error("🔥 Failed to send notification:", err);
+  }
+}
   };
 
 

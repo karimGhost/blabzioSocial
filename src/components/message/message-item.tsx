@@ -27,6 +27,7 @@ export function MessageItem({
   const {userData} = useAuth();
  const messageDate = message?.timestamp ? new Date(message.timestamp) : null;
 const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -52,13 +53,16 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
-useEffect(() => {
-  const handleEsc = (e: KeyboardEvent) => {
-    if (e.key === "Escape") setPreviewUrl(null);
-  };
-  window.addEventListener("keydown", handleEsc);
-  return () => window.removeEventListener("keydown", handleEsc);
-}, []);
+
+
+
+// useEffect(() => {
+//   const handleEsc = (e: KeyboardEvent) => {
+//     if (e.key === "Escape") setPreviewUrl(null);
+//   };
+//   window.addEventListener("keydown", handleEsc);
+//   return () => window.removeEventListener("keydown", handleEsc);
+// }, []);
 
   const formattedTime =
     messageDate && isValid(messageDate) ? format(messageDate, "p") : "";

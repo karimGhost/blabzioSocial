@@ -11,7 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 
 import CommentsModal from "../CommentsModal";
 import { useAuth } from "@/hooks/useAuth";
-import { dbd } from "@/lib/firebase";
+import { db, dbd, dbe } from "@/lib/firebase";
 import { doc, collection, deleteDoc, setDoc, addDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs} from "firebase/firestore";
 import { DropdownMenuContent,DropdownMenuTrigger, DropdownMenuItem, DropdownMenu } from "../ui/dropdown-menu";
 import ShareDropdown from "../shareDropdown";
@@ -92,6 +92,45 @@ const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}
       });
       await updateDoc(videoRef, { likesCount: increment(1) });
     }
+
+
+const postId = video.id;
+         await addDoc(collection(dbe,  "notifications"), {
+    type: "like",
+    fromUser: user?.uid,
+    toUser: video.user.uid,
+    postId,
+     fullName: userData.fullName ,
+    avatarUrl: userData.avatarUrl,
+    timestamp:  Date.now(),
+    read: false,
+  });
+
+
+
+      const otherUserSnap = await getDoc(doc(db, "users", video.user.uid));
+    
+                      const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+    
+    if (recipientFCMToken) {
+      try {
+        await fetch("/api/send-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: recipientFCMToken,
+            title: ` ${userData?.fullName   || "Someone"} liked your video`,
+            body:   "Tap to see!",
+           clickAction: `https://blabzio-social.vercel.app/videos/${postId}`,
+    
+          }),
+        });
+        console.log("📩 Notification sent to:", recipientFCMToken);
+      } catch (err) {
+        console.error("🔥 Failed to send notification:", err);
+      }
+    }
+
   } catch (err) {
     console.error("Error toggling like:", err);
   }
@@ -154,7 +193,7 @@ console.log("commentcount", commentcount)
 
   return (
     <Card ref={cardRef} className="w-full h-[90svh] snap-start relative overflow-hidden rounded-xl shadow-xl flex flex-col">
-      <div className="absolute inset-0 ">
+      <div className="absolute inset-0 bg-black">
        <video
   ref={videoRef}
   src={video.url}
@@ -163,7 +202,7 @@ console.log("commentcount", commentcount)
   preload="metadata"
 />
         {/* <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-          <Play className="w-16 h-16 text-white/70" fill="currentColor" />
+          <Play className="w-16 h-16 text-white/70" fill="currentColor" /> flex
         </div> */}
       </div>
 

@@ -19,10 +19,11 @@ export const useFCMPush = (user: User | null | undefined) => {
       return;
     }
 
-    const setupFCM = async () => {
+     const setupFCM = async () => {
       try {
         // 1. Register Service Worker
         // Ensure the service worker file is in your public directory
+        
         const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
         console.log("🔥 Service Worker registered:", registration);
 

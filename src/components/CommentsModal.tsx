@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { dbd } from "@/lib/firebase";
+import { db, dbd, dbe } from "@/lib/firebase";
 import {
   collection,
   addDoc,
@@ -12,15 +12,19 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  getDoc,
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Pencil, Trash } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import EmojiPicker from "emoji-picker-react"; // you must install this package
+import { string } from "zod";
 
 interface CommentsModalProps {
   videoId: string;
+ authorId:string;
+
   onClose: () => void;
   isOpen: boolean;
   width?: number; 
@@ -36,7 +40,7 @@ interface Comment {
   timestamp: any;
 }
 
-export default function CommentsModal({ videoId, setCommentComunt, onClose, isOpen, width }: CommentsModalProps) {
+export default function CommentsModal({ videoId, authorId, setCommentComunt, onClose, isOpen, width }: CommentsModalProps) {
   const { user, userData } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -55,7 +59,7 @@ export default function CommentsModal({ videoId, setCommentComunt, onClose, isOp
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     });
     return () => unsub();
-  }, []);
+  }, [videoId]);
 
   const handleSubmit = async () => {
     if (!newComment.trim() || !user) return;
@@ -75,6 +79,45 @@ export default function CommentsModal({ videoId, setCommentComunt, onClose, isOp
         timestamp: serverTimestamp(),
       });
     }
+
+
+const postId = videoId;
+         await addDoc(collection(dbe,  "notifications"), {
+    type: "like",
+    fromUser: user?.uid,
+    toUser: authorId,
+    postId,
+     fullName: userData.fullName ,
+    avatarUrl: userData.avatarUrl,
+    timestamp:  Date.now(),
+    read: false,
+  });
+
+
+
+      const otherUserSnap = await getDoc(doc(db, "users", authorId));
+    
+                      const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+    
+    if (recipientFCMToken) {
+      try {
+        await fetch("/api/send-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: recipientFCMToken,
+            title: ` ${userData?.fullName   || "Someone"} commented on your video`,
+            body:   "Tap to see!",
+           clickAction: `https://blabzio-social.vercel.app/videos/${postId}`,
+    
+          }),
+        });
+        console.log("📩 Notification sent to:", recipientFCMToken);
+      } catch (err) {
+        console.error("🔥 Failed to send notification:", err);
+      }
+    }
+
 
     setNewComment("");
   };
