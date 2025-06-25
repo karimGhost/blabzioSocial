@@ -117,11 +117,13 @@ console.log("token", conv)
 const recipient = conv[0]?.participant;
 
 if (!recipient?.id) return;
-console.log("conv", recipient)
 
 // Get FCM token
-const recipientDoc = await getDoc(doc(db, recipient.id, "fcmTokens"));
-const recipientFCMToken = recipientDoc.data()?.token;
+const recipientDoc = await getDoc(doc(db,"users", recipient.id));
+const recipientFCMToken = recipientDoc?.data()?.fcmToken;
+
+console.log("conv", recipientFCMToken)
+
 // Send the notification
 if (recipientFCMToken) {
   await fetch("/api/send-notification", {
