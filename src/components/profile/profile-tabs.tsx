@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Post, User } from "@/lib/types";
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 
 interface ProfileTabsProps {
   Blocked: boolean;
@@ -17,7 +18,33 @@ interface ProfileTabsProps {
   following: User[];
 }
 
-export function ProfileTabs({Blocked, userPosts, followers, following }: ProfileTabsProps) {
+export function ProfileTabs({Blocked, userPosts,userData, followers, following }: ProfileTabsProps) {
+
+
+  const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
+  
+  const [isprivate, setIsPrivate] = useState(userData?.privacySettings?.privateAccount);
+
+  if(isprivate){
+  return (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <Image 
+              src="https://placehold.co/400x300.png?text=Private+Account" 
+              alt={ `${userData?.fullName} Needs to follow you its Private`}
+              width={400} 
+              height={300} 
+
+
+              className="mb-8 rounded-lg shadow-md"
+            />
+            <h1 className="text-3xl font-bold"> Not Found</h1>
+            <p className="text-lg text-muted-foreground">
+              Sorry, Not ABle to show you anything <strong>{}</strong>.
+            </p>
+          </div>
+        );
+
+  }
 
 
   if(Blocked){

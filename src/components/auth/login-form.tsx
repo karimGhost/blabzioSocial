@@ -55,8 +55,20 @@ const getFriendlyError = (code: string) => {
     setLoading(true);
  
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+  
+    const userCredential =  await signInWithEmailAndPassword(auth, email, password);
     setLoading(true);
+
+        const user = userCredential.user;
+
+  //  session cookie logic:
+    const idToken = await user.getIdToken();
+    await fetch("/api/session", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+      headers: { "Content-Type": "application/json" },
+    });
+
 
    if( user?.uid ){
 
@@ -101,11 +113,39 @@ const handleGoogleLogin = async () => {
         createdAt: serverTimestamp(),
         postsCount: 0,
         followersCount: 0,
-        followingCount: 0
+        followingCount: 0,
+             theme:"",
+             deactivated:false,
+        bio:"",
+        DOB:"",
+        oneTimeNotification: false,
+        fcmToken:"",
+        notificationSettings:{
+        directMessage: true,
+        newFollower:true,
+        postComment: true,
+        replies:true,
+        postLike:true,
+},
+
+        privacySettings:{
+        activityStatus:true,
+        privateAccount:false,
+
+}
+
       });
     }
 
-    // ✅ Navigate to feed
+      //  session cookie logic:
+    const idToken = await user.getIdToken();
+    await fetch("/api/session", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    //  Navigate to feed
     router.push("/feed");
 
   } catch (err: any) {

@@ -42,6 +42,28 @@ const getFriendlyError = (code: string) => {
       return "Something went wrong. Please try again.";
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 
 
@@ -77,13 +99,42 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         postsCount: 0,
         followersCount: 0,
         followingCount: 0,
-        avatarUrl: ""
+        avatarUrl: "",
+        theme:"",
+        bio:"",
+        DOB:"",
+        fcmToken:"",
+     deactivated:false,
+
+        notificationSettings:{
+        directMessage: true,
+        newFollower:true,
+        postComment: true,
+        replies:true,
+        postLike:true,
+},
+
+        privacySettings:{
+        activityStatus:true,
+        privateAccount:false,
+
+}
+
       });
         toast({
           title: "Account Created ",
           description: "Now Login using your creditials.",
           // variant: "success",
         });
+
+
+           //  session cookie logic:
+    const idToken = await user.getIdToken();
+    await fetch("/api/session", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+      headers: { "Content-Type": "application/json" },
+    });
       router.push("/");
 
     } catch (firestoreError) {
@@ -131,12 +182,39 @@ const handleGoogleSignup = async () => {
           keywords:keywords,
           createdAt: Date.now(),
           postsCount: 0,
+          DOB:"",
           followersCount: 0,
           followingCount: 0,
-          avatarUrl: user.photoURL || ""
+          avatarUrl: user.photoURL || "",
+         theme:"",
+       deactivated:false,
+
+        bio:"",
+        oneTimeNotification: false,
+        fcmToken:"",
+        notificationSettings:{
+        directMessage: true,
+        newFollower:true,
+        postComment: true,
+        replies:true,
+        postLike:true,
+},
+
+        privacySettings:{
+        activityStatus:true,
+        privateAccount:false,
+
+}
+
         });
 
-
+   //  session cookie logic:
+    const idToken = await user.getIdToken();
+    await fetch("/api/session", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+      headers: { "Content-Type": "application/json" },
+    });
          toast({
           title: "Account Created ",
           description: "Proceed to Login using your creditials.",

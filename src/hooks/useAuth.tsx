@@ -54,5 +54,6 @@ useEffect(() => {
     return () => unsubscribe();
   }, []);
 
-  return { user, loading, userData , setUserData};
+  const userD =  userData;
+  return { user, loading, userData ,userD, setUserData};
 }

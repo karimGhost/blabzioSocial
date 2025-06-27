@@ -35,14 +35,16 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({followers, following, Blocked, userData, isCurrentUserProfile }: ProfileHeaderProps) {
-  const { user } = useAuth();
+  const { user, userD } = useAuth();
 const [showShareModal, setShowShareModal] = useState(false);
 
 const [isEditable, setIsEditable] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(userData.avatarUrl);
 const [uploading, setUploading] = useState(false);
+const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
 
+const [isprivate, setIsPrivate] = useState(userData?.privacySettings?.privateAccount);
 const {toast} = useToast();
   
 
@@ -96,6 +98,32 @@ const fileInputRef = useRef<HTMLInputElement>(null);
   timestamp: Date.now(),
   read: false,
 });
+
+
+ const otherUserSnap = await getDoc(doc(db, "users", userData?.uid));
+
+                  const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+                  const newFollower = otherUserSnap?.data()?.notificationSettings?.newFollower;
+
+if (recipientFCMToken && newFollower) {
+  try {
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: recipientFCMToken,
+        title: ` ${userD?.fullName   || "Someone"} Followed you`,
+        body:   "You've got a new follower Tap to check ",
+       clickAction: `https://blabzio-social.vercel.app/profile/${user?.uid}`,
+
+      }),
+    });
+    console.log("📩 Notification sent to:", recipientFCMToken);
+  } catch (err) {
+    console.error("🔥 Failed to send notification:", err);
+  }
+}
+
   }
   };
 
@@ -228,6 +256,8 @@ useEffect(() => {
   };
   checkFollowing();
 }, [userData, user]);
+
+
 
   return (
     <div className="relative">

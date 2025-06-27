@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from "lucide-react";
-import { doc, collection, deleteDoc, setDoc, addDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs} from "firebase/firestore";
+import { doc, collection, deleteDoc, setDoc, addDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs, serverTimestamp, Timestamp} from "firebase/firestore";
 
 import { dbb, db , dbe} from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,6 +55,13 @@ interface LikeUser {
   avatarUrl?: string;
 }
 
+interface Report{
+  type: "post",
+  itemId: "postId123",
+  reason: "Hate speech or symbols",
+  reportedBy: "uid123",
+  createdAt: Timestamp
+}
 interface RepliesListProps {
   postId: string;
   commentId: string;
@@ -191,15 +198,16 @@ const postId = post.id;
   const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
 
                   const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+                  const postLike = otherUserSnap?.data()?.notificationSettings?.postLike;
 
-if (recipientFCMToken) {
+if (recipientFCMToken && postLike) {
   try {
     await fetch("/api/send-notification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         token: recipientFCMToken,
-        title: ` ${userData?.fullName   || "Someone"} liked on your post`,
+        title: ` ${userData?.fullName   || "Someone"} liked on your post ❤️`,
         body:   "Tap to see it!",
        clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
 
@@ -329,15 +337,15 @@ const CommentTexts = commentText.trim();
   const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
 
                   const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
-
-if (recipientFCMToken) {
+const postComment = otherUserSnap?.data()?.notificationSettings?.postComment;
+if (recipientFCMToken && postComment) {
   try {
     await fetch("/api/send-notification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         token: recipientFCMToken,
-        title: ` ${userData?.fullName   || "Someone"} commented on your post`,
+        title: ` ${userData?.fullName   || "Someone"} commented on your post 🗨️`,
         body:   commentText.length > 9 ? commentText.slice(0, 9) + "..." : commentText || "You have a new comment !",
        clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
 
@@ -396,15 +404,17 @@ const postId = post.id;
   const otherUserSnap = await getDoc(doc(db, "users", commentuid));
 
                   const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+   const replies = otherUserSnap?.data()?.notificationSettings?.replies;
 
-if (recipientFCMToken) {
+
+if (recipientFCMToken && replies) {
   try {
     await fetch("/api/send-notification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         token: recipientFCMToken,
-        title: ` ${userData?.fullName   || "Someone"} replied  on your comment`,
+        title: ` ${userData?.fullName   || "Someone"} replied  on your comment ↩️`,
         body:   replyTexts.length > 9 ? replyTexts.slice(0, 9) + "..." : replyTexts || "You have a new reply on your comment !",
        clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
 
@@ -462,6 +472,37 @@ const handleReportPost = async (id: string) => {
     console.error("Report failed:", err);
   }
 };
+const [showReportModal, setShowReportModal] = useState<string | null>(null);
+
+
+const submitReport = async (postId: string, reason: string) => {
+    if (!user) return;
+
+  try {
+    await addDoc(collection(db, "reports"), {
+      type: "post",
+      itemId: postId,
+      reason,
+      reportedBy: user?.uid ?? null,
+      createdAt: serverTimestamp(),
+    });
+    setShowReportModal(null);
+
+toast({
+        title: "Thanks .",
+        description: "Your report has been submitted!.",
+      
+      });
+  } catch (err) {
+    console.error("Report error:", err);
+    toast({
+        title: "Failed .",
+        description: "Failed to submit report. try again after some time .",
+      
+      });
+  }
+};
+
 
   const timeAgo = post?.timestamp ? formatDistanceToNow(new Date(post.timestamp), { addSuffix: true }) : "";
 
@@ -504,31 +545,46 @@ const ConfirmDelete = async (post: Post) => {
         </Link>
         <div className="grid gap-0.5">
     
-<div style={{display:"flex"}}>
-     <Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline mr-2">
+
+
+<div className="flex  ">
+  <div>
+   <Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline mr-2">
   {post.author.name}
+
+   
 </Link>
 
-{(post?.feeling || post?.location) && (
-  <p className="text-sm text-muted-foreground mt-1">
-    {post.feeling && (
-      <>
-        is feeling{" "}
-        <span className="font-semibold text-orange-400">{post.feeling}</span>
-      </>
-    )}
-    {post.feeling && post.location && " At "}
-    {post.location && (
-      <span className="font-semibold text muted text-orange-250">{post.location} 🌍</span>
-    )}
-  </p>
-)}
-
-</div>
- 
-  <span className="text-xs text-muted-foreground">
+  <span className="text-xs text-muted-foreground block  ">
             @{post.author.name} · {timeAgo}
           </span>
+  </div>
+    
+
+
+{(post?.feeling || post?.location) && (
+<p className="text-xs sm:text-sm text-muted-foreground mt--1 p-0" style={{ margin: "auto", padding: "0", width: "fit-content" }}>
+  {post.feeling && (
+    <>
+      is feeling{" "}
+      <span className="font-semibold text-orange-400">{post.feeling}</span>
+    </>
+  )}
+  {post.feeling && post.location && " At "}
+  {post.location && (
+    <span className="font-semibold text-muted text-orange-300">{post.location} 🌍</span>
+  )}
+</p>
+)}
+
+ 
+
+
+</div>
+
+
+
+ 
 
         
         </div>
@@ -578,13 +634,44 @@ const ConfirmDelete = async (post: Post) => {
   Block @{post.author.name}
 </DropdownMenuItem>
 
+<DropdownMenuItem
+  className="text-destructive"
+  onClick={() => setShowReportModal(post?.id)}
+>
+  Report Post
+</DropdownMenuItem>
 
-    <DropdownMenuItem
-      className="text-destructive"
-      onClick={() => handleReportPost(post?.id)}
-    >
-      Report Post
-    </DropdownMenuItem>
+   {showReportModal === post?.id && (
+  <Dialog open onOpenChange={() => setShowReportModal(null)}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Report Post</DialogTitle>
+        <DialogDescription>Select a reason for reporting this post.</DialogDescription>
+      </DialogHeader>
+
+      <div className="space-y-2">
+        {[
+          "Nudity or sexual activity",
+          "Hate speech or symbols",
+          "Violence or dangerous behavior",
+          "Spam or misleading",
+          "Harassment or bullying",
+          "Other"
+        ].map((reason) => (
+          <Button
+            key={reason}
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => submitReport(post?.id, reason)}
+          >
+            {reason}
+          </Button>
+        ))}
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+
     </>
 
   

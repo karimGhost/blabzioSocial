@@ -9,6 +9,8 @@ import Link from "next/link";
 import { onSnapshot } from "firebase/firestore";
 import { useUnreadMessages } from "./useUnreadMessages";
 import { usePathname } from "next/navigation";
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+
 import {
   Home,
   PlusSquare,
@@ -21,6 +23,7 @@ import {
   Bell,
   ShieldCheck,
   X,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -213,6 +216,17 @@ useEffect(() => {
 </Card>
 
 
+<Card className="shadow-lg">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <HelpCircle className="h-6 w-6 text-primary" /> Help & Support
+    </CardTitle>
+    <CardDescription>Find FAQs, contact support, or report a problem.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Link href="/help" className="text-sm text-primary hover:underline">Go to Help Center</Link>
+  </CardContent>
+</Card>
 
 
             <DropdownMenuItem asChild>
@@ -243,6 +257,7 @@ const handleSearch = (e: React.FormEvent) => {
     router.push(`/search?q=${encodeURIComponent(querys.trim())}`);
   };
 const unreadCount = useUnreadMessages(user?.uid);
+  const { isInstallable, promptInstall } = useInstallPrompt();
 
 
 
@@ -453,6 +468,12 @@ const userId = user?.uid;
             <DropdownMenuItem asChild><Link href="/"><LogOut className="mr-2 h-4 w-4" />Logout</Link></DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+  { isInstallable ? (
+          <Button className='bg-primary mt-10' onClick={promptInstall}>Install App</Button>
+        ) : null}
+
+       
     </header>
    );
 }

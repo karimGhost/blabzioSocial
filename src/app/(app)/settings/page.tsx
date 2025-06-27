@@ -8,13 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Lock, Bell, Shield, Palette, UserCircle, LogOut, Loader2, ShieldCheck } from "lucide-react";
+import { Lock, Bell, Shield, Palette, UserCircle, LogOut, Loader2, ShieldCheck, HelpCircle, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { doc, getDoc,setDoc, collection, getDocs, query, where, updateDoc } from "firebase/firestore";
+import { deleteUser, signOut } from "firebase/auth";
+import { doc, getDoc,setDoc, collection, getDocs, query, where, updateDoc, deleteDoc } from "firebase/firestore";
 import { db , dbb} from "@/lib/firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import Link from "next/link";
@@ -36,14 +36,17 @@ const [privacySettings, setPrivacySettings] = useState<Record<PrivacySettingKey,
   activityStatus: true,
 });
 
-type NotificationType = "newFollower" | "postLike" | "postComment" | "directMessage";
+type NotificationType = "newFollower" | "postLike" | "postComment" | "replies" | "directMessage";
 
 const [notifications, setNotifications] = useState<Record<NotificationType, boolean>>({
   newFollower: true,
   postLike: true,
   postComment: true,
   directMessage: true,
+  replies:true,
 });
+
+
 
 
 type ThemeMode = "light" | "dark";
@@ -82,6 +85,15 @@ toast({ title: "Password updated successfully ✅" });
   }
 };
 
+const handleReactivateAccount = async () => {
+  const userRef = doc(db, "users", user?.uid as string);
+  await updateDoc(userRef, {
+    deactivation: false,
+  });
+
+  alert("Account reactivated!");
+  // Optionally reload user data or redirect
+};
 
 useEffect(() => {
   if (!user?.uid) return;
@@ -369,6 +381,75 @@ setUserData(docSnap.data());
 };
 
 
+const handleDeactivateAccount = async () => {
+  const userRef = doc(db, "users", user?.uid as string);
+  await updateDoc(userRef, {
+    deactivation: true,
+  });
+
+  alert("Account deactivated (simulate)");
+  handleLogout();
+};
+
+
+const handleDeleteAccount = async () => {
+  if (!confirm("Are you sure? This will permanently delete your account.")) return;
+
+  try {
+    // 🔥 1. Delete Posts + Cloudinary
+    const postQuery = query(collection(db, "posts"), where("author.uid", "==", user?.uid ));
+    const postSnap = await getDocs(postQuery);
+
+    await Promise.all(
+      postSnap.docs.map(async (d) => {
+        const postData = d.data();
+        // If mediaUrl contains Cloudinary, delete from Cloudinary first
+        if (postData.mediaUrl && postData.mediaUrl.includes("res.cloudinary.com")) {
+          await fetch("/api/delete-cloudinary", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mediaUrl: postData.mediaUrl }),
+          });
+        }
+
+        // Delete post from Firestore
+        await deleteDoc(doc(db, "posts", d.id));
+      })
+    );
+
+    // 🗑 2. Delete Comments
+    const commentQuery = query(collection(db, "comments"), where("uid", "==", user?.uid ));
+    const commentSnap = await getDocs(commentQuery);
+    await Promise.all(commentSnap.docs.map((d) => deleteDoc(doc(db, "comments", d.id))));
+
+    // ❤️ 3. Delete Likes
+    const likeQuery = query(collection(db, "likes"), where("userId", "==", user?.uid));
+    const likeSnap = await getDocs(likeQuery);
+    await Promise.all(likeSnap.docs.map((d) => deleteDoc(doc(db, "likes", d.id))));
+
+    // 👤 4. Delete User Profile
+    await deleteDoc(doc(db, "users", user?.uid as string));
+
+    // 🔐 5. Delete Auth Account
+    if (auth.currentUser) {
+      await deleteUser(auth.currentUser);
+    }
+
+    // ✅ 6. Cleanup (session, cookies, etc.)
+    const res = await fetch("/api/delete-user", { method: "POST" });
+    if (res.ok) {
+      handleLogout();
+    } else {
+      alert("Error deleting account");
+    }
+
+    alert("Your account and data were deleted.");
+  } catch (err) {
+    console.error("Account deletion error:", err);
+    alert("Failed to delete account.");
+  }
+};
+
 
 const notificationItems: {
   id: NotificationType;
@@ -378,6 +459,8 @@ const notificationItems: {
   { id: "newFollower", label: "New Followers", description: "When someone starts following you." },
   { id: "postLike", label: "Post Likes", description: "When someone likes your post." },
   { id: "postComment", label: "Post Comments", description: "When someone comments on your post." },
+  { id: "replies", label: "replies", description: "When someone replies on your comment." },
+
   { id: "directMessage", label: "Direct Messages", description: "When you receive a new direct message." },
 ];
 
@@ -503,17 +586,7 @@ const notificationItems: {
       {isSaving ? "Saving..." : "Change Password"}
     </Button>
   </CardFooter>
-            {/* <div className="flex items-center justify-between rounded-lg border p-4">
-              {/* <div>
-                <h4 className="font-medium">Two-Factor Authentication</h4>
-                <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
-              </div> */}
-              {/* <Switch id="2fa" /> */}
-            {/* </div> */} 
-          </CardContent>
-          {/* <CardFooter className="border-t px-6 py-4">
-            <Button type="submit">Save Account Settings</Button>
-          </CardFooter> */}
+      </CardContent>       
         </form>
       </Card>
 
@@ -625,7 +698,17 @@ const notificationItems: {
 
 
   
-
+<Card className="shadow-lg">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <HelpCircle className="h-6 w-6 text-primary" /> Help & Support
+    </CardTitle>
+    <CardDescription>Find FAQs, contact support, or report a problem.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Link href="/help" className="text-sm text-primary hover:underline">Go to Help Center</Link>
+  </CardContent>
+</Card>
 
 
       <Card className="shadow-lg">
@@ -649,6 +732,67 @@ const notificationItems: {
 
 </Card>
 
+
+
+ <Card className="shadow-lg border border-red-300">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2 text-red-600">
+        <Trash2 className="h-6 w-6 text-red-500" /> Delete or Deactivate Account
+      </CardTitle>
+      <CardDescription className="text-muted-foreground">
+        Permanently delete your account or temporarily deactivate it.
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      {userData?.deactivation ?
+
+      <div className="rounded-lg border p-4">
+        <h4 className="font-semibold text-sm">Deactivate Account</h4>
+        <p className="text-sm text-muted-foreground">
+          You can temporarily deactivate your account. You’ll be logged out, and your profile will be hidden until reactivation.
+        </p>
+        <Button variant="outline" className="mt-2" onClick={handleDeactivateAccount}>
+          Deactivate Account
+        </Button>
+      </div>
+
+
+:
+<>
+ {userData?.deactivation && (
+  <Card className="shadow-lg border">
+    <CardHeader>
+      <CardTitle className="text-primary">Reactivate Account</CardTitle>
+      <CardDescription>
+        Your account is currently deactivated. You can reactivate anytime.
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <Button onClick={handleReactivateAccount}>Reactivate Account</Button>
+    </CardContent>
+  </Card>
+)}
+
+</>
+     
+
+
+}
+
+
+      <div className="rounded-lg border border-destructive p-4">
+        <h4 className="font-semibold text-sm text-red-600">Delete Account</h4>
+        <p className="text-sm text-muted-foreground">
+          This will permanently delete your profile, content, and data. This action cannot be undone.
+        </p>
+        <Button variant="destructive" className="mt-2" onClick={ handleDeleteAccount}>
+          Delete Account
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+
+
   <Separator />
       
       <Button variant="destructive" className="w-full sm:w-auto" onClick={handleLogout}>
@@ -659,3 +803,15 @@ const notificationItems: {
     </div>
   );
 }
+
+ {/* <div className="flex items-center justify-between rounded-lg border p-4">
+              {/* <div>
+                <h4 className="font-medium">Two-Factor Authentication</h4>
+                <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
+              </div> */}
+              {/* <Switch id="2fa" /> */}
+            {/* </div> */} 
+        
+          {/* <CardFooter className="border-t px-6 py-4">
+            <Button type="submit">Save Account Settings</Button>
+          </CardFooter> */}

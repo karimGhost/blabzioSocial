@@ -21,6 +21,11 @@ export interface UserData {
   followersCount?: number;
   followingCount?: number;
   username?: string;
+    privacySettings?: {
+    activityStatus: boolean;
+    privateAccount: boolean;
+   
+  };
 }
 
 export default function UserProfilePage() {
@@ -49,8 +54,17 @@ interface UserData {
   followersCount?: number;
   followingCount?: number;
   username?: string;
-}
 
+  privacySettings?: {
+    activityStatus: boolean;
+    privateAccount: boolean;
+   
+  };
+
+  
+
+
+}
 
 useEffect(() => {
     const fetchUserProfile = async () => {

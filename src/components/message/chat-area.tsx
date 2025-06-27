@@ -178,11 +178,15 @@ const [lastSeen, setLastSeen] = useState<number | null>(null);
        
 
       
+
+
+
           const otherUserSnap = await getDoc(doc(db, "users", conversation.participant.id));
 
                   const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+const directMessage = otherUserSnap?.data()?.notificationSettings?.directMessage;
 
-if (recipientFCMToken) {
+if (recipientFCMToken && directMessage) {
   try {
     await fetch("/api/send-notification", {
       method: "POST",
@@ -190,7 +194,7 @@ if (recipientFCMToken) {
       body: JSON.stringify({
         token: recipientFCMToken,
         title: `New message from ${userData?.fullName || "Someone"}`,
-        body: newMessage || "You have a new message!",
+        body: newMessage || "You have a new message! 💬",
         clickAction: `https://blabzio-social.vercel.app/messages`,
 
       }),

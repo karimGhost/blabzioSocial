@@ -78,6 +78,20 @@ const firebaseConfig6 = {
 };
 
 
+
+const firebaseAdmin = {
+   apiKey: "AIzaSyCgWcMEiOMNgEtPtSBE2jr4BWcRu4HC2ZQ",
+  authDomain: "pols-834d8.firebaseapp.com",
+  databaseURL: "https://pols-834d8-default-rtdb.firebaseio.com",
+  projectId: "pols-834d8",
+  storageBucket: "pols-834d8.firebasestorage.app",
+  messagingSenderId: "414978015496",
+  appId: "1:414978015496:web:7a569b83ccf7ddee59acbd",
+  measurementId: "G-GXWKF51709"
+
+};
+
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const app2 = initializeApp(firebaseConfig2, "app2"); // 
@@ -85,6 +99,7 @@ const app3 = initializeApp(firebaseConfig3, "app3"); //
 const app4 = initializeApp(firebaseConfig4, "app4"); // 
 const app5 = initializeApp(firebaseConfig5, "app5"); // 
 const app6 = initializeApp(firebaseConfig6, "app6"); // 
+const appadmin = initializeApp(firebaseAdmin, "appadmin"); // 
 
 
 export const rtdb = getDatabase(app6); // 
@@ -95,7 +110,7 @@ const auth = getAuth(app); // <-- Auth  here
  const db = getFirestore(app); //
 
 const dbb =getFirestore(app2)
-
+const Admin = getFirestore(appadmin)
 const dbc =getFirestore(app3)
 const dbd =getFirestore(app4)
 const dbe =getFirestore(app5)
@@ -113,5 +128,5 @@ export const getFirebaseMessaging = async () => {
 
 
 // ✅ Export both
-export { dbb,db, auth, app2, dbc, dbd,dbe };
+export { dbb,db, auth, app2, dbc, dbd,dbe, Admin };
 
