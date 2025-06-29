@@ -22,6 +22,7 @@ export function useInstallPrompt() {
     const choiceResult = await deferredPrompt.userChoice;
     if (choiceResult.outcome === "accepted") {
       console.log("App installed!");
+      localStorage.setItem("Appinstalled", "true")
     }
     setDeferredPrompt(null);
     setIsInstallable(false);

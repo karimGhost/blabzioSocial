@@ -19,6 +19,17 @@ export interface UserData {
   bio?: string;
   postsCount?: number;
   followersCount?: number;
+  DOB:string;
+  premiumExpires:"";
+ isPremium: boolean;
+  premiumSince: "";
+  paymentMethod: "";
+  paymentId: "";
+  premiumBadge: "",
+ subscriptionMonths: "";
+      expiresAt:"";
+  deactivated:boolean;
+             theme:"";
   followingCount?: number;
   username?: string;
     privacySettings?: {
@@ -43,10 +54,39 @@ const [followers, setFollowers] = useState<any[]>([]);
 //   avatarUrl?: string;
 // };
 
+
+
+
+
+  
+
+     
+
+       
+        
+
 interface UserData {
   id: string;
+
+
   uid: string;
   fullName: string;
+
+
+          directMessage: boolean;
+ DOB:string;
+  premiumExpires:"";
+ isPremium: boolean;
+  premiumSince: "";
+  paymentMethod: "";
+  paymentId: "";
+  premiumBadge: "",
+ subscriptionMonths: "";
+      expiresAt:"";
+  deactivated:boolean;
+             theme:"";
+
+
   email: string;
   avatarUrl?: string;
   bio?: string;
@@ -54,6 +94,7 @@ interface UserData {
   followersCount?: number;
   followingCount?: number;
   username?: string;
+       
 
   privacySettings?: {
     activityStatus: boolean;

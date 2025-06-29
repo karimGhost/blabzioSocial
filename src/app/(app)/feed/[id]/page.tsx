@@ -13,7 +13,7 @@ import {  Facebook, Twitter,  CopyCheck } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import ShareDropdown from "@/components/shareDropdown";
-
+import { ProfileBadge } from "@/components/profile/ProfileBadge";
 import { formatDistanceToNow } from "date-fns";
 
 import Link from "next/link";
@@ -305,9 +305,23 @@ const handleReportPost = async (id: any) => {
           </Avatar>
         </Link>
         <div className="grid gap-0.5">
-          <Link href={`/profile/${post.author.name}`} className="font-semibold hover:underline">
+          <span>
+  <Link href={`/profile/${post.author.name}`} className="font-semibold hover:underline">
             {post.author.name}
+
           </Link>
+
+   <span className="flex">
+                          <h1 className="text-2xl sm:text-3xl font-bold font-headline">{userData?.fullName}  </h1> 
+
+              <ProfileBadge/>
+            </span>
+                        
+          </span>
+        
+
+
+
           <span className="text-xs text-muted-foreground">
             @{post.author.name} · {timeAgo}
           </span>

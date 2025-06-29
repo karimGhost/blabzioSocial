@@ -19,6 +19,7 @@ import {  Facebook, Twitter,  CopyCheck } from "lucide-react"
 import useClipboard from "react-use-clipboard";
 import { useToast } from "@/hooks/use-toast";
 import ShareDropdown from "../shareDropdown";
+import { ProfileBadge } from "../profile/ProfileBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -549,11 +550,23 @@ const ConfirmDelete = async (post: Post) => {
 
 <div className="flex  ">
   <div>
-   <Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline mr-2">
+    <span className="flex mr-2">
+<Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline mr-1">
   {post.author.name}
 
    
 </Link>
+
+{ post?.author?.isPremium &&
+    <ProfileBadge  />
+
+}
+
+
+
+      
+    </span>
+   
 
   <span className="text-xs text-muted-foreground block  ">
             @{post.author.name} · {timeAgo}

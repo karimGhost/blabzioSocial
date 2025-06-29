@@ -1,4 +1,10 @@
+// middleware.ts
+
 import { NextRequest, NextResponse } from "next/server";
+
+export const config = {
+  matcher: ["/admin/inbox/:path*"], // Only apply to this path
+};
 
 export async function middleware(req: NextRequest) {
   const session = req.cookies.get("session")?.value;
@@ -21,11 +27,8 @@ export async function middleware(req: NextRequest) {
     }
 
     return NextResponse.next();
-  } catch {
+  } catch (err) {
+    console.error("Middleware error:", err);
     return NextResponse.redirect(new URL("/unauthorized", req.url));
   }
 }
-
-export const config = {
-  matcher: ["/admin/inbox/:path*"],
-};

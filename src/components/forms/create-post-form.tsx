@@ -122,7 +122,7 @@ if (!user) return toast({title:"Please login first"});
     uid: user?.uid,
     name: userData.fullName,
     username: userData.fullName,
-    avatarUrl: currentUser.avatarUrl,
+    avatarUrl: userData.avatarUrl,
   },
   comments: {},
   likes: [],

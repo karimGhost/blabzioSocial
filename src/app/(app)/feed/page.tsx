@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, getDocs, getDoc, doc } from "firebase/firestore";
 import { dbb , db} from "@/lib/firebase"; // your Firestore instance
 import { PostItem } from "@/components/feed/post-item";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,9 @@ const {user,userData} = useAuth();
     uid: string;
     name: string;
     avatarUrl?: string;
+
   };
+  isPremium:boolean;
   content: string;
   mediaUrl?: string;
   mediaType?: string;
@@ -36,34 +38,89 @@ useEffect(() => {
 
   const fetchBlockedAndPosts = async () => {
     try {
-      const blockedSnapshot = await getDocs(
-        collection(db, "users", user.uid, "blocked")
-      );
+      // 1. Get blocked + following
+      const [blockedSnap, followingSnap] = await Promise.all([
+        getDocs(collection(db, "users", user.uid, "blocked")),
+        getDocs(collection(db, "users", user.uid, "followers")),
+      ]);
 
-      const blockedUids = blockedSnapshot.docs.map(doc => doc.id);
+      const blockedUids = blockedSnap.docs.map(doc => doc.id);
+      const followingUids = followingSnap.docs.map(doc => doc.id);
 
+      // 2. Get posts
       const postsRef = collection(dbb, "posts");
       const q = query(postsRef, orderBy("createdAt", "desc"));
 
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const postsData = snapshot.docs
-            .map((doc) => ({ id: doc.id, ...doc.data() } as Post))
-            .filter((post) => !blockedUids.includes(post.author?.uid));
+      const unsubscribe = onSnapshot(q, async (snapshot) => {
+        const rawPosts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Post[];
 
-          setPosts(postsData);
-          setLoading(false);
-        },
-        (error) => {
-          console.error("Failed to fetch posts:", error);
-          setLoading(false);
-        }
-      );
+        // 3. Get unique author UIDs
+        const authorUids = Array.from(new Set(
+          rawPosts.map(post => post.author?.uid).filter(Boolean)
+        ));
+
+        // 4. Fetch author privacy + premium status
+        const authorDocs = await Promise.all(
+          authorUids.map(uid => getDoc(doc(db, "users", uid  )) )
+        );
+
+        const authorMap: Record<
+          string,
+          { isPrivate: boolean; isPremium: boolean }
+        > = {};
+
+        authorDocs.forEach(doc => {
+          if (doc.exists()) {
+            const data = doc.data();
+            authorMap[doc.id] = {
+              isPrivate: data.isPrivate ?? false,
+              isPremium: data.isPremium ?? false,
+            };
+          }
+        });
+
+        // 5. Filter & enrich posts
+        const visiblePosts = rawPosts
+          .filter(post => {
+            const authorId = post.author?.uid;
+            if (!authorId) return false;
+
+            // Hide blocked authors
+            if (blockedUids.includes(authorId)) return false;
+
+            // Show public posts
+            const isPrivate = authorMap[authorId]?.isPrivate;
+            if (!isPrivate) return true;
+
+            // Show private only if followed
+            return followingUids.includes(authorId);
+          })
+          .map(post => {
+            const authorId = post.author?.uid;
+            const isPremium = authorMap[authorId]?.isPremium ?? false;
+
+            return {
+              ...post,
+              id: post.id,
+              author: {
+                ...post.author,
+                isPremium, // ✅ Add this from user doc
+              },
+            };
+          });
+
+        setPosts(visiblePosts);
+        console.log("isPremium",visiblePosts )
+        setLoading(false);
+      });
 
       return () => unsubscribe();
     } catch (error) {
-      console.error("Error loading blocked users or posts:", error);
+      console.error("Error loading posts:", error);
+      setLoading(false);
     }
   };
 

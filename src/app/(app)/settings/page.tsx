@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Lock, Bell, Shield, Palette, UserCircle, LogOut, Loader2, ShieldCheck, HelpCircle, Trash2 } from "lucide-react";
+import { Lock, Bell, Shield, Palette, UserCircle, LogOut, Loader2, ShieldCheck, HelpCircle, Trash2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,9 +18,15 @@ import { doc, getDoc,setDoc, collection, getDocs, query, where, updateDoc, delet
 import { db , dbb} from "@/lib/firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import Link from "next/link";
+import { Toast } from "@/components/ui/toast";
+import { PremiumMembershipCard } from "@/components/settings/PremiumMembershipCard";
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const [showPayPal, setShowPayPal] = useState(false);
+const [selectedBadge, setSelectedBadge] = useState<"gold" | "diamond">("gold");
+
 const {user, userData, setUserData} = useAuth();
  const [avatarUrl, setAvatarUrl] = useState(userData?.avatarUrl);
 const [uploading, setUploading] = useState(false);
@@ -60,7 +66,6 @@ type PrivacySettingKey = "privateAccount" | "activityStatus";
 
 
 const fileInputRef = useRef<HTMLInputElement>(null);
-
 
 
 
@@ -144,17 +149,17 @@ useEffect(() => {
       description: `Your ${section.toLowerCase()} settings have been saved.`,
     });
   };
+const userCache = new Map<string, any>(); // or use your CachedUser type
 
- 
+function clearUserCache(uid?: string) {
+  if (typeof window === "undefined") return; // skip in SSR
 
-  function clearUserCache(uid?: string) {
   if (uid) {
     localStorage.removeItem(`user-${uid}`);
     userCache.delete(uid);
   } else {
-    // clear all
     Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('user-')) {
+      if (key.startsWith("user-")) {
         localStorage.removeItem(key);
       }
     });
@@ -168,7 +173,7 @@ useEffect(() => {
       await signOut(auth);
       router.push("/"); // or home, wherever you want
       clearUserCache()
-
+localStorage.clear()
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -381,6 +386,20 @@ setUserData(docSnap.data());
 };
 
 
+
+
+
+
+const handlePremiumCheckout = async () => {
+  const res = await fetch("/api/paypal", { method: "POST" });
+  const data = await res.json();
+  window.location.href = data.url; // redirect to PayPal
+
+
+  
+};
+
+
 const handleDeactivateAccount = async () => {
   const userRef = doc(db, "users", user?.uid as string);
   await updateDoc(userRef, {
@@ -389,6 +408,57 @@ const handleDeactivateAccount = async () => {
 
   alert("Account deactivated (simulate)");
   handleLogout();
+};
+
+
+
+
+const handlePayPalPayment = async () => {
+  try {
+    // Step 1: Launch PayPal payment UI (usually via PayPal SDK or REST)
+    const paymentId = await initiatePayPalCheckout(); // Your custom or SDK function
+
+    if (!paymentId) throw new Error("No payment ID returned");
+
+    // Step 2: Call your backend to verify and update user
+    const res = await fetch("/api/paypal/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        paypalPaymentId: paymentId,
+        userId: user?.uid, // Make sure you have the user's Firestore UID
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+
+        toast({
+      title: `"Premium activated! 🥇"`,
+     
+    });
+
+    
+      // Optional: Refresh user data or UI
+    } else {
+   
+         toast({
+      title: `${data.error} || "Payment verification failed"`,
+     
+    });
+    }
+  } catch (err) {
+    console.error(err);
+       toast({
+      title: `Something went wrong during payment`,
+     
+    });
+  
+
+  }
 };
 
 
@@ -477,11 +547,31 @@ const notificationItems: {
         <form onSubmit={(e) => handleProfileUpdate(e, "Profile")}>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4 relative">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={userData?.avatarUrl} alt="User Avatar" data-ai-hint="profile avatar"/>
-                <AvatarFallback>      {(userData?.fullName ?? "").substring(0, 2) || "??"}
-</AvatarFallback>
-              </Avatar>
+          <div className="relative inline-block">
+  <Avatar className="h-20 w-20">
+    <AvatarImage src={userData?.avatarUrl} alt="User Avatar" data-ai-hint="profile avatar" />
+    <AvatarFallback>
+      {(userData?.fullName ?? "").substring(0, 2) || "??"}
+    </AvatarFallback>
+  </Avatar>
+
+  {/* Verified Badge */}
+  {userData?.isPremium && (
+   <span className="absolute -top-1 -right-1 bg-white rounded-full p-[2px] shadow-md">
+      <span className="flex items-center justify-center h-4 w-4 rounded-full bg-orange-400 text-white">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-2.5 w-2.5"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M12 17.27L18.18 21l-1.63-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.45 4.73L5.82 21z" />
+        </svg>
+      </span>
+    </span>
+  )}
+</div>
+
 
               {uploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
@@ -724,13 +814,15 @@ const notificationItems: {
       <div className="flex flex-wrap gap-4">
         <Link href="/privacy" className="text-sm text-primary hover:underline">Privacy Policy</Link>
         <Link href="/terms" className="text-sm text-primary hover:underline">Terms of Service</Link>
-        <Link href="/cookies" className="text-sm text-primary hover:underline">Cookies Policy</Link>
-        <Link href="/support" className="text-sm text-primary hover:underline">Support</Link>
+        <Link href="/policy" className="text-sm text-primary hover:underline">Cookies Policy</Link>
+        <Link href="/help" className="text-sm text-primary hover:underline">Support</Link>
       </div>
     </div>
   </CardContent>
 
 </Card>
+<PremiumMembershipCard userId={userData?.id} isPremium={userData?.isPremium} />
+
 
 
 
@@ -744,7 +836,7 @@ const notificationItems: {
       </CardDescription>
     </CardHeader>
     <CardContent className="space-y-4">
-      {userData?.deactivation ?
+      {!userData?.deactivation ?
 
       <div className="rounded-lg border p-4">
         <h4 className="font-semibold text-sm">Deactivate Account</h4>

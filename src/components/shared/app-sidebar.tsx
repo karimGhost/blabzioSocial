@@ -67,7 +67,7 @@ console.log("unreadCount", unreadCount)
 
 }, [])
 
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] =useState<any>(null) ;
   const [Loading, setLoading] = useState(true);
 
 useEffect(() => {
@@ -289,6 +289,7 @@ useEffect(() => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+            localStorage.clear();
       router.push("/"); // or home, wherever you want
     } catch (error) {
       console.error("Logout failed:", error);
@@ -313,6 +314,18 @@ const userId = user?.uid;
     await batch.commit();
     console.log("All notifications marked as read.");
   };
+
+
+   const [AppInstalled, setAppInstalled] = useState<any>(null)
+  
+    useEffect(() => {
+  
+      const APPP = localStorage.getItem("Appinstalled");
+      if(APPP){
+        setAppInstalled(APPP)
+  
+      }
+    },[])
 
    return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:hidden">
@@ -465,11 +478,11 @@ const userId = user?.uid;
             <DropdownMenuItem asChild><Link href="/profile/me">Profile</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link href="/"><LogOut className="mr-2 h-4 w-4" />Logout</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Button onClick={handleLogout} ><LogOut className="mr-2 h-4 w-4" />Logout</Button></DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-  { isInstallable ? (
+  { isInstallable ? ( AppInstalled ? null :
           <Button className='bg-primary mt-10' onClick={promptInstall}>Install App</Button>
         ) : null}
 

@@ -10,7 +10,7 @@ import type { User } from "@/lib/dummy-data";
 import { useFCMPush } from "@/hooks/useFCMPush";
 import QRCode from "react-qr-code";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
-
+import { ProfileBadge } from "./ProfileBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -280,7 +280,7 @@ useEffect(() => {
 <div className="relative">
   {/* Avatar with click and upload loader overlay message */}
   <Avatar
-    className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-background rounded-full shadow-lg cursor-pointer"
+    className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-background rounded-full shadow-lg cursor-pointer "
     onClick={isCurrentUserProfile ? triggerFileSelect : undefined}
   >
     <AvatarImage src={avatarUrl} alt={userData?.fullName} data-ai-hint="user avatar" />
@@ -314,7 +314,14 @@ useEffect(() => {
 
 </div>
           <div className="flex-1 text-center sm:text-left pt-4 sm:pt-0">
-            <h1 className="text-2xl sm:text-3xl font-bold font-headline">{userData?.fullName}</h1>
+            <span className="flex">
+                          <h1 className="text-2xl sm:text-3xl font-bold font-headline">{userData?.fullName}  </h1> 
+
+            { userData.isPremium && <ProfileBadge/>}
+            </span>
+                         
+
+          
             <p className="text-muted-foreground">@{userData?.fullName}</p>
           </div>
           <div className="flex items-center gap-2 pt-2 sm:pt-0">

@@ -79,7 +79,7 @@ export default function Recovery() {
         <CardFooter className="flex flex-col items-center space-y-2">
           <p className="text-sm text-muted-foreground">
             Remember your password?{' '}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link href="/" className="font-medium text-primary hover:underline">
               Go back to login
             </Link>
           </p>

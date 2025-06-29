@@ -9,7 +9,7 @@ import type { Post, User } from "@/lib/types";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-
+import { useAuth } from "@/hooks/useAuth";
 interface ProfileTabsProps {
   Blocked: boolean;
   userData: User;
@@ -20,7 +20,7 @@ interface ProfileTabsProps {
 
 export function ProfileTabs({Blocked, userPosts,userData, followers, following }: ProfileTabsProps) {
 
-
+const {user} = useAuth()
   const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
   
   const [isprivate, setIsPrivate] = useState(userData?.privacySettings?.privateAccount);
@@ -82,7 +82,14 @@ export function ProfileTabs({Blocked, userPosts,userData, followers, following }
             <CardContent>
               <Image src="https://placehold.co/300x200.png?text=No+Posts+Yet" alt="No posts illustration" width={300} height={200} className="mx-auto mb-4 rounded-md" />
               <h3 className="text-xl font-semibold">No Posts Yet</h3>
-              <p className="text-muted-foreground">This user hasn&apos;t shared any posts.</p>
+{userData?.uid === user?.uid ?
+                <p className="text-muted-foreground">Add pos&apos;t to show.</p>
+
+:
+                <p className="text-muted-foreground">This user hasn&apos;t shared any posts.</p>
+
+}
+
             </CardContent>
           </Card>
         )}

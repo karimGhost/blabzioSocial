@@ -1,3 +1,5 @@
+export const runtime = "nodejs"; // ⬅️ This line is a MUST
+
 import { messaging } from "@/lib/firebase-adminsdk";
 import { NextResponse } from "next/server";
 

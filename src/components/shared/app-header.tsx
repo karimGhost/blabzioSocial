@@ -26,16 +26,29 @@ import { useFCMPush } from '@/hooks/useFCMPush';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+
 export function AppHeader() {
   const { isInstallable, promptInstall } = useInstallPrompt();
 
-
+ 
   const {user} = useAuth();
 const {toast} = useToast();
 
+
+
+
   useFCMPush(user);
 
+  const [AppInstalled, setAppInstalled] = useState<any>(null)
 
+  useEffect(() => {
+
+    const APPP = localStorage.getItem("Appinstalled");
+    if(APPP){
+      setAppInstalled(APPP)
+
+    }
+  },[])
   // const { toggleSidebar } = useSidebar(); // If using shadcn sidebar for mobile  useFCMPush(user)
 const notifications = notification(user?.uid);
  const [querys, setQuerys] = useState("");
@@ -81,6 +94,7 @@ const userId = user?.uid;
        */}
      
    { isInstallable ? (
+  AppInstalled ? null : 
   <Button className='bg-primary' onClick={promptInstall}>Install App</Button>
 ) : null}
 
