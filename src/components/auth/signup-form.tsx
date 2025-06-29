@@ -233,6 +233,12 @@ const handleGoogleSignup = async () => {
           description: "Proceed to Login using your creditials.",
           // variant: "success",
         });
+
+
+
+
+        
+
               router.push("/");
 
       } catch (firestoreError) {

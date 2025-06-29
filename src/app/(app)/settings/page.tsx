@@ -407,6 +407,8 @@ const handleDeactivateAccount = async () => {
   });
 
   alert("Account deactivated (simulate)");
+
+  
   handleLogout();
 };
 

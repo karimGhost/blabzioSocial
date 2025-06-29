@@ -40,8 +40,8 @@ useEffect(() => {
     try {
       // 1. Get blocked + following
       const [blockedSnap, followingSnap] = await Promise.all([
-        getDocs(collection(db, "users", user.uid, "blocked")),
-        getDocs(collection(db, "users", user.uid, "followers")),
+        getDocs(collection(db, "users", user?.uid, "blocked")),
+        getDocs(collection(db, "users", user?.uid, "followers")),
       ]);
 
       const blockedUids = blockedSnap.docs.map(doc => doc.id);
@@ -63,46 +63,63 @@ useEffect(() => {
         ));
 
         // 4. Fetch author privacy + premium status
-        const authorDocs = await Promise.all(
-          authorUids.map(uid => getDoc(doc(db, "users", uid  )) )
-        );
+     const authorDocs = await Promise.all(
+  authorUids.map(async (uid) => {
+    const userDoc = await getDoc(doc(db, "users", uid));
+    const blockedSnap = await getDocs(collection(db, "users", uid, "blocked"));
 
-        const authorMap: Record<
-          string,
-          { isPrivate: boolean; isPremium: boolean }
-        > = {};
+    return {
+      uid,
+      exists: userDoc.exists(),
+      data: userDoc.data(),
+      blockedUids: blockedSnap.docs.map(doc => doc.id),
+    };
+  })
+);
+const authorMap: Record<
+  string,
+  { isPrivate: boolean; isPremium: boolean; blockedUids: string[] }
+> = {};
 
-        authorDocs.forEach(doc => {
-          if (doc.exists()) {
-            const data = doc.data();
-            authorMap[doc.id] = {
-              isPrivate: data.isPrivate ?? false,
-              isPremium: data.isPremium ?? false,
-            };
-          }
-        });
+       authorDocs.forEach(author => {
+  if (author.exists) {
+    const data = author.data;
+    authorMap[author.uid] = {
+      isPrivate: data?.privacySettings?.privateAccount ?? false,
+      isPremium: data?.isPremium ?? false,
+      blockedUids: author.blockedUids,
+    };
+  }
+});
+
 
         // 5. Filter & enrich posts
-        const visiblePosts = rawPosts
-          .filter(post => {
-            const authorId = post.author?.uid;
-            if (!authorId) return false;
+      const visiblePosts = rawPosts
+  .filter(post => {
+    const authorId = post.author?.uid;
+    if (!authorId) return false;
 
-            // Hide blocked authors
-            if (blockedUids.includes(authorId)) return false;
+    // 1. Hide posts from authors *this user* has blocked
+    if (blockedUids.includes(authorId)) return false;
 
-            // Show public posts
-            const isPrivate = authorMap[authorId]?.isPrivate;
-            if (!isPrivate) return true;
+    // 2. Hide posts from authors who have blocked *this user*
+    const blockedMe = authorMap[authorId]?.blockedUids.includes(user.uid);
+    if (blockedMe) return false;
 
-            // Show private only if followed
-            return followingUids.includes(authorId);
-          })
+    // 3. Check for private account logic
+    const isPrivate = authorMap[authorId]?.isPrivate;
+
+    if (!isPrivate) return true;
+
+    // 4. Only show private if I follow them
+    return followingUids.includes(authorId);
+  })
           .map(post => {
             const authorId = post.author?.uid;
             const isPremium = authorMap[authorId]?.isPremium ?? false;
 
             return {
+
               ...post,
               id: post.id,
               author: {
@@ -111,6 +128,7 @@ useEffect(() => {
               },
             };
           });
+
 
         setPosts(visiblePosts);
         console.log("isPremium",visiblePosts )

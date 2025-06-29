@@ -5,9 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from "lucide-react";
-import { doc, collection, deleteDoc, setDoc, addDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs, serverTimestamp, Timestamp} from "firebase/firestore";
+import { doc, collection, deleteDoc, setDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs, serverTimestamp, Timestamp, addDoc} from "firebase/firestore";
 
-import { dbb, db , dbe} from "@/lib/firebase";
+import { dbb, db , dbe, Admin} from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -479,8 +479,11 @@ const [showReportModal, setShowReportModal] = useState<string | null>(null);
 const submitReport = async (postId: string, reason: string) => {
     if (!user) return;
 
+
+   
+
   try {
-    await addDoc(collection(db, "reports"), {
+    await addDoc(collection(Admin, "Postsreports"), {
       type: "post",
       itemId: postId,
       reason,

@@ -12,8 +12,10 @@ import { BlabzioLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { decodeAction } from "next/dist/server/app-render/entry-base";
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -21,7 +23,7 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+const {toast} = useToast()
 const {user} = useAuth();
 
 const getFriendlyError = (code: string) => {
@@ -49,43 +51,59 @@ const getFriendlyError = (code: string) => {
   }
 };
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-   setError("");
-    
-    setLoading(true);
- 
-    try {
-  
-    const userCredential =  await signInWithEmailAndPassword(auth, email, password);
-    setLoading(true);
+  event.preventDefault();
+  setError("");
+  setLoading(true);
 
-        const user = userCredential.user;
+  try {
+    // 1. Sign in the user
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-  //  session cookie logic:
+    // 2. Get Firebase ID token
     const idToken = await user.getIdToken();
+
+    // 3. Set session cookie on backend
     await fetch("/api/session", {
       method: "POST",
       body: JSON.stringify({ idToken }),
       headers: { "Content-Type": "application/json" },
     });
 
+    // 4. Check if user account is deactivated, and activate it
+    if (user?.uid) {
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-   if( user?.uid ){
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        if (userData.deactivation === true) {
+          await updateDoc(userDocRef, { deactivation: false });
 
-          router.push("/feed");
+          toast({
+            title: "Account Activated",
+            description: "Welcome back!",
+          });
+        }
+      }
 
-   }else{
-    return BlabzioLoader();
-   }
-
-    } catch (err: any) {
-      const errorCode = err.code || "";
-  const friendlyMessage = getFriendlyError(errorCode);
-  setError(friendlyMessage);
- setLoading(false);
-
+      // 5. Redirect to feed
+      router.push("/feed");
+    } else {
+      setLoading(false);
+      BlabzioLoader(); // Only call this if needed – make sure it's a visual component or effect
     }
-  };
+  } catch (err: any) {
+    const errorCode = err.code || "";
+    const friendlyMessage = getFriendlyError(errorCode);
+    setError(friendlyMessage);
+    setLoading(false);
+  }
+};
+
+
+
+
 const handleGoogleLogin = async () => {
   const provider = new GoogleAuthProvider();
   setLoading(true);
@@ -122,6 +140,12 @@ const handleGoogleLogin = async () => {
   paymentMethod: "",
   paymentId: "",
   premiumBadge: "",
+ subscriptionMonths: "",
+      expiresAt:"",
+
+  
+
+     
 
   bio:"",
         DOB:"",
@@ -152,6 +176,24 @@ const handleGoogleLogin = async () => {
       headers: { "Content-Type": "application/json" },
     });
 
+
+
+     if (user?.uid) {
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        if (userData.deactivation === true) {
+          await updateDoc(userDocRef, { deactivation: false });
+
+          toast({
+            title: "Account Activated",
+            description: "Welcome back!",
+          });
+        }
+      }
+    }
     //  Navigate to feed
     router.push("/feed");
 
@@ -164,6 +206,8 @@ const handleGoogleLogin = async () => {
     setLoading(false);
   }
 };
+
+
 
 
 

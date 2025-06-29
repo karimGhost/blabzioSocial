@@ -44,7 +44,6 @@ const [isEditable, setIsEditable] = useState(false)
 const [uploading, setUploading] = useState(false);
 const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
 
-const [isprivate, setIsPrivate] = useState(userData?.privacySettings?.privateAccount);
 const {toast} = useToast();
   
 
@@ -259,6 +258,20 @@ useEffect(() => {
 
 
 
+ const isprivate = userData?.privacySettings?.privateAccount;
+
+const isNotOwner = userData.uid !== user?.uid;
+
+const isFollowings = following.some((i) => i.id === user?.uid);
+
+const followBack = following.some((i) => i.id === user?.uid);
+
+const isNotFollowing = !isFollowings;
+const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
+
+
+
+
   return (
     <div className="relative">
       {/* Cover Photo */}
@@ -346,10 +359,10 @@ useEffect(() => {
              
             <Button onClick={handleFollowToggle} variant={isFollowing ? "outline" : "default"}>
                   {isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                  {isFollowing ? "Following" : "Follow"}
+                  {isFollowing ? "Following" : followBack ? "followBack" :  "Follow"}
                 </Button>
                 
-                <MessageButton targetUserId={userData.uid} />
+              { shouldRestrictAccess ? <></> : <MessageButton targetUserId={userData.uid} /> }
 
                </>)}
                 </>

@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Post, User } from "@/lib/types";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 interface ProfileTabsProps {
   Blocked: boolean;
@@ -23,9 +23,25 @@ export function ProfileTabs({Blocked, userPosts,userData, followers, following }
 const {user} = useAuth()
   const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
   
-  const [isprivate, setIsPrivate] = useState(userData?.privacySettings?.privateAccount);
 
-  if(isprivate){
+  const isprivate = userData?.privacySettings?.privateAccount;
+
+const isNotOwner = userData.uid !== user?.uid;
+
+const isFollowing = following.some((i) => i.id === user?.uid);
+
+const isNotFollowing = !isFollowing;
+const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
+
+
+useEffect(() =>{
+console.log("isNotFollowing", isNotFollowing );
+
+
+}, [isNotFollowing])
+
+
+  if(shouldRestrictAccess ){
   return (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <Image 
@@ -33,8 +49,6 @@ const {user} = useAuth()
               alt={ `${userData?.fullName} Needs to follow you its Private`}
               width={400} 
               height={300} 
-
-
               className="mb-8 rounded-lg shadow-md"
             />
             <h1 className="text-3xl font-bold"> Not Found</h1>

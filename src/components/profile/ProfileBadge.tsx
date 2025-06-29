@@ -2,7 +2,7 @@
     return(
 
         <>
-   <span className=" rounded-full p-[2px] shadow-md">
+   <span className=" rounded-full  shadow-md">
       <span className="flex items-center justify-center h-4 w-4 rounded-full bg-orange-400 text-white">
         <svg
           xmlns="http://www.w3.org/2000/svg"
