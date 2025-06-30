@@ -108,11 +108,16 @@ const authorMap: Record<
 
     // 3. Check for private account logic
     const isPrivate = authorMap[authorId]?.isPrivate;
+   
+  if (user.uid === authorId) return true;
 
     if (!isPrivate) return true;
 
+
     // 4. Only show private if I follow them
-    return followingUids.includes(authorId);
+    return followingUids.includes(authorId)   ; 
+
+
   })
           .map(post => {
             const authorId = post.author?.uid;

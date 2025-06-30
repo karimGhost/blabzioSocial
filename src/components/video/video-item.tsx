@@ -11,10 +11,11 @@ import { formatDistanceToNow } from "date-fns";
 
 import CommentsModal from "../CommentsModal";
 import { useAuth } from "@/hooks/useAuth";
-import { db, dbd, dbe } from "@/lib/firebase";
-import { doc, collection, deleteDoc, setDoc, addDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs} from "firebase/firestore";
+import { Admin, db, dbd, dbe } from "@/lib/firebase";
+import { doc, collection, deleteDoc, setDoc, addDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs, serverTimestamp} from "firebase/firestore";
 import { DropdownMenuContent,DropdownMenuTrigger, DropdownMenuItem, DropdownMenu } from "../ui/dropdown-menu";
 import ShareDropdown from "../shareDropdown";
+
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -27,8 +28,9 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { deleteVideo } from "./api/deletevideo";
-
+import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
 interface VideoUser {
   uid: string;
   name: string;
@@ -59,6 +61,7 @@ export function VideoItem({ video, containerWidth}: VideoItemProps) {
  const [commentcount, setCommentComunt] =  useState<number >()
 const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
+  const {toast} = useToast();
 const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/videos/${video.id}`
   const shareText = encodeURIComponent("Check out this post!")
 
@@ -158,6 +161,44 @@ const [cardWidth, setCardWidth] = useState<number | null>(null);
 
 
 
+
+ const [showReportModal, setShowReportModal] = useState<string | null>(null)
+
+
+
+const submitReport = async (postId: string, reason: string, postOwner: string) => {
+    if (!user) return;
+
+
+   
+
+  try {
+    await addDoc(collection(Admin, "Postsreports"), {
+      type: "post",
+      itemId: postId,
+      reason,
+      postOwner,
+      reportedBy: user?.uid ?? null,
+      createdAt: serverTimestamp(),
+    });
+    setShowReportModal(null);
+
+toast({
+        title: "Thanks .",
+        description: "Your report has been submitted!.",
+      
+      });
+  } catch (err) {
+    console.error("Report error:", err);
+    toast({
+        title: "Failed .",
+        description: "Failed to submit report. try again after some time .",
+      
+      });
+  }
+};
+
+
 const deleteVideoFromFirestore = async (videoId: string) => {
   try {
     await deleteDoc(doc(dbd, "videos", videoId));
@@ -233,6 +274,63 @@ console.log("commentcount", commentcount)
  
       <div className="absolute right-2 bottom-1/4 sm:bottom-4 flex flex-col gap-3 items-center text-white">
   
+ {user?.uid !== video.user.uid && (<>
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="ghost" size="icon"><MoreVertical /></Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent>
+     
+
+        <DropdownMenuItem 
+        
+          onClick={() => setShowReportModal(video.id)}
+        >
+  report
+</DropdownMenuItem>
+    
+    </DropdownMenuContent>
+  </DropdownMenu>
+
+
+
+ {showReportModal ===  video.id && (
+  <Dialog open onOpenChange={() => setShowReportModal(null)}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Report Post</DialogTitle>
+        <DialogDescription>Select a reason for reporting this post.</DialogDescription>
+      </DialogHeader>
+
+      <div className="space-y-2">
+        {[
+          "Nudity or sexual activity",
+          "Hate speech or symbols",
+          "Violence or dangerous behavior",
+          "Spam or misleading",
+          "Harassment or bullying",
+          "Other"
+        ].map((reason) => (
+          <Button
+            key={reason}
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => submitReport( video.id, reason, video.user.uid)}
+          >
+            {reason}
+          </Button>
+        ))}
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+</>)
+
+}
+
+
+
+
     {user?.uid === video.user.uid && (<>
   <DropdownMenu>
     <DropdownMenuTrigger asChild>

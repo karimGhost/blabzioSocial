@@ -250,20 +250,40 @@ if (recipientFCMToken && directMessage) {
   };
   // const repliedMessage = conversation.replyToId ? repliesMap.get(conversation.replyToId) : null; online
 
-const handleBlockUser = async (username: string) => {
+const handleBlockUser = async (username: string, useris:string) => {
   if (!user) return;
   try {
     await setDoc(doc(db, "users", user.uid, "blocked", username), { blockedAt: Date.now() });
 
       toast({
       title: "BLOCKED",
-      description:`${username} has been blocked.`,
+      description:`${useris} has been blocked.`,
       variant: "destructive",
     });
   } catch (err) {
     console.error("Block failed:", err);
   }
 };
+
+const handleUnblockUser = async (username: string, useris: string) => {
+   if (!user) return;
+
+  try {
+    await deleteDoc(doc(db, "users", user.uid, "blocked", username));
+  toast({
+      title: "UN_BLOCKED",
+      description:`${useris} has been unblocked.`,
+    });
+location.reload()
+  } catch (err) {
+    console.error("Unblock failed:", err);
+  }
+};
+
+
+ 
+
+
 
 useEffect(() => {
   const handleUnload = () => {
@@ -344,7 +364,7 @@ const handleMuteUser = async (username: string) => {
 
               <DropdownMenuItem>View Profile</DropdownMenuItem>
 </Link>
-              <DropdownMenuItem onClick={() => handleBlockUser(conversation?.participant?.id)}>Block User</DropdownMenuItem>
+              <DropdownMenuItem onClick={() =>  Blocked ?  handleUnblockUser(conversation?.participant?.id, conversation?.participant?.fullName) :  handleBlockUser(conversation?.participant?.id, conversation?.participant?.fullName)}>{Blocked ? `Unblock` : `Block User`}</DropdownMenuItem>
              
               <DropdownMenuItem onClick={() => handleClearChat()}>Clear Chat</DropdownMenuItem>
 

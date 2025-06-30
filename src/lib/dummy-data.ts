@@ -1,4 +1,7 @@
 export type User = {
+CoverPhoto:string;
+  isPremium: any;
+  privacySettings: any;
   uid: any;
   id: string;
   name: string;
@@ -12,6 +15,8 @@ export type User = {
 };
 
 export type Post = {
+  isPremium: any;
+  ispremium: any;
   comments: any;
   author: any;
   createdAt: string | number | Date;

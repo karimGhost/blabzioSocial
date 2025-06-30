@@ -2,8 +2,8 @@
     return(
 
         <>
-   <span className=" rounded-full  shadow-md">
-      <span className="flex items-center justify-center h-4 w-4 rounded-full bg-orange-400 text-white">
+   <span className=" rounded-full  " style={{marginLeft:"-2px"}}>
+      <span className="flex items-center justify-center h-3 w-3  rounded-full bg-orange-400 text-white">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-2.5 w-2.5"

@@ -588,7 +588,7 @@ const ConfirmDelete = async (post: Post) => {
   )}
   {post.feeling && post.location && " At "}
   {post.location && (
-    <span className="font-semibold text-muted text-orange-300">{post.location} 🌍</span>
+    <span className="font-semibold text-muted text-orange-300">{post.location} 📍</span>
   )}
 </p>
 )}

@@ -36,6 +36,29 @@ const {toast} = useToast();
 
 
 
+  const [timedouts, setTimeouts] = useState(false);
+
+  useEffect(() => {
+    // First timeout after 2 seconds
+    const firstTimer = setTimeout(() => {
+      setTimeouts(true);
+    }, 2000);
+
+    return () => clearTimeout(firstTimer); // cleanup
+  }, []);
+
+  useEffect(() => {
+    if (timedouts) {
+      // Second timeout after 5 seconds when timedouts becomes true
+      const secondTimer = setTimeout(() => {
+        setTimeouts(false);
+      }, 8000);
+
+      return () => clearTimeout(secondTimer); // cleanup
+    }
+  }, [timedouts]);
+
+
 
   useFCMPush(user);
 
@@ -92,10 +115,17 @@ const userId = user?.uid;
         <span className="sr-only">Toggle navigation menu</span>
       </Button>
        */}
-     
+
+
    { isInstallable ? (
   AppInstalled ? null : 
-  <Button className='bg-primary' onClick={promptInstall}>Install App</Button>
+  <div
+      className={`slide-container ${timedouts ? "slide-in" : "slide-out"}`}
+    >
+      <Button className="bg-primary" onClick={promptInstall}>
+        Install App
+      </Button>
+    </div>
 ) : null}
 
       {/* Desktop: Search Bar */}

@@ -149,7 +149,12 @@ const listToRender = searchTerm.length > 0 ? filteredConversations : conversatio
             <p className="text-center text-muted-foreground text-sm">No conversations</p>
           ) : (
 
-      listToRender.map((conv) => {
+listToRender
+  .sort((a, b) => {
+    const timeA = new Date(a?.lastMessage?.timestamp).getTime() || 0;
+    const timeB = new Date(b?.lastMessage?.timestamp).getTime() || 0;
+    return timeB - timeA; // Descending: latest first
+  }).map((conv) => {
               const isSelected = conv?.id === selectedConversationId;
 
 const lastMessageTimestamp = conv?.lastMessage?.timestamp;

@@ -9,6 +9,7 @@ import type { Post, User } from "@/lib/types";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 interface ProfileTabsProps {
   Blocked: boolean;
@@ -19,11 +20,13 @@ interface ProfileTabsProps {
 }
 
 export function ProfileTabs({Blocked, userPosts,userData, followers, following }: ProfileTabsProps) {
-
-const {user} = useAuth()
+const {user} = useAuth() ;
   const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
   
 
+
+
+  
   const isprivate = userData?.privacySettings?.privateAccount;
 
 const isNotOwner = userData.uid !== user?.uid;
@@ -126,6 +129,9 @@ interface UserListProps {
 }
 
 function UserList({ users, emptyMessage }: UserListProps) {
+const router = useRouter();
+
+
   if (users.length === 0) {
     return (
       <Card className="text-center py-12">
@@ -137,6 +143,8 @@ function UserList({ users, emptyMessage }: UserListProps) {
       </Card>
     );
   }
+
+ 
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -151,10 +159,12 @@ function UserList({ users, emptyMessage }: UserListProps) {
               <Link href={`/profile/${u.id}`} className="font-semibold hover:underline">{u.fullName}</Link>
               <p className="text-sm text-muted-foreground">@{u.fullName}</p>
             </div>
-            <Button variant="outline" size="sm">View</Button>
+            <Button onClick={() =>  router.push(`/profile/${u.id}`)} variant="outline" size="sm">View</Button>
           </CardContent>
         </Card>
       ))}
     </div>
   );
 }
+
+

@@ -18,7 +18,6 @@ import { doc, getDoc,setDoc, collection, getDocs, query, where, updateDoc, delet
 import { db , dbb} from "@/lib/firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import Link from "next/link";
-import { Toast } from "@/components/ui/toast";
 import { PremiumMembershipCard } from "@/components/settings/PremiumMembershipCard";
 
 export default function SettingsPage() {
@@ -300,7 +299,7 @@ await updatePassword(user, password);
 
 const toggleTheme = async () => {
   const newTheme: ThemeMode = theme === "light" ? "dark" : "light";
-
+ localStorage.setItem("darkMode", theme === "light" ? "true" : "false")
   document.documentElement.classList.toggle("dark", newTheme === "dark");
   setTheme(newTheme);
 
@@ -408,7 +407,7 @@ const handleDeactivateAccount = async () => {
 
   alert("Account deactivated (simulate)");
 
-  
+
   handleLogout();
 };
 

@@ -41,7 +41,11 @@ const [showShareModal, setShowShareModal] = useState(false);
 const [isEditable, setIsEditable] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(userData.avatarUrl);
+    const [CoverPhoto, setCoverPhoto] = useState(userData?.CoverPhoto);
+
 const [uploading, setUploading] = useState(false);
+const [uploadingC, setUploadingC] = useState(false);
+
 const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
 
 const {toast} = useToast();
@@ -74,6 +78,7 @@ useEffect(() => {
 
 const fileInputRef = useRef<HTMLInputElement>(null);
 
+const fileInputCRef = useRef<HTMLInputElement>(null);
   const handleFollowToggle = async () => {
     if (!user?.uid || !userData?.uid) return;
   const followingRef = doc(db, "users", user.uid, "following", userData.uid);
@@ -126,7 +131,7 @@ if (recipientFCMToken && newFollower) {
   }
   };
 
- const handleUnBlock = async (username: string) => {
+ const handleUnBlock = async (username: string, useris: string) => {
   if (!user) return;
 
   try {
@@ -141,7 +146,7 @@ location.reload()
   }
 };
 
-const handleBlockUser = async (username: string) => {
+const handleBlockUser = async (username: string, useris: string) => {
   if (!user) return;
   try {
     await setDoc(doc(db, "users", user?.uid, "blocked", username), { blockedAt: Date.now() });
@@ -149,7 +154,7 @@ const handleBlockUser = async (username: string) => {
 
      toast({
       title: "BLOCKED",
-      description:`${username} has been blocked.`,
+      description:`${useris} has been blocked.`,
       variant: "destructive",
     });
     location.reload()
@@ -159,13 +164,13 @@ const handleBlockUser = async (username: string) => {
   }
 };
 
-const handleMuteUser = async (username: string) => {
+const handleMuteUser = async (username: string, useris: string) => {
   if (!user) return;
   try {
     await setDoc(doc(db, "users", user?.uid, "muted", username), { mutedAt: Date.now() });
  toast({
       title: "MUTED",
-      description:`${username} has been muted.`,
+      description:`${useris} has been muted.`,
     });  } catch (err) {
     console.error("Mute failed:", err);
   }
@@ -233,6 +238,71 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
 
 
+
+const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files?.[0]) return;
+  const file = e.target.files[0];
+
+  if (!file.type.startsWith("image/") ) {
+    toast({
+      title: "Invalid File",
+      description: "Please select a valid image file.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "profilePic"); //  preset
+  formData.append("folder", "profiledp"); //  folder
+
+  setUploadingC(true);
+
+  try {
+    const res = await fetch("https://api.cloudinary.com/v1_1/dpebbtz2z/image/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (data.secure_url) {
+      setCoverPhoto(data.secure_url);
+
+      if (user?.uid) {
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, { CoverPhoto: data.secure_url });
+      }
+
+      toast({
+        title: "Cover BG Updated",
+        description: "Your Cover image  picture has been updated.",
+      });
+    } else {
+      throw new Error("No secure URL returned");
+    }
+  } catch (error) {
+    console.error("Upload failed", error);
+    toast({
+      title: "Upload Failed",
+      description: "Something went wrong. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setUploadingC(false);
+  }
+};
+
+
+
+
+
+
+   const triggerFileCSelect = () => {
+    fileInputCRef.current?.click();
+  };
+
+
 const profileUrl = `https://blabzio.com/profile/${userData.uid}`; 
 
 
@@ -275,16 +345,43 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
   return (
     <div className="relative">
       {/* Cover Photo */}
-      <div className="h-48 sm:h-64 bg-muted rounded-t-lg overflow-hidden">
+      <div className="h-48 sm:h-64 bg-muted rounded-t-lg overflow-hidden relative"
+                  onClick={isCurrentUserProfile && isEditable ? triggerFileCSelect : undefined}
+
+      >
         <Image 
-          src={`https://placehold.co/1200x400.png?text=${userData?.fullName}'s+Cover`} 
+
+src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.fullName}'s+Cover`}
           alt={`${userData?.fullName}'s cover photo`} 
           width={1200} 
           height={400} 
           className="w-full h-full object-cover"
           data-ai-hint="profile cover photo" 
         />
+
+ {uploadingC && (
+      <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+        <Loader2 className="h-8 w-8 text-white animate-spin" />
       </div>
+    )}
+
+         {isCurrentUserProfile && isEditable && !uploading  &&(
+    <>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleCoverChange}
+        ref={fileInputCRef}
+        className="hidden"
+      />
+      <div className="absolute bottom-1 right-1 bg-orange-500 rounded-full p-1" style={{cursor:"pointer"}}>
+        <Plus className="w-4 h-4 text-white" />
+      </div>
+    </>
+  )}
+
+      </div>
+
 
       {/* Profile Info */}
       <div className="px-4 sm:px-6 pb-6">
@@ -310,7 +407,7 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
   </Avatar>
 
   {/* Plus badge when editable */}
-  {isCurrentUserProfile && isEditable && (
+  {isCurrentUserProfile && isEditable && !uploadingC && (
     <>
       <input
         type="file"
@@ -319,8 +416,9 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
         ref={fileInputRef}
         className="hidden"
       />
-      <div className="absolute bottom-1 right-1 bg-orange-500 rounded-full p-1">
-        <Plus className="w-4 h-4 text-white" />
+      <div className="absolute bottom-1 right-1 bg-orange-500 rounded-full p-1" style={{cursor:"pointer"}}>
+        <Plus     onClick={isCurrentUserProfile ? triggerFileSelect : undefined}
+ className="w-4 h-4 text-white" />
       </div>
     </>
   )}
@@ -348,11 +446,11 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
                 {  Blocked ?(
                   <>
 
-                 <Button onClick={() => handleUnBlock(userData.uid)} style={{background:"red"}} >
+                 <Button onClick={() => handleUnBlock(userData.uid, userData.fullName)} style={{background:"red"}} >
                   
                   {"Unblock" }
                 </Button>
-                {/* <MessageButton targetUserId={userData.uid} /> */}
+                {/* <MessageButton targetUserId={userData.uid} unblock /> */}
                 </>
              
              ) :(<>
@@ -385,8 +483,8 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
 }
                 {!isCurrentUserProfile && (
                   <>
-                    <DropdownMenuItem onClick={() => handleMuteUser(userData?.uid)}>Mute @{userData?.username}</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleBlockUser(userData?.uid)} className="text-destructive">Block @{userData?.username}</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMuteUser(userData?.uid, userData?.fullName)}>Mute @{userData?.username}</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleBlockUser(userData?.uid, userData?.fullName)} className="text-destructive">Block @{userData?.username}</DropdownMenuItem>
                   </>
                 )}
                 <DropdownMenuSeparator />

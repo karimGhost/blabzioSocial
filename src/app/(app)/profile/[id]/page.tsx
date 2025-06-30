@@ -12,6 +12,7 @@ import Image from "next/image";
 
 export interface UserData {
   id: string;
+  CoverPhoto?: string;
   uid: string;
   fullName: string;
   email: string;
@@ -58,6 +59,7 @@ const [followers, setFollowers] = useState<any[]>([]);
 
 
 
+
   
 
      
@@ -68,6 +70,7 @@ const [followers, setFollowers] = useState<any[]>([]);
 interface UserData {
   id: string;
 
+  CoverPhoto?: string;
 
   uid: string;
   fullName: string;
@@ -255,6 +258,8 @@ const checkBlockedStatus = async (viewerId: string, profileId: string) => {
     youBlocked: youBlockedThem.exists(),
   };
 };
+
+
 
 
 useEffect(() => {
