@@ -2,8 +2,8 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { doc, getDoc,setDoc, collection, getDocs, query, where } from "firebase/firestore";
-import { db,dbb } from "@/lib/firebase";
+import { doc, getDoc,setDoc, collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { db,dbb, dbd } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
@@ -45,6 +45,7 @@ export default function UserProfilePage() {
 const {user} = useAuth();
   const [userData, setUserData] = useState<any | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
+    const [userVids, setUserVids] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
@@ -126,6 +127,7 @@ const userInfo: UserData = {
   ...(userSnap.data() as Omit<UserData, "id">),
 };        setUserData(userInfo);
 
+
         // Fetch posts
         const postsSnap = await getDocs(
           query(collection(dbb, "posts"), where("author.uid", "==", userInfo.uid))
@@ -133,9 +135,28 @@ const userInfo: UserData = {
 
         const posts = postsSnap.docs.map(doc => ({
           id: doc.id,
+    isprofile: true,
           ...doc.data()
         }));
         setUserPosts(posts);
+
+
+             const vidsSnap = await getDocs(
+         query(collection(dbd, "videos"),where("user.uid", "==", userInfo.uid), orderBy("timestamp", "desc"))
+        );
+
+
+
+        const vids = vidsSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setUserVids(vids);
+
+
+
+
+
 
         // Fetch followers UIDs
         const followersSnap = await getDocs(collection(db, "users", userInfo.uid, "followers"));
@@ -148,6 +169,9 @@ const userInfo: UserData = {
           })
         );
         setFollowers(followerUsers.filter(Boolean));
+
+
+
 
         // Fetch following UIDs
         const followingSnap = await getDocs(collection(db, "users", userInfo.uid, "following"));
@@ -176,54 +200,54 @@ const userInfo: UserData = {
 
 
 
-useEffect(() => {
-  const fetchUser = async () => {
-    try {
-      const userRef = doc(db, "users", id as string);
-      const snap = await getDoc(userRef);
+// useEffect(() => {
+//   const fetchUser = async () => {
+//     try {
+//       const userRef = doc(db, "users", id as string);
+//       const snap = await getDoc(userRef);
 
-      if (snap.exists()) {
-        const userInfo = { id: snap.id, ...snap.data() } as any;
+//       if (snap.exists()) {
+//         const userInfo = { id: snap.id, ...snap.data() } as any;
 
-        // Fetch posts by this user
-        const postsSnap = await getDocs(
-          query(
-            collection(db, "posts"),
-            where("author.uid", "==", userInfo.uid)
-          )
-        );
+//         // Fetch posts by this user
+//         const postsSnap = await getDocs(
+//           query(
+//             collection(db, "posts"),
+//             where("author.uid", "==", userInfo.uid)
+//           )
+//         );
 
-        const posts = postsSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+//         const posts = postsSnap.docs.map(doc => ({
+//           id: doc.id,
+//           ...doc.data()
+//         }));
 
-        setUserPosts(posts);
+//         setUserPosts(posts);
 
-        // Count followers and following
-        const [followersSnap, followingSnap] = await Promise.all([
-          getDocs(collection(db, "users", userInfo.uid, "followers")),
-          getDocs(collection(db, "users", userInfo.uid, "following")),
-        ]);
+//         // Count followers and following
+//         const [followersSnap, followingSnap] = await Promise.all([
+//           getDocs(collection(db, "users", userInfo.uid, "followers")),
+//           getDocs(collection(db, "users", userInfo.uid, "following")),
+//         ]);
 
-        setUserData({
-          ...userInfo,
-          followersCount: followersSnap.size,
-          followingCount: followingSnap.size,
-        });
-      } else {
-        setUserData(null);
-      }
-    } catch (err) {
-      console.error("Error fetching user:", err);
-      setUserData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+//         setUserData({
+//           ...userInfo,
+//           followersCount: followersSnap.size,
+//           followingCount: followingSnap.size,
+//         });
+//       } else {
+//         setUserData(null);
+//       }
+//     } catch (err) {
+//       console.error("Error fetching user:", err);
+//       setUserData(null);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
-  if (id) fetchUser();
-}, [id]);
+//   if (id) fetchUser();
+// }, [id]);
 
 
 const handleBlockUser = async (username: string) => {
@@ -337,6 +361,7 @@ useEffect(() => {
       <ProfileTabs
        Blocked={Blocked}
       userData={userData}
+      userVids={userVids}
         userPosts={userPosts}
         followers={followers}
         following={following} />

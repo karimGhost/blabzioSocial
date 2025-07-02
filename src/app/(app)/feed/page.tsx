@@ -127,6 +127,7 @@ const authorMap: Record<
 
               ...post,
               id: post.id,
+              isprofile: false, 
               author: {
                 ...post.author,
                 isPremium, // ✅ Add this from user doc
@@ -155,10 +156,12 @@ const authorMap: Record<
   return (
     <div className="max-w-2xl mx-auto w-full space-y-6">
       <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="font-headline text-lg">Create Post</CardTitle>
+        <CardHeader style={{padding:"0px", margin:"0px", marginBottom:"10px"}}>
+          {/* <CardTitle className="font-headline text-lg">Create Post</CardTitle> */}
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-1 "  onClick={() => {
+                router.push("/create-post");
+              }}>
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage

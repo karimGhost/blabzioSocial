@@ -105,6 +105,7 @@ function RepliesList({ postId, commentId }: RepliesListProps) {
 
 interface PostItemProps {
   post: Post;
+
 }
 
 export function PostItem({ post }: PostItemProps) {
@@ -476,6 +477,7 @@ const handleReportPost = async (id: string) => {
 const [showReportModal, setShowReportModal] = useState<string | null>(null);
 
 
+
 const submitReport = async (postId: string, reason: string) => {
     if (!user) return;
 
@@ -539,7 +541,7 @@ const ConfirmDelete = async (post: Post) => {
 
  
   return (
-    <Card className="overflow-hidden shadow-lg">
+    <Card className={` overflow-hidden shadow-lg     ${post?.isprofile && 'w-full  object-cover'} `  }  style={{height: post?.isprofile && "250px"}}>
       <CardHeader className="flex flex-row items-center gap-3 p-4">
         <Link href={`/profile/${post.author.uid}`}>
           <Avatar className="h-11 w-11 border-2 border-primary">
@@ -583,12 +585,20 @@ const ConfirmDelete = async (post: Post) => {
   {post.feeling && (
     <>
       is feeling{" "}
-      <span className="font-semibold text-orange-400">{post.feeling}</span>
+      <span className="font-semibold text-orange-400">{  post.feeling}</span>
     </>
   )}
   {post.feeling && post.location && " At "}
   {post.location && (
-    <span className="font-semibold text-muted text-orange-300">{post.location} 📍</span>
+
+    post.isprofile ? 
+post.mediaUrl && post.mediaType === "image" ?
+    <span className="font-semibold text-muted text-orange-300">📍</span>
+:
+    <span className="font-semibold text-muted text-orange-300">{ post.isprofile ?   post.location.length > 21 ? "" :  post.location : post.location} 📍</span>
+
+    :
+    <span className="font-semibold text-muted text-orange-300">{ post.location} 📍</span>
   )}
 </p>
 )}
@@ -698,9 +708,25 @@ const ConfirmDelete = async (post: Post) => {
       </CardHeader>
 
       <CardContent className="p-4 pt-0">
+{
+ post.isprofile ? 
+
+(post.mediaUrl && post.mediaType === "image" ?
+
+   <p className="whitespace-pre-wrap text-sm">{""}</p>
+
+        :
+         <p className="whitespace-pre-wrap text-sm">{   post.isprofile ?   post.content.length > 30 ?  post.content.slice(0, 30 ) + "..." : post.content
+        :  post.content}</p>
+         )
+      
+:
+
+
         <p className="whitespace-pre-wrap text-sm">{post.content}</p>
+}
         {post.mediaUrl && post.mediaType === "image" && (
-          <div className="mt-3 h-64 -mx-4 sm:mx-0 sm:rounded-lg overflow-hidden aspect-video relative" style={{margin:"auto"}}>
+          <div className="mt-3 h-64 -mx-4 sm:mx-0 sm:rounded-lg overflow-hidden aspect-video relative " style={{margin:"auto" , width: post?.isprofile && "100%",  height: post?.isprofile && "80px" }}>
             <Image     onClick={() => setPreviewUrl(post.mediaUrl)} src={post.mediaUrl} alt="Post media" fill className="object-cover" />
           </div>
         )}

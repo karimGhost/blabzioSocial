@@ -2,10 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
 import Link from "next/link";
-
+import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { collection, onSnapshot,doc, snapshot, orderBy, query } from "firebase/firestore";
-import { dbd } from "@/lib/firebase";
+import { collection, onSnapshot,doc, snapshot, orderBy, query, getDocs, getDoc } from "firebase/firestore";
+import { db, dbd } from "@/lib/firebase";
 import { VideoItem } from "@/components/video/video-item";
 import { useParams } from "next/navigation";
 interface VideoUser {
@@ -28,22 +28,130 @@ interface VideoData {
 export default function VideoPage() {
   const [videos, setVideos] = useState<VideoData[]>([]);
   const { id } = useParams();
+const {user} = useAuth()
+// useEffect(() => {
+//   if (!id) return;
+
+//   const docRef = doc(dbd, "videos", id as string);
+//   const unsubscribe = onSnapshot(docRef, (snapshot) => {
+//     if (snapshot.exists()) {
+//       const videoData = { id: snapshot.id, ...snapshot.data() } as VideoData;
+//       setVideos([videoData]); // or setVideo(videoData) if it's a single object
+//     } else {
+//       console.warn("Video not found");
+//     }
+//   });
+
+//   return () => unsubscribe();
+// }, [id]);
+
+
+
+
+
 
 useEffect(() => {
-  if (!id) return;
+  if (!user?.uid) return;
 
-  const docRef = doc(dbd, "videos", id as string);
-  const unsubscribe = onSnapshot(docRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const videoData = { id: snapshot.id, ...snapshot.data() } as VideoData;
-      setVideos([videoData]); // or setVideo(videoData) if it's a single object
-    } else {
-      console.warn("Video not found");
+  const fetchData = async () => {
+    try {
+      // 1. Get blocked + following UIDs
+      const [blockedSnap, followingSnap] = await Promise.all([
+        getDocs(collection(db, "users", user.uid, "blocked")),
+        getDocs(collection(db, "users", user.uid, "following")), // <-- or "followers" if you meant that
+      ]);
+
+      const blockedUids = blockedSnap.docs.map(doc => doc.id);
+      const followingUids = followingSnap.docs.map(doc => doc.id);
+
+      // 2. Reference videos collection
+      const videosRef = collection(dbd, "videos");
+      const q = query(videosRef, orderBy("timestamp", "desc"));
+
+      // 3. Listen for video updates
+      const unsubscribe = onSnapshot(q, async (snapshot) => {
+        const rawVideos = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as VideoData[];
+
+        // 4. Get unique author UIDs
+        const authorUids = Array.from(
+          new Set(rawVideos.map(video => video?.user?.uid).filter(Boolean))
+        );
+
+        // 5. Get author privacy & block info
+        const authorDocs = await Promise.all(
+          authorUids.map(async (uid) => {
+            const userDoc = await getDoc(doc(db, "users", uid));
+            const theirBlockedSnap = await getDocs(
+              collection(db, "users", uid, "blocked")
+            );
+
+            return {
+              uid,
+              exists: userDoc.exists(),
+              data: userDoc.data(),
+              blockedUids: theirBlockedSnap.docs.map(doc => doc.id),
+            };
+          })
+        );
+
+        const authorMap: Record<
+          string,
+          { isPrivate: boolean; isPremium?: boolean; blockedUids: string[] }
+        > = {};
+
+        authorDocs.forEach((doc) => {
+          if (doc.exists) {
+            authorMap[doc.uid] = {
+              isPrivate: doc.data?.privacySettings?.privateAccount || false,
+              isPremium: doc.data?.isPremium || false,
+              blockedUids: doc.blockedUids || [],
+            };
+          }
+        });
+
+
+
+
+
+        // 6. Filter videos based on privacy & blocks
+        const filteredVideos = rawVideos.filter((video) => {
+          const authorId = video?.user?.uid;
+          if (!authorId) return false;
+
+          // Hide if I blocked them
+          if (blockedUids.includes(authorId)) return false;
+
+          // Hide if they blocked me
+          const blockedMe = authorMap[authorId]?.blockedUids.includes(user?.uid);
+          if (blockedMe) return false;
+
+          // Always show my own videos
+          if (authorId === user?.uid) return true;
+
+          const isPrivate = authorMap[authorId]?.isPrivate;
+
+          // Show if not private
+          if (!isPrivate) return true;
+
+          // Show if I follow them and content is private
+          return followingUids.includes(authorId);
+        });
+
+        setVideos(filteredVideos);
+      });
+
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Error fetching videos:", error);
     }
-  });
+  };
 
-  return () => unsubscribe();
-}, [id]);
+  fetchData();
+}, [user?.uid]);
+
 
   return (
     <div className="flex flex-col items-center gap-4 p-4 bg-black text-white">
