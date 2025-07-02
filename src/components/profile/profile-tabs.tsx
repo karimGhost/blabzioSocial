@@ -106,7 +106,7 @@ console.log("user", userVids)
    <TabsContent value="posts" className="mt-6">
   {userPosts.length > 0 || userVids.length > 0 ? (
     <>
-      <div className="grid grid-cols-3 sm:grid-cols-3 gap-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
         {[
 
           
