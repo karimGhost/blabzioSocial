@@ -21,6 +21,7 @@ interface Notification {
  export function notification(userId: string | undefined) {
  const [notifications, setNotifications] = useState<Notification[]>([]);
 
+ 
   useEffect(() => {
     if (!userId) return;
 
@@ -34,6 +35,7 @@ interface Notification {
       const snapshot = await getDocs(q);
       const list = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Notification[];
       setNotifications(list);
+      console.log("LOGING", list)
     };
 
     fetchNotifications();

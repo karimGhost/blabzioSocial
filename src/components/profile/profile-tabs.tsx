@@ -30,6 +30,9 @@ const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
 const handleOpen = (video: any) => setSelectedVideo(video);
 const handleClose = () => setSelectedVideo(null);
 
+useEffect(() => {
+console.log("userVids", userPosts)
+}, [userPosts])
 
 const [selectedPost, setselectedPost] = useState<any | null >(null);
 const handleOpenPost = (post: any) => setselectedPost(post);
@@ -107,17 +110,21 @@ console.log("user", userVids)
   {userPosts.length > 0 || userVids.length > 0 ? (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-        {[
-
-          
-          ...userPosts.map((post) => ({ type: "post", data: post, timestamp: post?.timestamp ? formatDistanceToNow(new Date(post.timestamp))  :""}  )),
-          ...userVids.map((video) => ({ type: "video", data: video, timestamp: video.timestamp?.toDate ? video.timestamp.toDate() : new Date(video.timestamp)})),
-        ]
-          .sort((a, b) => {
-            const timeA = new Date(a.timestamp).getTime() || 0;
-            const timeB = new Date(b.timestamp).getTime() || 0;
-            return timeB - timeA;
-          })
+     {[
+  ...userPosts.map((post) => ({
+    type: "post",
+    data: post,
+    rawTime: post.createdAt, // milliseconds
+  })),
+  ...userVids.map((video) => ({
+    type: "video",
+    data: video,
+    rawTime: video.timestamp?.toDate
+      ? video.timestamp.toDate().getTime()
+      : new Date(video.timestamp).getTime(),
+  })),
+]
+  .sort((a, b) => b.rawTime - a.rawTime)
           .map((item) => {
             const isPost = item.type === "post";
 

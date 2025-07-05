@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import ShareDropdown from "@/components/shareDropdown";
 import { ProfileBadge } from "@/components/profile/ProfileBadge";
 import { formatDistanceToNow } from "date-fns";
-
+import Image from "next/image";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation"; // or next/router if using older Next.js
+import PostMediaSlider from "@/components/feed/PostMediaSlider";
 
 
 interface Comment {
@@ -155,6 +156,7 @@ const [isLiked, setIsLiked] = useState(post?.isLiked || false);
     return () => unsub();
   }, [post?.id]);
 
+const [previewUrl, setPreviewUrl] = useState<any | null>(null);
 
   const handleLike = async () => {
     if (!user || !post?.id) return;
@@ -193,6 +195,7 @@ useEffect(() => {
       setPost(postWithId);
       console.log("post is", postWithId);
     }
+
   };
 
   fetchPost();
@@ -367,11 +370,11 @@ const handleReportPost = async (id: any) => {
 
       <CardContent className="p-4 pt-0">
         <p className="whitespace-pre-wrap text-sm">{post.content}</p>
-        {post.mediaUrl && post.mediaType === "image" && (
-          <div className="mt-3 h-64 -mx-4 sm:mx-0 sm:rounded-lg overflow-hidden aspect-video relative">
-            <Image src={post.mediaUrl} alt="Post media" fill className="object-cover" />
-          </div>
-        )}
+           {post?.mediaUrl && post.mediaType === "image" && (
+             <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl}/>
+        
+                )}
+        
       </CardContent>
 
       <CardFooter className="flex flex-col items-start gap-3 p-4 pt-0">
@@ -474,6 +477,23 @@ const handleReportPost = async (id: any) => {
           </div>
         )}
       </CardFooter>
+
+
+
+
+   {previewUrl && (
+  <div
+    onClick={() => setPreviewUrl(null)}
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+  >
+    {previewUrl.endsWith(".mp4") || previewUrl.includes("video") ? (
+      <video src={previewUrl} controls autoPlay className="max-h-full max-w-full rounded" />
+    ) : (
+      <img src={previewUrl} alt="preview" className="max-h-full max-w-full rounded" />
+    )}
+  </div>
+)}
+
     </Card>
   );
 }

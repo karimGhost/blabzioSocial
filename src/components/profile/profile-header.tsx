@@ -99,6 +99,8 @@ const fileInputCRef = useRef<HTMLInputElement>(null);
   type: "follow",
   fromUser:  user?.uid,
   toUser: userData?.uid,
+  username: userD.fullName,
+  avatarUrl: userD.avatarUrl,
   timestamp: Date.now(),
   read: false,
 });

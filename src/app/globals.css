@@ -219,3 +219,14 @@ padding-left: 80px !important;
   opacity: 0;
   pointer-events: none;
 }
+
+
+.swiper-pagination-bullet {
+  background-color: #d1d5db !important; /* muted default (Tailwind gray-300) */
+  opacity: 1 !important;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: #f97316 !important; /* Tailwind orange-500 */
+}
+

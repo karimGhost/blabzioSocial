@@ -6,7 +6,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from "lucide-react";
 import { doc, collection, deleteDoc, setDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs, serverTimestamp, Timestamp, addDoc} from "firebase/firestore";
-
+import PostMediaSlider from "./PostMediaSlider";
 import { dbb, db , dbe, Admin} from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +20,12 @@ import useClipboard from "react-use-clipboard";
 import { useToast } from "@/hooks/use-toast";
 import ShareDropdown from "../shareDropdown";
 import { ProfileBadge } from "../profile/ProfileBadge";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css'; // basic styles
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
+
+import { Navigation, Pagination } from 'swiper/modules';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Post } from "@/lib/dummy-data";
 import { Dialog, DialogContent,  DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface Comment {
   id: string;
@@ -117,7 +124,9 @@ const {toast} = useToast();
   const [textToCopy, setTextToCopy] = useState('');
   const [pastedText, setPastedText] = useState('');
 
-
+useEffect(()=>{
+console.log("postpost", post)
+},[post])
 
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/feed/${post.id}`
   const shareText = encodeURIComponent("Check out this post!")
@@ -510,7 +519,7 @@ toast({
 };
 
 
-  const timeAgo = post?.timestamp ? formatDistanceToNow(new Date(post.timestamp), { addSuffix: true }) : "";
+  const timeAgo = post?.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true }) : "";
 
 
 
@@ -553,7 +562,7 @@ const ConfirmDelete = async (post: Post) => {
     
 
 
-<div className="flex  ">
+<div className="flex flex-column " style={{flexDirection:"column"}}>
   <div>
     <span className="flex mr-2">
 <Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline mr-1">
@@ -573,7 +582,7 @@ const ConfirmDelete = async (post: Post) => {
     </span>
    
 
-  <span className="text-xs text-muted-foreground block  ">
+  <span className="text-xs text-muted-foreground block  " style={{margin:"0"}}>
             @{post.author.name} · {timeAgo}
           </span>
   </div>
@@ -581,7 +590,7 @@ const ConfirmDelete = async (post: Post) => {
 
 
 {(post?.feeling || post?.location) && (
-<p className="text-xs sm:text-sm text-muted-foreground mt--1 p-0" style={{ margin: "auto", padding: "0", width: "fit-content" }}>
+<p className="text-xs sm:text-sm text-muted-foreground mt--1 p-0" style={{ margin: "auto",  padding: "0", width: "fit-content" }}>
   {post.feeling && (
     <>
       is feeling{" "}
@@ -726,9 +735,8 @@ post.mediaUrl && post.mediaType === "image" ?
         <p className="whitespace-pre-wrap text-sm">{post.content}</p>
 }
         {post.mediaUrl && post.mediaType === "image" && (
-          <div className="mt-3 h-64 -mx-4 sm:mx-0 sm:rounded-lg overflow-hidden aspect-video relative " style={{margin:"auto" , width: post?.isprofile && "100%",  height: post?.isprofile && "80px" }}>
-            <Image     onClick={() => setPreviewUrl(post.mediaUrl)} src={post.mediaUrl} alt="Post media" fill className="object-cover" />
-          </div>
+     <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl}/>
+
         )}
       </CardContent>
 
@@ -738,17 +746,19 @@ post.mediaUrl && post.mediaType === "image" ?
           <span>{comments.length} Comments · {comments.length} Shares</span>
         </div>
         <Separator />
+
+        
         <div className="grid w-full grid-cols-3 gap-1">
           <Button variant="ghost" onClick={handleLike} className={`flex items-center gap-1.5 ${isLiked ? 'text-destructive' : 'text-muted-foreground'}`}>
-            <Heart className={`h-5 w-5 ${isLiked ? 'fill-destructive' : ''}`} /> Like
-          </Button>
+            <Heart className={`h-5 w-5 ${isLiked ? 'fill-destructive' : ''}`} /> { post.isprofile ? "" : "Like"}
+          </Button> 
           <Button variant="ghost" onClick={() => setShowComments(!showComments)} className="flex items-center gap-1.5 text-muted-foreground">
-            <MessageCircle className="h-5 w-5" /> Comment
+            <MessageCircle className="h-5 w-5" />  { post.isprofile ? "" : "Comment"}
           </Button>
            <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="flex items-center gap-1.5 text-muted-foreground">
-          <Share2 className="h-5 w-5" /> Share
+          <Share2 className="h-5 w-5" />  { post.isprofile ? "" : "Share"}
         </Button>
       </DropdownMenuTrigger>
 
@@ -831,6 +841,8 @@ post.mediaUrl && post.mediaType === "image" ?
           </div>
         )}
       </CardFooter>
+
+
 
    {previewUrl && (
   <div

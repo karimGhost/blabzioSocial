@@ -13,13 +13,19 @@ import { dbb } from "@/lib/firebase"; // Ensure db is exported from lib/firebase
 import { collection, addDoc } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
-import { ImageIcon, Video, VideoIcon , MapPin, Smile, X  } from "lucide-react";
+import { ImageIcon, Video, VideoIcon , MapPin, Smile, X, Loader2  } from "lucide-react";
 export function CreatePostForm() {
   const [content, setContent] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
 const [mediaType, setMediaType] =  useState();
+
+const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
+const [mediaTypes, setMediaTypes] = useState<string[]>([])
+
+const [loading, setLoading] = useState(false)
 const [feeling, setFeeling] = useState("");
 const [locationQuery, setLocationQuery] = useState("");
 const [searchResults, setSearchResults] = useState<string[]>([]);
@@ -36,42 +42,66 @@ const handleSelectFeeling = (f: string) => {
   const router = useRouter();
   const { toast } = useToast();
 const {user, userData} = useAuth();
-  const handleMediaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setMediaFile(file);
 
-        const type = file.type.startsWith("image")
-      ? "image"
-      : file.type.startsWith("video")
-      ? "video"
-      : "other"; // fallback
+const MAX_FILES = 5;
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setMediaPreview(reader.result as string);
-        setMediaType(type)
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+const handleMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  let selectedFiles = Array.from(files).slice(0, MAX_FILES); // ⛔ limit to 5
+  setMediaFiles(selectedFiles);
+
+  const previews: string[] = [];
+  const types: string[] = [];
+
+  const readFiles = selectedFiles.map(
+    (file) =>
+      new Promise<{ preview: string; type: string }>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve({
+            preview: reader.result as string,
+            type: file.type.startsWith("image")
+              ? "image"
+              : file.type.startsWith("video")
+              ? "video"
+              : "other",
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      })
+  );
+
+  try {
+    const results = await Promise.all(readFiles);
+    setMediaPreviews(results.map((r) => r.preview));
+    setMediaTypes(results.map((r) => r.type));
+  } catch (error) {
+    console.error("Error reading files:", error);
+  }
+};
 
 
 
-  const removeMedia = () => {
-    setMediaFile(null);
-    setMediaPreview(null);
-    // Reset file input
-    const fileInput = document.getElementById('media-upload') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  };
+
+const removeMedia = (indexToRemove: number) => {
+  setMediaFiles((prev) => prev.filter((_, i) => i !== indexToRemove));
+  setMediaPreviews((prev) => prev.filter((_, i) => i !== indexToRemove));
+  setMediaTypes((prev) => prev.filter((_, i) => i !== indexToRemove));
+
+  // Do NOT reset the file input unless all are removed
+  const fileInput = document.getElementById('media-upload') as HTMLInputElement;
+  if (fileInput && mediaPreviews.length <= 1) {
+    fileInput.value = '';
+  }
+};
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
   event.preventDefault();
 if (!user) return toast({title:"Please login first"});
-
 
   console.log("Auth currentUser:", user?.uid);
 
@@ -82,28 +112,31 @@ if (!user) return toast({title:"Please login first"});
   if (!content.trim() && !mediaFile) return;
 
   setIsPosting(true);
-  let mediaUrl = null;
+let mediaUrls: string[] = [];
 
   try {
     // 1. Upload media to Cloudinary (if provided)
-    if (mediaFile) {
-      const formData = new FormData();
-      formData.append("file", mediaFile);
-      formData.append("upload_preset", "PostsM");
-      formData.append("folder", "postsmedia");
+   if (mediaFiles.length > 0) {
+  for (const file of mediaFiles) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "PostsM");
+    formData.append("folder", "postsmedia");
 
-      const uploadRes = await fetch(
-        "https://api.cloudinary.com/v1_1/dpebbtz2z/auto/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+    const uploadRes = await fetch(
+      "https://api.cloudinary.com/v1_1/dpebbtz2z/auto/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
-      const uploadData = await uploadRes.json();
-      mediaUrl = uploadData.secure_url;
+    const uploadData = await uploadRes.json();
+    if (uploadData.secure_url) {
+      mediaUrls.push(uploadData.secure_url);
     }
-
+  }
+}
               const keywords = content.trim().toLowerCase().split(" ")
 
 
@@ -112,8 +145,8 @@ if (!user) return toast({title:"Please login first"});
    const newPost = {
   content: content.trim() || null,
   createdAt: Date.now(),
-  mediaUrl: mediaUrl || null,
-  mediaType: mediaType || null,
+  mediaUrl: mediaUrls || null,
+  mediaType: "image" ,
   feeling: feeling || null,
   keywords:keywords || null,
   location:location || null,
@@ -202,6 +235,9 @@ useEffect(() => {
                 <X className="h-4 w-4" />
               </Button>
         <CardTitle className="text-2xl font-headline text-center">Create New Post</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
+  Hold <kbd>Ctrl</kbd> or <kbd>Cmd</kbd>and click to select multiple files.
+</p>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -223,28 +259,54 @@ useEffect(() => {
             required
           />
 
-          {mediaPreview && (
-            <div className="relative group">
-              <Image src={mediaPreview} alt="Media preview" width={500} height={300} className="rounded-lg object-cover w-full max-h-[300px]" data-ai-hint="upload preview"/>
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                className="absolute top-2 right-2 group-hover:opacity-100 transition-opacity"
-                onClick={removeMedia}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+            {mediaPreviews.length > 0 && (
+  <div className="relative group grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+    {mediaPreviews.map((src, i) => (
+      <div key={i} className="relative">
+        <Image
+          src={src}
+          alt={`preview-${i}`}
+          width={500}
+          height={300}
+          className="rounded-lg object-cover w-full max-h-[300px]"
+        />
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          className="absolute top-2 right-2 opacity-80 hover:opacity-100 transition-opacity"
+          onClick={() => removeMedia(i)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    ))}
+  </div>
+)}
+
+
+
+
+
 
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
             <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => document.getElementById('media-upload')?.click()}>
               <ImageIcon className="h-5 w-5 mr-1.5 text-green-500" /> Photo/Video
             </Button>
-            <Input id="media-upload" type="file" accept="image/*,video/*" className="hidden" onChange={handleMediaChange} />
-            
-            {/* <Button type="button" variant="ghost" size="sm" className="text-muted-foreground">
+  
+<input
+  type="file"
+  id="media-upload"
+  accept="image/*,video/*"
+  multiple
+  className="hidden"
+  disabled={mediaFiles.length >= 5}
+  onChange={handleMediaChange}
+/>          
+
+      
+            {/* <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" /*,  accept="image/*,video/*"
+/>
               <VideoIcon className="h-5 w-5 mr-1.5 text-blue-500" />  Video
             </Button> */}
           
@@ -312,9 +374,20 @@ useEffect(() => {
 
         </CardContent>
         <CardFooter className="flex justify-end border-t pt-4">
-          <Button type="submit" className="w-full sm:w-auto" disabled={!content.trim() && !mediaFile}>
-            Post
-          </Button>
+   <Button
+  type="submit"
+  className="w-full sm:w-auto flex items-center justify-center gap-2"
+  disabled={(!content.trim() && mediaFiles.length === 0) || isPosting}
+>
+  {isPosting ? (
+    <>
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Posting...
+    </>
+  ) : (
+    "Post"
+  )}
+</Button>
         </CardFooter>
       </form>
     </Card>
