@@ -81,6 +81,11 @@ const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 function handleLikeBurst( videoId: string) {
 
+// for(let i = 5; i >= heartId.current; heartId.current++ ){
+//   if(heartId.current  === 5){
+//   break; 
+//   }
+// }
 
   const newHeart = {
     id: heartId.current++,
@@ -545,7 +550,7 @@ onClick={(e) => handleLike(e, video.id)}
               <Send className="mr-2 h-4 w-4 text-blue-400" />
               Telegram
             </DropdownMenuItem>
-         <ShareDropdown  shareUrl={shareUrl}/>
+         <ShareDropdown  shareUrl={shareUrl }/>
           </DropdownMenuContent>
           </DropdownMenu>
       </div>

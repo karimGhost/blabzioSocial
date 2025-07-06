@@ -44,7 +44,7 @@ export function MessageItem({
    setReplyTo,
 }: MessageItemProps) {
 
-  const {userData} = useAuth();
+  const {userData, user} = useAuth();
  const messageDate = message?.timestamp ? new Date(message.timestamp) : null;
 const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [open, setOpen] =  useState<string | null>(null);
@@ -218,8 +218,6 @@ async function deleteMessageAndUpdateLast(conversationId: string, messageId: str
 }
 
 
-
-
   const formattedTime =
     messageDate && isValid(messageDate) ? format(messageDate, "p") : "";
 
@@ -227,8 +225,12 @@ async function deleteMessageAndUpdateLast(conversationId: string, messageId: str
 const doubleClicked = (mess : any) => {
     setReplyTo(null)
    setOpen(mess)
+    triggeredRef.current = true;
 
 }
+
+
+
 
   return (
   <div
@@ -282,13 +284,13 @@ const doubleClicked = (mess : any) => {
         }
 
 {isOwnMessage &&
-<Link href={`#${message?.conversationId}`}>
+<Link href={`#${message?.conversationId}`} onClick={(e) => e.preventDefault()}>
      <div className="flex flex-col max-w-[70%]" >
         {repliedTo && (
           <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mb-1 bg-muted rounded-md" style={{float:"right"}}>
             <span className="font-semibold">
-              {repliedTo.senderId === sender.id ? 'You' : sender.fullName}
-            </span>: {repliedTo.content.slice(0, 60)}
+              {repliedTo.senderId === sender.id ? sender.fullName : "You"}
+            </span>: {repliedTo.type === "image" ?   "image"  :  linkify(repliedTo.content.slice(0, 14)) }
           </div>
         )}
 
@@ -326,17 +328,41 @@ const doubleClicked = (mess : any) => {
   />
 ) : (
   <>
-  {repliedTo && (
+  {repliedTo && user?.uid && (
     <div className="mb-1 p-2 border-l-4 border-blue-500 bg-background rounded text-sm text-muted-foreground">
       <p className="font-semibold">
         {repliedTo.senderId === sender.id ? sender.fullName : "You"}
       </p>
 
-     <p className="text-sm break-words whitespace-pre-wrap break-all">
+{ repliedTo.type === "image" ? (
+  <img
+    src={repliedTo.content}
+    alt="sent media"
+    className="w-full max-w-[75%] md:max-w-[400px] rounded-lg object-contain cursor-pointer"
+    onClick={() => setPreviewUrl(repliedTo.content)}
+  />
+) : repliedTo.type === "video" ? (
+  <video
+    src={repliedTo.content}
+    controls
+    className="w-full max-w-[75%] md:max-w-[400px] rounded-lg cursor-pointer"
+    onClick={() => setPreviewUrl(repliedTo.content)}
+  />
+
+
+) :
+(<>
+<p className="text-sm break-words whitespace-pre-wrap break-all">
       {linkify(repliedTo.content)}
 </p>
     {url && <LinkPreview url={url} />}
 
+</>
+
+)
+
+}
+     
     </div>
   )}
 
@@ -400,9 +426,11 @@ const doubleClicked = (mess : any) => {
    <div className="flex flex-col max-w-[70%]">
         {repliedTo && (
           <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mb-1 bg-muted rounded-md" style={{float:"right"}}>
+         
             <span className="font-semibold">
-              {repliedTo.senderId === sender.id ? 'You' : sender.fullName}
-            </span>: {repliedTo.content.slice(0, 60)}
+              {repliedTo.senderId === sender.id ? sender.fullName : "You"}
+            </span> : {repliedTo.type === "image" ?   "image"  :  linkify(repliedTo.content.slice(0, 14)) }
+
           </div>
         )}
 

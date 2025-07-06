@@ -270,6 +270,8 @@ if (recipientFCMToken && directMessage) {
       timestamp: new Date().toISOString(),
       isRead: false,
       conversationId: conversation.id,
+    ...(replyTo ? { replyToId: replyTo.id } : {}),
+
     });
   };
   // const repliedMessage = conversation.replyToId ? repliesMap.get(conversation.replyToId) : null; online
