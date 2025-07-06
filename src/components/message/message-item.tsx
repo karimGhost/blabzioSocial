@@ -8,14 +8,30 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { MoreVertical, Reply } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+
+import {
+  deleteDoc,
+  doc,
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+  updateDoc
+} from "firebase/firestore";
+
 import LinkPreview from "./LinkPreview";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import Link from "next/link";
+import ConversationDropdown from "./ConversationDropdown";
+import { dbc } from "@/lib/firebase";
 interface MessageItemProps {
   message: Message;
   sender: User;
   isOwnMessage: boolean;
   onReply?: (message: Message) => void;
   repliesMap?: Map<string, Message>;
+   setReplyTo: any;
 }
 
 
@@ -25,11 +41,13 @@ export function MessageItem({
   isOwnMessage,
   onReply,
   repliesMap,
+   setReplyTo,
 }: MessageItemProps) {
 
   const {userData} = useAuth();
  const messageDate = message?.timestamp ? new Date(message.timestamp) : null;
 const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [open, setOpen] =  useState<string | null>(null);
 
  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -92,12 +110,17 @@ const [Touch,setTouch] = useState(true)
 
     if (!isOwnMessage && offset > TRIGGER && !triggeredRef.current) {
       triggeredRef.current = true;
- if (onReply) onReply(message);
-    } else if (isOwnMessage && offset > TRIGGER && !triggeredRef.current) {
-      triggeredRef.current = true;
+       setOpen(null)
  if (onReply) onReply(message);
 
+    } else if (isOwnMessage && offset < TRIGGER && !triggeredRef.current) {
+      triggeredRef.current = true;
+       setOpen(null)
+ if (onReply) onReply(message);
+
+
 }
+
 
     ref.current.style.transform = 'translateX(0px)';
     startXRef.current = null;
@@ -142,6 +165,8 @@ function linkify(text: string) {
     )
   );
 }
+
+
 // useEffect(() => {
 //   const handleEsc = (e: KeyboardEvent) => {
 //     if (e.key === "Escape") setPreviewUrl(null);
@@ -150,16 +175,71 @@ function linkify(text: string) {
 //   return () => window.removeEventListener("keydown", handleEsc);
 // }, []);
 
+
+
+async function deleteMessageAndUpdateLast(conversationId: string, messageId: string) {
+  try {
+    // 1. Delete the message
+    await deleteDoc(doc(dbc, "conversations", conversationId, "messages", messageId));
+    console.log("🗑️ Message deleted:", messageId);
+
+    // 2. Get the latest remaining message (if any)
+    const messagesRef = collection(dbc, "conversations", conversationId, "messages");
+    const latestMessageQuery = query(messagesRef, orderBy("timestamp", "desc"), limit(1));
+    const querySnapshot = await getDocs(latestMessageQuery);
+
+    if (!querySnapshot.empty) {
+      const latestMessage = querySnapshot.docs[0].data();
+
+      // 3. Update the conversation's lastMessage
+      await updateDoc(doc(dbc, "conversations", conversationId), {
+        lastMessage: {
+          senderId: latestMessage.senderId,
+          content: latestMessage.content,
+          timestamp: latestMessage.timestamp,
+          isRead: latestMessage.isRead || false,
+        },
+        updatedAt: new Date().toISOString(),
+      });
+
+      console.log("✅ lastMessage updated with most recent message.");
+    } else {
+      // 4. No messages left — clear lastMessage
+      await updateDoc(doc(dbc, "conversations", conversationId), {
+        lastMessage: null,
+        updatedAt: new Date().toISOString(),
+      });
+
+      console.log("📭 Conversation now has no messages. lastMessage cleared.");
+    }
+  } catch (error) {
+    console.error("❌ Failed to delete message or update lastMessage:", error);
+  }
+}
+
+
+
+
   const formattedTime =
     messageDate && isValid(messageDate) ? format(messageDate, "p") : "";
+
+
+const doubleClicked = (mess : any) => {
+    setReplyTo(null)
+   setOpen(mess)
+
+}
 
   return (
   <div
       ref={ref}
+      style={{position:"relative"}}
       className={cn(
         "flex items-end gap-2 py-2 select-none  touch-pan-y", 
         isOwnMessage ? "justify-end" : "justify-start"
       )}
+      onDoubleClick={() => doubleClicked(message.conversationId)}
+     
     onScroll={() => setTouch(true)}
       onTouchStart={handleStart}
       onTouchMove={handleMove}
@@ -176,12 +256,36 @@ function linkify(text: string) {
         </Avatar>
       )}
 
+      
 
 
 
-    <div className="flex flex-col max-w-[70%]">
+
+{isOwnMessage &&
+
+    <DropdownMenu            
+ open={open === message.conversationId} onOpenChange={() => setOpen(null)}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" style={{float:"right",width:"0px", height:"0px", padding:"0px", margin:"0px"}} > </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+        
+<DropdownMenuItem
+  onSelect={() => deleteMessageAndUpdateLast(message.conversationId, message.id)}
+>
+  Delete
+</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+
+        }
+
+{isOwnMessage &&
+<Link href={`#${message?.conversationId}`}>
+     <div className="flex flex-col max-w-[70%]" >
         {repliedTo && (
-          <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mb-1 bg-muted rounded-md">
+          <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mb-1 bg-muted rounded-md" style={{float:"right"}}>
             <span className="font-semibold">
               {repliedTo.senderId === sender.id ? 'You' : sender.fullName}
             </span>: {repliedTo.content.slice(0, 60)}
@@ -190,7 +294,8 @@ function linkify(text: string) {
 
 
      </div>
-
+     </Link>
+}
 
 
       <div
@@ -234,7 +339,11 @@ function linkify(text: string) {
 
     </div>
   )}
-<p className="text-sm break-words whitespace-pre-wrap break-all">
+
+   
+
+<p className="text-sm break-words whitespace-pre-wrap break-all"   id={message?.conversationId}
+>
       {linkify(message.content)}
 </p>
     {url && <LinkPreview url={url} />}
@@ -249,7 +358,7 @@ function linkify(text: string) {
             <Button
               size="icon"
               variant="ghost"
-              onClick={() =>  onReply()}
+              // onClick={() =>  onReply()}
               className="h-5 w-5"
             >
               <Reply className="w-4 h-4" />
@@ -285,6 +394,22 @@ function linkify(text: string) {
   </div>
 )}
 
+{!isOwnMessage &&
+<Link href={`#${message?.conversationId}`}>
+
+   <div className="flex flex-col max-w-[70%]">
+        {repliedTo && (
+          <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mb-1 bg-muted rounded-md" style={{float:"right"}}>
+            <span className="font-semibold">
+              {repliedTo.senderId === sender.id ? 'You' : sender.fullName}
+            </span>: {repliedTo.content.slice(0, 60)}
+          </div>
+        )}
+
+
+     </div>
+     </Link>
+}
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { Admin, db, dbd, dbe } from "@/lib/firebase";
 import { doc, collection, deleteDoc, setDoc, addDoc, query, onSnapshot, getDoc, orderBy,where, increment, updateDoc,  getDocs, serverTimestamp} from "firebase/firestore";
 import { DropdownMenuContent,DropdownMenuTrigger, DropdownMenuItem, DropdownMenu } from "../ui/dropdown-menu";
 import ShareDropdown from "../shareDropdown";
-
+import { MouseEvent } from "react";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -54,7 +54,10 @@ interface VideoItemProps {
 }
 
 export function VideoItem({ video, containerWidth}: VideoItemProps) {
-  const {user, userData} = useAuth()
+  const {user, userData} = useAuth();
+  const [hearts, setHearts] = useState<{ id: number; left: number }[]>([]);
+const heartId = useRef(0);
+
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(video.likesCount || 0);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -72,12 +75,61 @@ const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}
     telegram: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`,
   }
 
+const [likeEmoji, setLikeEmoji] = useState<string>("");
 
- const handleLike = async () => {
+const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+function handleLikeBurst( videoId: string) {
+
+
+  const newHeart = {
+    id: heartId.current++,
+    left: Math.random() * 40 - 20, // random horizontal drift
+  };
+
+
+  // Remove it after animation
+  setTimeout(() => {
+    setHearts((prev) => prev.filter((h) => h.id !== newHeart.id));
+  }, 2000);
+}
+
+
+function triggerHeart(videoId: string) {
+
+  // Clear any previous timeout
+  if (timeoutRef.current) {
+    clearTimeout(timeoutRef.current);
+  }
+
+  // Set the emoji
+
+  // Auto-clear it after 1 second
+  timeoutRef.current = setTimeout(() => {
+    setLikeEmoji("");
+  }, 1000);
+}
+const handleLike = async (
+  e: MouseEvent<HTMLElement>, // ✅ works for <div>, <button>, etc.
+  videoId: string
+) => {
+    e.preventDefault();
+
+ const newHeart = {
+    id: heartId.current++,
+    left: Math.random() * 40 - 20, // random horizontal drift
+  };
+  setHearts((prev) => [...prev, newHeart]);
+  setLikeEmoji(video.id);
+        handleLikeBurst(video.id);
+
+
+triggerHeart(video.id)
   if (!user || !video?.id) return;
 
   const videoRef = doc(dbd, "videos", video.id); // ← this was "posts" before
   const likeRef = doc(dbd, "videos", video.id, "likes", user.uid); // ← same here
+
 
   try {
     const snap = await getDoc(likeRef);
@@ -94,6 +146,7 @@ const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}
         timestamp: Date.now(),
       });
       await updateDoc(videoRef, { likesCount: increment(1) });
+    
     }
 
 
@@ -235,13 +288,50 @@ console.log("commentcount", commentcount)
   return (
     <Card ref={cardRef} className="w-full h-[90svh] snap-start relative overflow-hidden rounded-xl shadow-xl flex flex-col">
       <div className="absolute inset-0 bg-black">
+  
+
        <video
   ref={videoRef}
-  src={video.url}
-  controls
+ onDoubleClick={(e) => handleLike(e, video.id)}
+   src={video.url}
+   controls={false}
   className="absolute inset-0 w-full h-full object-cover"
   preload="metadata"
+
 />
+
+{(
+ 
+<>
+
+
+{likeEmoji === video.id && (
+  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pop">
+    <Heart
+      fill="#f97316" // Tailwind's orange-400 hex
+      className="h-[80px] w-[80px] text-orange-400"
+    />
+  </div>
+)}
+  {hearts.map((heart) => (
+  <div
+      key={heart.id}
+      className="absolute bottom-12 left-1/2 animate-floatUp"
+      style={{
+        transform: `translateX(${heart.left}px)`,
+      }}
+    >
+      <Heart
+        fill="#f97316"
+        className="h-6 w-6 text-orange-400 drop-shadow-lg"
+      />
+    </div>
+  ))}
+</>
+
+)}
+
+
         {/* <div className="absolute inset-0 flex items-center justify-center bg-black/30">
           <Play className="w-16 h-16 text-white/70" fill="currentColor" /> flex
         </div> */}
@@ -383,7 +473,7 @@ console.log("commentcount", commentcount)
               ownerId: video.user.uid,
             });
             setShowConfirm(false);
-            router.refresh(); // or router.push("/videos");
+            router.refresh(); // or router.push("/videos"); video.time
           } catch (err) {
             alert("Failed to delete video.");
             console.error(err);
@@ -401,11 +491,15 @@ console.log("commentcount", commentcount)
         <Button
           variant="ghost"
           size="icon"
-          onClick={handleLike}
-          className={`flex flex-col items-center h-auto p-1 ${isLiked ? "text-destructive" : ""}`}
+onClick={(e) => handleLike(e, video.id)}
+          className={`flex flex-col items-center h-auto p-1 text-primary` }
         >
-          <Heart className={`h-7 w-7 ${isLiked ? "fill-destructive" : ""}`} />
-          <span className="text-xs font-medium">{likesCount}</span>
+
+           <Heart
+      fill= {isLiked ? `#f97316` : "" }
+           className={`h-7 w-7 `} />
+
+          <span className="text-xs font-medium " style={{color:"white", textShadow:"1px 1px black"}}>{likesCount}</span>
         </Button>
         <Button
           variant="ghost"

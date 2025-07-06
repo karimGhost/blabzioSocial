@@ -32,13 +32,44 @@ export function PremiumMembershipCard({
 }) {
   const [selectedPlan, setSelectedPlan] = useState("1");
   const [showPayPal, setShowPayPal] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const current = plans.find((p) => p.value === selectedPlan)!;
 
-  const handleMpesaPayment = async () => {
-    const receipt = prompt("Enter your M-Pesa receipt number:");
-    if (!receipt) return;
+const handleStartMpesaPayment = async () => {
+  if (!userId || !phoneNumber) {
+    toast.error("Please login and enter a phone number");
+    return;
+  }
 
+  try {
+    const res = await fetch("/api/subscribe/stk-push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phoneNumber, userId }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.checkoutRequestID) {
+      toast.info("M-Pesa prompt sent! Complete payment on your phone.");
+
+      // Optionally, you can poll your backend or listen for confirmation
+      // Or you just wait for the callback to update premium status automatically
+    } else {
+      toast.error(`STK Push failed: ${data.error || JSON.stringify(data)}`);
+    }
+  } catch (error) {
+    toast.error("Network error with M-Pesa payment.");
+  }
+};
+
+
+  const handleMpesaPayment = async () => {
+  const receipt = prompt("Enter your M-Pesa receipt number:");
+  if (!receipt) return;
+
+  try {
     const res = await fetch("/api/verify-mpesa", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,9 +84,14 @@ export function PremiumMembershipCard({
       toast.success("✅ You are now a Premium Member!");
       window.location.reload();
     } else {
-      toast.error("❌ M-Pesa verification failed.");
+      const error = await res.json();
+      toast.error(`❌ M-Pesa verification failed: ${error.error || "Unknown error"}`);
     }
-  };
+  } catch (err) {
+    toast.error("❌ Network or server error during verification.");
+  }
+};
+
 
   return (
     <Card className="shadow-lg border border-orange-400 max-w-md mx-auto">
@@ -105,12 +141,22 @@ export function PremiumMembershipCard({
                 >
                   Pay with PayPal
                 </Button>
-                <Button
-                  onClick={handleMpesaPayment}
+               <input
+  type="text"
+  placeholder="Enter phone number"
+  value={phoneNumber}
+  onChange={(e) => setPhoneNumber(e.target.value)}
+/>
+
+<Button
                   className="bg-green-600 text-white hover:bg-green-700"
-                >
-                  Pay with M-Pesa
-                </Button>
+
+onClick={handleStartMpesaPayment}>Pay with M-Pesa</Button>
+
+<Button
+                  className="bg-green-600 text-white hover:bg-green-700"
+
+onClick={handleMpesaPayment}>Enter M-Pesa Receipt Manually</Button>
               </div>
             ) : (
               <div className="pt-4">

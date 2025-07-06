@@ -100,7 +100,29 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
+
+
     },
+     keyframes: {
+             pop: {
+          '0%': { transform: 'scale(0.5)', opacity: '0' },
+          '30%': { transform: 'scale(1.2)', opacity: '1' },
+          '60%': { transform: 'scale(3)', opacity: '1' },
+          '80%': { transform: 'scale(1.3)', opacity: '1' },
+          '100%': { transform: 'scale(1.0)', opacity: '1' },
+        },
+        floatUp: {
+          '0%': { transform: 'translateY(0)', opacity: '1' },
+         '10%': { transform: 'translateY(3)', opacity: '1' },
+
+          '100%': { transform: 'translateY(-120px)', opacity: '0' },
+        },
+
+      },
+      animation: {
+        pop: 'pop 500ms ease-out',
+        floatUp: 'floatUp 1s ease-out forwards',
+      },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;

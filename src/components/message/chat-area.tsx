@@ -25,8 +25,9 @@ import { dbc,dbb, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { uploadToCloudinary } from "@/lib/cloudinary-upload";
 import { formatDistanceToNow } from 'date-fns';
-import { getDatabase, onValue, ref } from "firebase/database";
+import { getDatabase, onValue, ref  } from "firebase/database";
 import { Message } from "postcss";
+
 
 interface ChatAreaProps {
   conversation: any;
@@ -59,23 +60,46 @@ const [lastSeen, setLastSeen] = useState<number | null>(null);
     };
   };
 
-
-  useEffect(() => {
+useEffect(() => {
   if (!conversation?.participant?.id) return;
 
- 
-  const statusRef = ref(rtdb, `/onlineStatus/${conversation.participant.id}`);
+  const onlineStatusRef = ref(rtdb, `/onlineStatus/${conversation.participant.id}`);
+const privacySettingsRef = doc(db, "users", conversation.participant.id);
 
-  const unsubscribe = onValue(statusRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      setIsOnline(data.state === "online");
-      setLastSeen(data.last_changed);
+
+  let unsubscribe: (() => void) | undefined;
+
+  // Wrap everything in an async IIFE
+  (async () => {
+    try {
+      const privacySnap = await getDoc(privacySettingsRef);
+
+      const activityStatus = privacySnap.data()?.privacySettings?.activityStatus;
+
+      
+      // Subscribe to Realtime DB
+      unsubscribe = onValue(onlineStatusRef, (snapshot) => {
+        const data = snapshot.val();
+
+        if (data && activityStatus) {
+          setIsOnline(data.state === "online");
+        } else {
+          setIsOnline(false);
+        }
+              setLastSeen(data.last_changed);
+
+      });
+    } catch (err) {
+      console.error("Error fetching privacy or online status:", err);
     }
-  });
+  })();
 
-  return () => unsubscribe();
+  return () => {
+    if (unsubscribe) unsubscribe();
+  };
 }, [conversation?.participant?.id]);
+
+
 
 
   useEffect(() => {
@@ -353,13 +377,14 @@ const handleMuteUser = async (username: string) => {
 
 
   <div className="flex items-center gap-1">
-     {   /*  <Button variant="ghost" size="icon"><Phone className="h-5 w-5" /></Button>     reminder to add video and call 
+     {   /*  <Button variant="ghost" size="icon"><Phone className="h-5 w-5" /></Button>     reminder to add video and call online
           <Button variant="ghost" size="icon"><VideoIcon className="h-5 w-5" /></Button> */ }
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon"><MoreVertical className="h-5 w-5" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              
         <Link href={`/profile/${conversation?.participant?.id}`}>
 
               <DropdownMenuItem>View Profile</DropdownMenuItem>
@@ -383,6 +408,7 @@ const handleMuteUser = async (username: string) => {
   isOwnMessage={msg.senderId === user?.uid}
   repliesMap={repliesMap}
   onReply={(msg) => setReplyTo(msg)}
+   setReplyTo={ setReplyTo}
 />
           ))}
         </div>
