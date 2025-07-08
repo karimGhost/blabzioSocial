@@ -346,7 +346,7 @@ console.log("commentcount", commentcount)
         <div className="flex items-center gap-2 mb-2">
           <Link href={`/profile/${video.user.uid}`}>
             <Avatar className="h-10 w-10 border-2 border-primary">
-              <AvatarImage src={video.user.avatarUrl} alt={video.user.name} />
+              <AvatarImage src={video.user.avatarUrl} alt={video.user.username || video.user.name } />
               <AvatarFallback>{video.user.name?.charAt(0)}</AvatarFallback>
             </Avatar>
           </Link>
@@ -355,7 +355,7 @@ console.log("commentcount", commentcount)
               href={`/profile/${video.user.uid}`}
               className="font-semibold hover:underline text-sm"
             >
-              {video.user.name}
+              {video.user.username || video.user.name}
             </Link>
             <p className="text-xs">{timeAgo}</p>
           </div>

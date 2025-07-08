@@ -12,7 +12,7 @@ import { Lock, Bell, Shield, Palette, UserCircle, LogOut, Loader2, ShieldCheck, 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { auth } from "@/lib/firebase";
+import { auth, dbd } from "@/lib/firebase";
 import { deleteUser, signOut } from "firebase/auth";
 import { doc, getDoc,setDoc, collection, getDocs, query, where, updateDoc, deleteDoc } from "firebase/firestore";
 import { db , dbb} from "@/lib/firebase";
@@ -29,6 +29,8 @@ const [selectedBadge, setSelectedBadge] = useState<"gold" | "diamond">("gold");
 const {user, userData, setUserData} = useAuth();
  const [avatarUrl, setAvatarUrl] = useState(userData?.avatarUrl);
 const [uploading, setUploading] = useState(false);
+
+const [ UploadingProfile,  setUploadingProfile] = useState(false);
 const [password, setPassword] = useState("");
 const [repeatPassword, setRepeatPassword] = useState("");
 const [showPassword, setShowPassword] = useState(false);
@@ -178,10 +180,12 @@ localStorage.clear()
     }
   };
 
-  const handleAvatarChange = async (e: React.FormEvent<HTMLFormElement>, section: string) => {
-    if (!e.target?.files?.[0]) return;
-    const file = e.target?.files[0];
-  
+const handleAvatarChange = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
     if (!file.type.startsWith("image/") ) {
       toast({
         title: "Invalid File",
@@ -190,27 +194,91 @@ localStorage.clear()
       });
       return;
     }
-  
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "profilePic"); // Your preset
-    formData.append("folder", "profiledp"); // Optional folder
-  
+
+    if (!user?.uid) {
+  console.error("User UID is missing");
+  return;
+}
+  const public_id = `profiledp/${user.uid}`;
+
+// 1. Get signed upload details 
+const signRes = await fetch("/api/sign-upload", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ public_id, folder: "profiledp" }),
+});
+
+const { timestamp, signature, apiKey, cloudName } = await signRes.json();
+
+const formData = new FormData();
+formData.append("file", file);
+formData.append("public_id", public_id);
+formData.append("folder", "profiledp");
+formData.append("overwrite", "true"); // ✅ must match signed fields
+formData.append("api_key", apiKey);
+formData.append("timestamp", timestamp.toString());
+formData.append("signature", signature);
+
+
     setUploading(true);
   
     try {
-      const res = await fetch("https://api.cloudinary.com/v1_1/dpebbtz2z/image/upload", {
-        method: "POST",
-        body: formData,
-      });
-  
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+  method: "POST",
+  body: formData,
+});
       const data = await res.json();
+      if (!data.secure_url) {
+  console.error("Upload failed", data); // <== show exact Cloudinary error
+  return;
+}
       if (data.secure_url) {
         setAvatarUrl(data.secure_url);
   
+        console.log("avatarurl", data.secure_url)
         if (user?.uid) {
           const userRef = doc(db, "users", user.uid);
           await updateDoc(userRef, { avatarUrl: data.secure_url });
+
+
+
+
+        const postsRef = collection(dbb, "posts");
+
+const q = query(postsRef, where("uid", "==", user.uid));
+
+const snapshot = await getDocs(q);
+
+const updates = snapshot.docs.map((postDoc) => {
+  return updateDoc(doc(dbb, "posts", postDoc.id), {
+      "author.avatarUrl":  data.secure_url,
+  });
+
+});
+
+await Promise.all(updates);
+
+
+
+
+
+ const videoRef = collection(dbd, "videos");
+
+const v = query(videoRef, where("user.uid", "==", user?.uid));
+
+const snapshots = await getDocs(v);
+
+const updated = snapshots.docs.map((postDoc) => {
+  return updateDoc(doc(dbd, "videos", postDoc.id), {
+      "user.avatarUrl":  data.secure_url,
+  });
+  
+});
+
+await Promise.all(updated);
+
+
+
         }
   
         toast({
@@ -233,6 +301,10 @@ localStorage.clear()
   };
 
   const triggerFileSelect = () => {
+      if (!fileInputRef.current) {
+    console.warn("File input ref is not attached");
+    return;
+  }
     fileInputRef.current?.click();
   };
 
@@ -345,6 +417,7 @@ const handleSaveNotifications = async () => {
   const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>, section: string) => {
   e.preventDefault();
 
+
   const name = (document.getElementById("name") as HTMLInputElement).value.trim();
   const username = (document.getElementById("username") as HTMLInputElement).value.trim();
   const bio = (document.getElementById("bio") as HTMLTextAreaElement).value.trim();
@@ -353,18 +426,84 @@ const handleSaveNotifications = async () => {
     toast({ title: "Name and username are required." });
     return;
   }
+    setUploadingProfile(true);
 
 
   try {
-    const userRef = doc(db, "users", user?.uid as string);
-     const keywords =name.toLowerCase().split(" ")
+
+     const usersRef = collection(db, "users");
+    const qp = query(usersRef, where("username", "==", username));
+    const querySnapshot = await getDocs(qp);
+
+    const usernameTaken = querySnapshot.docs.some(
+      (docSnap) => docSnap.id !== user?.uid // exclude current user's own doc
+    );
+
+    if (usernameTaken) {
+      toast({
+        title: "Username taken",
+        description: "Please choose a different username.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+const userRef = doc(db, "users", user?.uid as string);
+     const keywords =username.toLowerCase().split(" ");
+ 
+    const current=  Number(userData?.UploadedTimes) ;
+
+const UploadedTimes = !isNaN(current) ? (current + 1).toString() : "1" ;
+
     await updateDoc(userRef, {
       fullName: name,
       keywords:keywords,
       username,
       bio,
+      UploadedTimes: UploadedTimes,
       updatedAt: Date.now(),
     });
+
+
+
+
+    
+            const postsRef = collection(dbb, "posts");
+    
+    const q = query(postsRef, where("uid", "==", user?.uid));
+    
+    const snapshot = await getDocs(q);
+    
+    const updates = snapshot.docs.map((postDoc) => {
+      return updateDoc(doc(dbb, "posts", postDoc.id), {
+          "author.username":  username,
+
+      });
+    
+    });
+    
+    await Promise.all(updates);
+    
+    
+    
+    
+    
+     const videoRef = collection(dbd, "videos");
+    
+    const v = query(videoRef, where("user.uid", "==", user?.uid));
+    
+    const snapshots = await getDocs(v);
+    
+    const updated = snapshots.docs.map((postDoc) => {
+      return updateDoc(doc(dbd, "videos", postDoc.id), {
+          "user.username":  username,
+      });
+      
+    });
+    
+    await Promise.all(updated);
+
+
 
     const docSnap = await getDoc(userRef);
 setUserData(docSnap.data());
@@ -381,7 +520,10 @@ setUserData(docSnap.data());
       description: "Something went wrong while updating your profile.",
       variant: "destructive",
     });
+
   }
+        setUploadingProfile(false);
+
 };
 
 
@@ -535,6 +677,36 @@ const notificationItems: {
   { id: "directMessage", label: "Direct Messages", description: "When you receive a new direct message." },
 ];
 
+
+
+
+
+
+
+const lastUpdated = userData?.updatedAt;
+const now = Date.now();
+const oneMonth = 30 * 24 * 60 * 60 * 1000; // in ms
+const current = Number(userData?.UploadedTimes);
+
+const changedTwice = current >= 2;
+const updatedRecently = lastUpdated && now - lastUpdated < oneMonth;
+
+
+function Trigger(){
+
+
+if (changedTwice && updatedRecently) {
+
+
+  toast({
+    title: "Name change limit reached",
+    description: "You can only change your name twice a month. Try again later.",
+    variant: "destructive",
+  });
+  return;
+}
+}
+
   return (
     <div className="max-w-3xl mx-auto space-y-8 p-4 sm:p-0">
       <h1 className="text-3xl font-bold font-headline mb-8">Settings</h1>
@@ -545,7 +717,7 @@ const notificationItems: {
           <CardTitle className="flex items-center gap-2"><UserCircle className="h-6 w-6 text-primary" /> Profile Settings</CardTitle>
           <CardDescription>Manage your public profile information.</CardDescription>
         </CardHeader>
-        <form onSubmit={(e) => handleProfileUpdate(e, "Profile")}>
+        <form onSubmit={(e) => handleProfileUpdate(e, "profile credentials")}>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4 relative">
           <div className="relative inline-block">
@@ -573,7 +745,7 @@ const notificationItems: {
   )}
 </div>
 
-
+ 
               {uploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
                       <Loader2 className="h-8 w-8 text-white animate-spin" />
@@ -584,21 +756,21 @@ const notificationItems: {
                  <input
         type="file"
         accept="image/*"
-        onChange={handleAvatarChange}
+        onChange={(e) => handleAvatarChange(e)}
         ref={fileInputRef}
         className="hidden"
       />
                 <Button variant="outline"  onClick={ triggerFileSelect } type="button">  Change Avatar</Button>
 
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-      <Input id="name" defaultValue={userData?.fullName} />
+      <Input onSelect={Trigger} disabled={changedTwice && updatedRecently}  id="name" defaultValue={userData?.fullName} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                   <Input id="username" defaultValue={userData?.username || userData?.fullName} />
+                <Label  htmlFor="username">Username</Label>
+                   <Input onClick={Trigger} disabled={changedTwice && updatedRecently} id="username" defaultValue={userData?.username || userData?.fullName} />
 
               </div>
             </div>
@@ -611,8 +783,9 @@ const notificationItems: {
       className="min-h-[80px]"
     />            </div>
           </CardContent>
-          <CardFooter className="border-t px-6 py-4">
-            <Button type="submit">Save Profile</Button>
+          <CardFooter className="border-t px-6 py-4 relative">
+         
+            <Button type="submit" disabled={UploadingProfile}>{UploadingProfile ? "Saving" : 'Save Profile'}  {UploadingProfile && <Loader2 className="h-8 w-8 text-white animate-spin" /> } </Button>
           </CardFooter>
         </form>
       </Card>

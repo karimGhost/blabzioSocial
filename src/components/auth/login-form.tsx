@@ -12,7 +12,7 @@ import { BlabzioLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { decodeAction } from "next/dist/server/app-render/entry-base";
@@ -113,6 +113,19 @@ const handleGoogleLogin = async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
+
+    let useis = user.email?.split("@")[0] || "";
+    
+    // Check if that username is already taken
+    const usersRef = collection(db, "users");
+    const qp = query(usersRef, where("username", "==", useis));
+    const querySnapshot = await getDocs(qp);
+    
+    // If taken, append timestamp or random number
+    if (!querySnapshot.empty) {
+      useis = useis + Date.now().toString().slice(-4); // e.g., "john1234"
+    }
+    
     // Step 2: Check if user exists in Firestore
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
@@ -124,7 +137,7 @@ const handleGoogleLogin = async () => {
       await setDoc(userDocRef, {
         uid: user.uid,
         fullName: user.displayName || "",
-        username: user.email?.split("@")[0] || "",
+        username: useis,
         email: user.email || "",
         keywords:keywords,
         avatarUrl: user.photoURL || "",

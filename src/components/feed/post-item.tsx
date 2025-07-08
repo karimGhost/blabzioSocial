@@ -566,7 +566,7 @@ const ConfirmDelete = async (post: Post) => {
   <div>
     <span className="flex mr-2">
 <Link href={`/profile/${post.author.uid}`} className="font-semibold hover:underline mr-1">
-  {post.author.name}
+  {post.author.username || post.author.name}
 
    
 </Link>

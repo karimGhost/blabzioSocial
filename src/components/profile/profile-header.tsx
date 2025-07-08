@@ -22,8 +22,8 @@ import { Loader2, Plus } from "lucide-react";
 
 import { useState, useRef } from "react";
 
-import { doc, updateDoc, deleteDoc, setDoc, getDoc, addDoc, collection } from "firebase/firestore";
-import { db, dbe } from "@/lib/firebase";
+import { doc, updateDoc, deleteDoc, setDoc, getDoc, addDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { db, dbb, dbd, dbe } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";  
 import { MessageButton } from "../MessageButton";
 interface ProfileHeaderProps {
@@ -192,27 +192,85 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     return;
   }
 
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "profilePic"); //  preset
-  formData.append("folder", "profiledp"); //  folder
+  const public_id = `profiledp/${user?.uid}`;
+
+// 1. Get signed upload details 
+const signRes = await fetch("/api/sign-upload", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ public_id, folder: "profiledp" }),
+});
+
+const { timestamp, signature, apiKey, cloudName } = await signRes.json();
+
+const formData = new FormData();
+formData.append("file", file);
+formData.append("public_id", public_id);
+formData.append("folder", "profiledp");
+formData.append("overwrite", "true"); // ✅ must match signed fields
+formData.append("api_key", apiKey);
+formData.append("timestamp", timestamp.toString());
+formData.append("signature", signature);
+
 
   setUploading(true);
 
+
   try {
-    const res = await fetch("https://api.cloudinary.com/v1_1/dpebbtz2z/image/upload", {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
       method: "POST",
       body: formData,
     });
 
+
     const data = await res.json();
     if (data.secure_url) {
-      setAvatarUrl(data.secure_url);
+
+    setAvatarUrl(data.secure_url);
 
       if (user?.uid) {
         const userRef = doc(db, "users", user.uid);
+
         await updateDoc(userRef, { avatarUrl: data.secure_url });
+
+
+
+        const postsRef = collection(dbb, "posts");
+
+const q = query(postsRef, where("uid", "==", user.uid));
+
+const snapshot = await getDocs(q);
+
+const updates = snapshot.docs.map((postDoc) => {
+  return updateDoc(doc(dbb, "posts", postDoc.id), {
+      "author.avatarUrl":  data.secure_url,
+  });
+
+});
+
+await Promise.all(updates);
+
+
+
+
+
+ const videoRef = collection(dbd, "videos");
+
+const v = query(videoRef, where("user.uid", "==", user?.uid));
+
+const snapshots = await getDocs(v);
+
+const updated = snapshots.docs.map((postDoc) => {
+  return updateDoc(doc(dbd, "videos", postDoc.id), {
+      "user.avatarUrl":  data.secure_url,
+  });
+  
+});
+
+await Promise.all(updated);
       }
+
+    
 
       toast({
         title: "Avatar Updated",
@@ -221,6 +279,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     } else {
       throw new Error("No secure URL returned");
     }
+  
   } catch (error) {
     console.error("Upload failed", error);
     toast({
@@ -230,6 +289,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     });
   } finally {
     setUploading(false);
+  
   }
 };
 
@@ -258,6 +318,9 @@ const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   formData.append("file", file);
   formData.append("upload_preset", "profilePic"); //  preset
   formData.append("folder", "profiledp"); //  folder
+
+  formData.append("public_id", `profiledp/${user?.uid}`);
+formData.append("overwrite", "true");
 
   setUploadingC(true);
 
@@ -353,7 +416,7 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
       >
         <Image 
 
-src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.fullName}'s+Cover`}
+src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}'s+Cover`}
           alt={`${userData?.fullName}'s cover photo`} 
           width={1200} 
           height={400} 
@@ -428,7 +491,7 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.fullName}
 </div>
           <div className="flex-1 text-center sm:text-left pt-4 sm:pt-0">
             <span className="flex">
-                          <h1 className="text-2xl sm:text-3xl font-bold font-headline">{userData?.fullName}  </h1> 
+                          <h1 className="text-2xl sm:text-3xl font-bold font-headline">{userData?.username}  </h1> 
 
             { userData.isPremium && <ProfileBadge/>}
             </span>

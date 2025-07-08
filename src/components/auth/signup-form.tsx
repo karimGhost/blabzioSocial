@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile, deleteUser } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,11 +65,6 @@ const getFriendlyError = (code: string) => {
 
 
 const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-
-
-  if (password !== repeatPassword) {
-    return setError("Passwords do not match.");
-  }
   event.preventDefault();
   setError("");
 
@@ -77,7 +72,28 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     setError("You must agree to the Terms and Conditions.");
     return;
   }
+
+  if (password !== repeatPassword) {
+    return setError("Passwords do not match.");
+  }
+
+
+  
   try {
+
+ const usersRef = collection(db, "users");
+const qp = query(usersRef, where("username", "==", UserName));
+const querySnapshot = await getDocs(qp);
+
+if (!querySnapshot.empty) {
+  toast({
+    title: "Username taken",
+    description: "Please choose a different username.",
+    variant: "destructive",
+  });
+  return;
+}
+
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
     const user = userCredential.user;
@@ -128,11 +144,9 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
       });
         toast({
           title: "Account Created ",
-          description: "Now Login using your creditials.",
-          // variant: "success",
+          description: "Welcome to Blabzio.",
+         variant: "success",
         });
-
-
            //  session cookie logic:
     const idToken = await user.getIdToken();
     await fetch("/api/session", {
@@ -170,8 +184,13 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 const handleGoogleSignup = async () => {
   const provider = new GoogleAuthProvider();
   try {
+
+
+
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
+
+
 
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
@@ -180,10 +199,23 @@ const handleGoogleSignup = async () => {
           const keywords = user?.displayName?.toLowerCase().split(" ")
 
       try {
+let useis = user.email?.split("@")[0] || "";
+
+// Check if that username is already taken
+const usersRef = collection(db, "users");
+const qp = query(usersRef, where("username", "==", useis));
+const querySnapshot = await getDocs(qp);
+
+// If taken, append timestamp or random number
+if (!querySnapshot.empty) {
+  useis = useis + Date.now().toString().slice(-4); // e.g., "john1234"
+}
+
         await setDoc(userRef, {
           uid: user.uid,
           fullName: user.displayName || "",
           email: user.email || "",
+        username: useis,
           keywords:keywords,
           createdAt: Date.now(),
           postsCount: 0,
