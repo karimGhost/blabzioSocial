@@ -52,9 +52,9 @@ export default function RootLayout({
 
               <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta property="og:title" content="Blabzio - Where people socialize " />
+<meta property="og:title" content="Blabzio - chat-connect-Socialize." />
 <meta property="og:description" content="Check out this awesome post!" />
-<meta property="og:image" content="https://blabzio.vercel.app//icons/android-chrome-192x192.png" />
+<meta property="og:image" content="https://blabzio.vercel.app/icons/android-chrome-192x192.png" />
 <meta property="og:url" content="https://blabzio.vercel.app/feed/" />
 <meta property="og:site_name" content="Blabzio" />
   <meta name="description" content="Messaging connect Social." />
