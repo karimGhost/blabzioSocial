@@ -6,7 +6,11 @@ import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Play, Facebook, Twitter, Send, MoreVertical,X, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Play, Facebook, Twitter, Send, MoreVertical,X, Trash2,  
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize2, } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 import CommentsModal from "../CommentsModal";
@@ -307,21 +311,228 @@ console.log("commentcount", commentcount)
     video.timestamp?.toDate ? video.timestamp.toDate() : new Date(video.timestamp),
     { addSuffix: true }
   );
+  const [isPlaying, setIsPlaying] = useState(false);
+const [isMuted, setIsMuted] = useState(true);
+const [showControls, setShowControls] = useState(false);
+  const [volume, setVolume] = useState(0.5); // default 50%
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const userWantsSound = useRef(false); // 🔥 track if user tapped unmute once
 
-  return (
-    <Card ref={cardRef} className="w-full h-[90svh] snap-start relative overflow-hidden rounded-xl shadow-xl flex flex-col">
+ useEffect(() => {
+    if (showControls) {
+      const timeout = setTimeout(() => setShowControls(false), 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [showControls]);
+
+//  useEffect(() => {
+//     if (videoRef.current) {
+//       videoRef.current.volume = volume;
+//       // videoRef.current.muted = isMuted;
+//     }
+//   }, [volume, isMuted]);
+
+const unmuteAll = () => {
+  setIsMuted(false);
+  if (videoRef.current) videoRef.current.muted = false;
+
+  // Dispatch a global custom event
+  window.dispatchEvent(new CustomEvent("UNMUTE_ALL_VIDEOS"));
+};
+ const handleUnmuteAll = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      setIsMuted(false);
+    }
+  };
+
+ 
+
+   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  };
+const togglePlayPause = () => {
+  const video = videoRef.current;
+  if (!video) return;
+  if (video.paused) {
+    video.play();
+    setIsPlaying(true);
+  } else {
+    video.pause();
+    setIsPlaying(false);
+  }
+};
+
+
+const [isActive, setIsActive] = useState(false); 
+
+
+
+
+const toggleMute = () => {
+  if (isMuted) {
+    window.dispatchEvent(new CustomEvent("UNMUTE_USER_TRIGGERED"));
+
+  }else{
+
+      setIsMuted(true);
+  }
+
+};
+
+const toggleFullscreen = () => {
+  const video = videoRef.current;
+  if (!video) return;
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else {
+    video.requestFullscreen();
+  }
+};
+
+ useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting) {
+          videoRef.current?.play();
+          setIsPlaying(true);
+        setIsActive(true); 
+             const newUrl = `/videos/${video.id}`;
+  window.history.replaceState(null, "", newUrl);
+         
+ if (userWantsSound.current && videoRef.current) {
+            videoRef.current.muted = false;
+            setIsMuted(false);
+          }
+
+
+  
+        } else {
+          videoRef.current?.pause();
+          setIsPlaying(false);
+
+        setIsActive(false); 
+         if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+          }
+        }
+      },
+      {
+        threshold: 0.7, // Adjust visibility threshold (70% visible)
+      }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) observer.unobserve(cardRef.current);
+    };
+  }, [video.id, router]);
+
+
+const handleGlobalUnmute = () => {
+  if (videoRef.current) {
+    videoRef.current.muted = false;
+    setIsMuted(false);
+    // ✅ DON'T call play()
+  }
+};
+
+ useEffect(() => {
+    const handleUnmute = () => {
+      userWantsSound.current = true;
+
+      if (isActive && videoRef.current) {
+        videoRef.current.muted = false;
+        setIsMuted(false);
+      }
+    };
+
+    window.addEventListener("UNMUTE_USER_TRIGGERED", handleUnmute);
+    return () => window.removeEventListener("UNMUTE_USER_TRIGGERED", handleUnmute);
+  }, [isActive]);
+
+return (
+    <Card   onMouseOver={() => setShowControls(true)}
+ ref={cardRef} className="w-full h-[90svh] snap-start relative overflow-hidden rounded-xl shadow-xl flex flex-col">
+   
+    
       <div className="absolute inset-0 bg-black">
   
-
+<>
        <video
   ref={videoRef}
  onDoubleClick={(e) => handleLike(e, video.id)}
    src={video.url}
    controls={false}
+     muted={isMuted}
+  onClick={togglePlayPause}
+
   className="absolute inset-0 w-full h-full object-cover"
   preload="metadata"
+  onMouseEnter={() => setShowControls(true)}
+  onMouseLeave={() => setShowControls(false)}
+  playsInline
+  loop
+          onLoadedData={() => videoRef.current?.play()}
 
-/>
+  />
+
+
+  {showControls && (
+        <div className="absolute top-5 left-0 right-0 flex justify-between items-center px-6 text-white z-10">
+          {/* Play / Pause */}
+          <button
+            onClick={togglePlayPause}
+            className="bg-black/50 p-2 rounded-full hover:bg-black/70 transition"
+          >
+            {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+          </button>
+
+          {/* Volume Control with Hover Slider */}
+          <div
+            className="relative flex items-center group"
+            onMouseEnter={() => setShowVolumeSlider(true)}
+            onMouseLeave={() => setShowVolumeSlider(false)}
+          >
+            <button
+              onClick={toggleMute}
+              className="bg-black/50 p-2 rounded-full hover:bg-black/70 transition"
+            >
+              {isMuted || volume === 0 ? <VolumeX size={24} /> : <Volume2 size={24} />}
+            </button>
+
+            {showVolumeSlider && (
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="absolute bottom-full mb-2 w-24 h-1 accent-orange-400 bg-white/30 rounded-lg cursor-pointer"
+              />
+            )}
+          </div>
+
+          {/* Fullscreen */}
+          <button
+            onClick={toggleFullscreen}
+            className="bg-black/50 p-2 rounded-full hover:bg-black/70 transition"
+          >
+            <Maximize2 size={24} />
+          </button>
+        </div>
+      )}
+    </>
+ 
 
 {(
  
@@ -580,6 +791,7 @@ onClick={(e) => handleLike(e, video.id)}
   width={containerWidth}
 setCommentComunt={setCommentComunt}
         videoId={video.id}
+        authorId={video.user.uid}
         isOpen={commentsOpen}
         onClose={() => setCommentsOpen(false)}
       />
