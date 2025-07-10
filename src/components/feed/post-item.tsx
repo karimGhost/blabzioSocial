@@ -128,15 +128,16 @@ useEffect(()=>{
 console.log("postpost", post)
 },[post])
 
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/feed/${post.id}`
-  const shareText = encodeURIComponent("Check out this post!")
+ const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://blabzio.vercel.app";
+const shareUrl = `${baseUrl}/feed/${post.id}`;
+const shareText = encodeURIComponent(`🔥 Check out this post on 🧡 Blabzio!\n`);
 
-  const socialLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
-    twitter: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareText}`,
-    whatsapp: `https://wa.me/?text=${shareText}%20${shareUrl}`,
-    telegram: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`,
-  }
+const socialLinks = {
+  facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+  twitter: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareText}`,
+  whatsapp: `https://wa.me/?text=${shareText}${encodeURIComponent(shareUrl)}`,
+  telegram: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`,
+};
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [showComments, setShowComments] = useState(false);
@@ -192,18 +193,40 @@ console.log("postpost", post)
           timestamp: Date.now(),
         });
         await updateDoc(postRef, { likesCount: increment(1) });
-const postId = post.id;
-         await addDoc(collection(dbe,  "notifications"), {
+
+   const postId = post.id;
+const fromUser = user?.uid;
+const toUser = post.author.uid;
+
+const notificationsRef = collection(dbe, "notifications");
+
+// 1. Check if a similar notification already exists
+const existingQuery = query(
+  notificationsRef,
+  where("type", "==", "like"),
+  where("fromUser", "==", fromUser),
+  where("toUser", "==", toUser),
+    where("content", "==", "post"),
+  where("postId", "==", postId),
+
+);
+
+const existingSnapshot = await getDocs(existingQuery);
+
+// 2. Only add if not already exists
+if (existingSnapshot.empty) {
+  await addDoc(notificationsRef, {
     type: "like",
-    fromUser: user?.uid,
-    toUser: post.author.uid,
+     content:"post",
+    fromUser,
+    toUser,
     postId,
-     fullName: userData.fullName ,
+    fullName: userData.fullName,
     avatarUrl: userData.avatarUrl,
-    timestamp:  Date.now(),
+    timestamp: Date.now(),
     read: false,
   });
-
+}
 
 
   const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
@@ -213,6 +236,7 @@ const postId = post.id;
 
 if (recipientFCMToken && postLike) {
   try {
+
     await fetch("/api/send-notification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -326,13 +350,33 @@ const   commentId = crypto.randomUUID();
         },
       });
       setCommentText("");
-const postId = post.id;
+
+
+      const notificationsRef = collection(dbe, "notifications");
+   const postId = post.id;
+const fromUser = user?.uid;
+const toUser = post.author.uid;
 
 const CommentTexts = commentText.trim();
 
-       await addDoc(collection(dbe, "notifications"), {
+// 1. Check if a similar notification already exists
+const existingQuery = query(
+  notificationsRef,
+  where("type", "==", "like"),
+  where("fromUser", "==", fromUser),
+  where("content", "==", "post"),
+  where("toUser", "==", toUser),
+  where("postId", "==", postId)
+);
+
+const existingSnapshot = await getDocs(existingQuery);
+
+// 2. Only add if not already exists
+if (existingSnapshot.empty) {
+       await addDoc(notificationsRef, {
     type: "comment",
     fromUser: user.uid,
+    content:"post",
     toUser: post.author.uid,
     postId,
     commentId: commentId,
@@ -343,7 +387,7 @@ const CommentTexts = commentText.trim();
     read: false,
   });
 
-
+}
 
   const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
 
@@ -393,11 +437,29 @@ if (recipientFCMToken && postComment) {
 
 const replyTexts =  reply.trim();
 
-const postId = post.id;
+   const notificationsRef = collection(dbe, "notifications");
+   const postId = post.id;
+const fromUser = user?.uid;
+const toUser = post.author.uid;
 
-         await addDoc(collection(dbe, "notifications"), {
+
+const existingQuery = query(
+  notificationsRef,
+  where("type", "==", "like"),
+  where("fromUser", "==", fromUser),
+    where("content", "==", "post"),
+  where("toUser", "==", toUser),
+  where("postId", "==", postId)
+);
+
+const existingSnapshot = await getDocs(existingQuery);
+
+if (existingSnapshot.empty) {
+
+         await addDoc(notificationsRef, {
     type: "reply",
     fromUser: user.uid,
+        content:"post",
     toUser: commentuid,
     postId,
     fullName: userData.fullName ,
@@ -408,6 +470,7 @@ const postId = post.id;
     timestamp:  Date.now(),
     read: false,
   });
+}
     setReplyMap((prev) => ({ ...prev, [commentId]: "" }));
 
 

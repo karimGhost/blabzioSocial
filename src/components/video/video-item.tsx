@@ -65,16 +65,16 @@ const heartId = useRef(0);
 const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
   const {toast} = useToast();
-const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/videos/${video.id}`
-  const shareText = encodeURIComponent("Check out this post!")
+ const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://blabzio.vercel.app";
+const shareUrl = `${baseUrl}/feed/${video.id}`;
+const shareText = encodeURIComponent(`🔥 Check out this video on 🧡 Blabzio!\n`);
 
-  const socialLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
-    twitter: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareText}`,
-    whatsapp: `https://wa.me/?text=${shareText}%20${shareUrl}`,
-    telegram: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`,
-  }
-
+const socialLinks = {
+  facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+  twitter: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareText}`,
+  whatsapp: `https://wa.me/?text=${shareText}${encodeURIComponent(shareUrl)}`,
+  telegram: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`,
+};
 const [likeEmoji, setLikeEmoji] = useState<string>("");
 
 const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -154,9 +154,26 @@ triggerHeart(video.id)
     
     }
 
-
+   const notificationsRef = collection(dbe, "notifications");
 const postId = video.id;
-         await addDoc(collection(dbe,  "notifications"), {
+const fromUser = user?.uid;
+const toUser = video.user.uid;
+
+
+const existingQuery = query(
+  notificationsRef,
+  where("type", "==", "like"),
+  where("fromUser", "==", fromUser),
+  where("toUser", "==", toUser),
+   where("content", "==", "video"),
+  where("postId", "==", postId),
+  )
+
+
+const existingSnapshot = await getDocs(existingQuery);
+
+if(existingSnapshot.empty){
+         await addDoc(notificationsRef, {
     type: "like",
     fromUser: user?.uid,
     toUser: video.user.uid,
@@ -165,9 +182,10 @@ const postId = video.id;
     avatarUrl: userData.avatarUrl,
     timestamp:  Date.now(),
     read: false,
+    content: "video"
   });
 
-
+}
 
       const otherUserSnap = await getDoc(doc(db, "users", video.user.uid));
     

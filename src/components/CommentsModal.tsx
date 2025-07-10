@@ -13,6 +13,8 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  getDocs,
+  where,
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,10 +82,27 @@ export default function CommentsModal({ videoId, authorId, setCommentComunt, onC
       });
     }
 
-
+ const notificationsRef = collection(dbe, "notifications");
 const postId = videoId;
+const fromUser = user?.uid;
+const toUser = authorId;
+
+
+const existingQuery = query(
+  notificationsRef,
+  where("type", "==", "comment"),
+  where("fromUser", "==", fromUser),
+  where("toUser", "==", toUser),
+   where("content", "==", "video"),
+  where("postId", "==", postId),
+  )
+
+
+const existingSnapshot = await getDocs(existingQuery);
+if(existingSnapshot.empty){
          await addDoc(collection(dbe,  "notifications"), {
-    type: "like",
+    type: "comment",
+    content:"video",
     fromUser: user?.uid,
     toUser: authorId,
     postId,
@@ -94,7 +113,7 @@ const postId = videoId;
   });
 
 
-
+}
       const otherUserSnap = await getDoc(doc(db, "users", authorId));
     
                       const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
