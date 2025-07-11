@@ -69,7 +69,7 @@ const privacySettingsRef = doc(db, "users", conversation.participant.id);
 
   let unsubscribe: (() => void) | undefined;
 
-  // Wrap everything in an async IIFE
+  // Wrap everything in an async IIFE Last seen
   (async () => {
     try {
       const privacySnap = await getDoc(privacySettingsRef);
@@ -366,8 +366,10 @@ const handleMuteUser = async (username: string) => {
    <p className="font-semibold">{conversation?.participant?.fullName}</p> </Link>
 
 <p className="text-xs text-muted-foreground">
-  { isTyping
-    ? isOnline ? "Typing..." : lastSeen
+  {isTyping
+    ? isOnline
+      ? "Typing..."
+      : `Last seen ${formatDistanceToNow(new Date(lastSeen))} ago`
     : isOnline
       ? "Online"
       : lastSeen
