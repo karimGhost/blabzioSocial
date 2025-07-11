@@ -183,7 +183,7 @@ const privacySettingsRef = doc(db, "users", conversation.participant.id);
       senderId: user.uid,
       receiverId: conversation.participant.id,
       content: newMessage,
-      timestamp: new Date().toISOString(),
+      timestamp:  serverTimestamp(),
       isRead: false,
       conversationId: conversation.id,
       ...(replyTo ? { replyToId: replyTo.id } : {}),
@@ -194,10 +194,10 @@ const privacySettingsRef = doc(db, "users", conversation.participant.id);
       lastMessage: {
         senderId: user.uid,
         content: newMessage,
-        timestamp: new Date().toISOString(),
+        timestamp:  serverTimestamp(),
         isRead: false,
       },
-      updatedAt: new Date().toISOString(),
+      updatedAt:  serverTimestamp(),
     });
        
 
