@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { MoreVertical, Reply } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-
+import { formatMessageTime } from "./formatMessageTime";
 import {
   deleteDoc,
   doc,
@@ -46,6 +46,8 @@ export function MessageItem({
 
   const {userData, user} = useAuth();
  const messageDate = message?.timestamp ? new Date(message.timestamp) : null;
+
+
 const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [open, setOpen] =  useState<string | null>(null);
 
@@ -218,8 +220,8 @@ async function deleteMessageAndUpdateLast(conversationId: string, messageId: str
 }
 
 
-  const formattedTime =
-    messageDate && isValid(messageDate) ? format(messageDate, "p") : "";
+
+
 
 
 const doubleClicked = (mess : any) => {
@@ -395,7 +397,7 @@ const doubleClicked = (mess : any) => {
             "text-xs mt-1",
             isOwnMessage ? "text-primary-foreground/70 text-right" : "text-muted-foreground/70 text-left"
         )}>
-            {formattedTime}
+            {formatMessageTime(message.timestamp, "ago")}
         </p>
       </div>
       {isOwnMessage && (
