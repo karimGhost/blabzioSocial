@@ -116,7 +116,7 @@ const [Touch,setTouch] = useState(true)
     } else if (isOwnMessage && offset < TRIGGER && !triggeredRef.current) {
       triggeredRef.current = true;
        setOpen(null)
- if (onReply) onReply(message);
+//  if (onReply) onReply(message);
 
 
 }
