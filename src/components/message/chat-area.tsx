@@ -267,7 +267,7 @@ if (recipientFCMToken && directMessage) {
       receiverId: conversation.participant.id,
       content: url,
       type: "image",
-      timestamp: new Date().toISOString(),
+      timestamp: serverTimestamp(),
       isRead: false,
       conversationId: conversation.id,
     ...(replyTo ? { replyToId: replyTo.id } : {}),
