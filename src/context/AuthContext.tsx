@@ -28,12 +28,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 
  
-useEffect(() => {
-        document.documentElement.classList.toggle("dark", localStorage.getItem("darkMode") === "true");
+ type ThemeMode = "light" | "dark";
+    
+    
 
-
-},[])
-   
+  useEffect(() => {
+    
+    const theme = localStorage.getItem("darkMode");
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, []);
 
 
 

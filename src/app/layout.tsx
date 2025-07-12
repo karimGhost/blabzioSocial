@@ -19,7 +19,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script
+        <>
+          <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -35,7 +36,30 @@ export default function RootLayout({
               description: "Connect and Share with Blabzio",
             }),
           }}
+
+
+
         />
+
+
+          {/* Dark mode initializer */}
+<script
+  dangerouslySetInnerHTML={{
+    __html: `
+      try {
+        const theme = localStorage.getItem('darkMode');
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (_) {}
+    `,
+  }}
+/>
+        </>
+      
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />

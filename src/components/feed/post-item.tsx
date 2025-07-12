@@ -70,6 +70,7 @@ interface Report{
   reportedBy: "uid123",
   createdAt: Timestamp
 }
+
 interface RepliesListProps {
   postId: string;
   commentId: string;
@@ -118,6 +119,8 @@ interface PostItemProps {
 export function PostItem({ post }: PostItemProps) {
   const router = useRouter();
 const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+const [showConfirmDialogAdmin, setShowConfirmDialogAdmin] = useState(false);
+
 const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
 const {toast} = useToast();
@@ -359,7 +362,7 @@ const toUser = post.author.uid;
 
 const CommentTexts = commentText.trim();
 
-// 1. Check if a similar notification already exists
+// 1. Check if a similar notification already exists report
 const existingQuery = query(
   notificationsRef,
   where("type", "==", "like"),
@@ -612,6 +615,41 @@ const ConfirmDelete = async (post: Post) => {
 };
 
  
+const ConfirmDeleteAdmin = async (post: Post) => {
+  if (!post?.id) {
+    console.error("Post ID is missing");
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(dbb, "posts", post.id));
+    console.log("Post deleted successfully");
+   
+
+    const postId = post.id;
+
+const CommentTexts = post.content;
+
+       await addDoc(collection(dbe, "notifications"), {
+    type: "PolicyViolation",
+    fromUser: "Blabzio",
+    toUser: post.author.uid,
+    postId,
+    commentId: post.id,
+     fullName: "Admin" ,
+    avatarUrl: userData.avatarUrl,
+    CommentTexts,
+    timestamp:  Date.now(),
+    read: false,
+  });
+
+
+  } catch (error) {
+    console.error("Error deleting post:", error);
+  }
+};
+
+
   return (
     <Card className={` overflow-hidden shadow-lg     ${post?.isprofile && 'w-full  object-cover'} `  }  style={{height: post?.isprofile && "250px"}}>
       <CardHeader className="flex flex-row items-center gap-3 p-4">
@@ -716,7 +754,19 @@ post.mediaUrl && post.mediaType === "image" ?
   </DropdownMenuItem>
 )}
 
-
+{
+(!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
+           ""
+            :
+            <DropdownMenuItem
+    onClick={() => {
+      setSelectedPost(post);
+      setShowConfirmDialogAdmin(true);
+    }}
+ style={{background:"red"}} >
+ RemovePost
+   </DropdownMenuItem>
+}
 
   {post?.author.uid !== user?.uid &&
 <>
@@ -734,13 +784,21 @@ post.mediaUrl && post.mediaType === "image" ?
 
 <DropdownMenuItem
   className="text-destructive"
-  onClick={() => setShowReportModal(post?.id)}
+
+
+  onSelect={(e) => {
+        e.preventDefault();
+ showReportModal === null && setShowReportModal(post?.id)
+  }}
 >
   Report Post
 </DropdownMenuItem>
 
-   {showReportModal === post?.id && (
-  <Dialog open onOpenChange={() => setShowReportModal(null)}>
+
+
+
+   
+  <Dialog open={ showReportModal === post?.id} onOpenChange={(isOpen) =>  setShowReportModal(isOpen ? post?.id : null)}>
     <DialogContent>
       <DialogHeader>
         <DialogTitle>Report Post</DialogTitle>
@@ -760,7 +818,7 @@ post.mediaUrl && post.mediaType === "image" ?
             key={reason}
             variant="outline"
             className="w-full justify-start"
-            onClick={() => submitReport(post?.id, reason)}
+            onClick={() => {  submitReport(post?.id, reason), setShowReportModal(null);}}
           >
             {reason}
           </Button>
@@ -768,7 +826,6 @@ post.mediaUrl && post.mediaType === "image" ?
       </div>
     </DialogContent>
   </Dialog>
-)}
 
     </>
 
@@ -942,6 +999,35 @@ post.mediaUrl && post.mediaType === "image" ?
         }}
       >
         Confirm Delete
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+
+
+
+<Dialog open={showConfirmDialogAdmin} onOpenChange={setShowConfirmDialogAdmin}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Are you sure?</DialogTitle>
+      <DialogDescription>
+        This will permanently delete the post.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="flex justify-end gap-2">
+      <Button variant="ghost" onClick={() => setShowConfirmDialogAdmin(false)}>
+        Cancel
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={() => {
+          if (selectedPost) ConfirmDeleteAdmin(selectedPost);
+          setShowConfirmDialogAdmin(false);
+        }}
+      >
+        Confirm Remove
       </Button>
     </div>
   </DialogContent>

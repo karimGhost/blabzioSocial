@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, UserPlus, UserCheck, MessageCircle, Bell } from "lucide-react";
+import { MoreHorizontal, UserPlus, UserCheck, MessageCircle, Bell, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import type { User } from "@/lib/dummy-data";
@@ -207,7 +207,7 @@ const formData = new FormData();
 formData.append("file", file);
 formData.append("public_id", public_id);
 formData.append("folder", "profiledp");
-formData.append("overwrite", "true"); // ✅ must match signed fields
+formData.append("overwrite", "true"); // ✅ must match signed fields dark
 formData.append("api_key", apiKey);
 formData.append("timestamp", timestamp.toString());
 formData.append("signature", signature);
@@ -372,11 +372,7 @@ const profileUrl = `https://blabzio.com/profile/${userData.uid}`;
 
 
 
-useEffect(() => {
-        document.documentElement.classList.toggle("dark", localStorage.getItem("darkMode") === "true");
 
-
-},[])
    
 
 
@@ -546,6 +542,18 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
                   Turn on notifications
                 </DropdownMenuItem>
 }
+
+{
+(!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
+           ""
+            :
+
+            <DropdownMenuItem style={{background:"red"}}>
+                  <ShieldAlert className="mr-2 h-4 w-4" />
+                  
+                  Terminate Account
+                </DropdownMenuItem>
+        }
                 {!isCurrentUserProfile && (
                   <>
                     <DropdownMenuItem onClick={() => handleMuteUser(userData?.uid, userData?.fullName)}>Mute @{userData?.username}</DropdownMenuItem>

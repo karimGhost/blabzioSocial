@@ -371,8 +371,9 @@ await updatePassword(user, password);
 
 const toggleTheme = async () => {
   const newTheme: ThemeMode = theme === "light" ? "dark" : "light";
- localStorage.setItem("darkMode", theme === "light" ? "true" : "false")
+  localStorage.setItem("darkMode", newTheme); // 🔁 save as "dark" or "light"
   document.documentElement.classList.toggle("dark", newTheme === "dark");
+  
   setTheme(newTheme);
 
   toast({ title: `Switched to ${newTheme === "dark" ? "Dark" : "Light"} Mode` });
@@ -1078,6 +1079,6 @@ if (changedTwice && updatedRecently) {
               {/* <Switch id="2fa" /> */}
             {/* </div> */} 
         
-          {/* <CardFooter className="border-t px-6 py-4">
+          {/* <CardFooter className="border-t px-6 py-4"> darkmode
             <Button type="submit">Save Account Settings</Button>
           </CardFooter> */}

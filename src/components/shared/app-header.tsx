@@ -36,6 +36,13 @@ const {toast} = useToast();
 
 
 
+  useEffect(() => {
+    
+    const theme = localStorage.getItem("darkMode");
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, []);
+
+
   const [timedouts, setTimeouts] = useState(false);
 
   useEffect(() => {
@@ -110,7 +117,7 @@ const userId = user?.uid;
       {/* Mobile nav toggle - if you add a collapsible sidebar using shadcn/ui Sidebar component */}
      
 {/* 
-       <Button variant="outline" size="icon" className="shrink-0 md:hidden" onClick={toggleSidebar}>
+       <Button variant="outline"  dark size="icon" className="shrink-0 md:hidden" onClick={toggleSidebar}>
         <Menu className="h-5 w-5" />
         <span className="sr-only">Toggle navigation menu</span>
       </Button>

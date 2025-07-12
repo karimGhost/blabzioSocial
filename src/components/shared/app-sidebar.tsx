@@ -24,6 +24,8 @@ import {
   ShieldCheck,
   X,
   HelpCircle,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -87,6 +89,7 @@ useEffect(() => {
 
 
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(true);
 
 
 
@@ -109,7 +112,7 @@ useEffect(() => {
     try {
 
       await signOut(auth);
-      router.push("/"); // or home, wherever you want messages
+      router.push("/"); // or home, wherever you want messages dark
       clearUserCache()
     } catch (error) {
       console.error("Logout failed:", error);
@@ -191,32 +194,67 @@ useEffect(() => {
             <DropdownMenuItem asChild>
               <Link href="/settings">Settings</Link>
             </DropdownMenuItem>
+            {
+
+           (!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
+           ""
+            :
+ (
+               <DropdownMenuItem asChild>
+              <Link href="/admin/inbox">Admin</Link>
+            </DropdownMenuItem>
+            )
+  
+            
+
+          }
             <DropdownMenuSeparator />
 
 
-  <Card className="shadow-lg">
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      <ShieldCheck className="h-6 w-6 text-primary" /> Legal & Support
-    </CardTitle>
-    <CardDescription>Learn more about your rights and our policies.</CardDescription>
-  </CardHeader>
-  <CardContent className="space-y-2">
+  <Card className="">
+      <CardHeader>
+        <div className="flex justify-between items-start w-full">
+          <div>
+            <CardTitle             onClick={() => setIsOpen(!isOpen)}
+ className="flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6 text-primary" />
+              Legal & Support
+            </CardTitle>
+            <CardDescription>
+              Learn more about your rights and our policies.
+            </CardDescription>
+          </div>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-md hover:bg-muted"
+          >
+            {isOpen ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
+          </button>
+        </div>
+      </CardHeader>
+
+      {!isOpen && (
+         <CardContent className="space-y-2">
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <p className="text-sm text-muted-foreground">Read our legal documents and policies:</p>
       <div className="flex flex-wrap gap-4">
         <Link href="/privacy" className="text-sm text-primary hover:underline">Privacy Policy</Link>
         <Link href="/terms" className="text-sm text-primary hover:underline">Terms of Service</Link>
-        <Link href="/cookies" className="text-sm text-primary hover:underline">Cookies Policy</Link>
-        <Link href="/support" className="text-sm text-primary hover:underline">Support</Link>
+        <Link href="/policy" className="text-sm text-primary hover:underline">Cookies Policy</Link>
+        <Link href="/help" className="text-sm text-primary hover:underline">Support</Link>
       </div>
     </div>
   </CardContent>
 
-</Card>
+      )}
+    </Card>
 
 
-<Card className="shadow-lg">
+<Card className="">
   <CardHeader>
     <CardTitle className="flex items-center gap-2">
       <HelpCircle className="h-6 w-6 text-primary" /> Help & Support
@@ -500,6 +538,21 @@ const userId = user?.uid;
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild><Link href="/profile/me">Profile</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
+{
+
+   (!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
+           ""
+            :
+ (
+               <DropdownMenuItem asChild>
+              <Link href="/admin/inbox">Admin</Link>
+            </DropdownMenuItem>
+            )
+  
+            
+
+          }
+
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild><Button onClick={handleLogout} ><LogOut className="mr-2 h-4 w-4" />Logout</Button></DropdownMenuItem>
           </DropdownMenuContent>

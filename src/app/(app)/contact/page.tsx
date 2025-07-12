@@ -51,7 +51,7 @@ export default function ContactPage() {
       </p>
 
       {submitted ? (
-        <div className="text-green-600 font-semibold">
+        <div className="text-orange-400 font-semibold">
           Thanks for reaching out! We'll get back to you soon.
         </div>
       ) : (

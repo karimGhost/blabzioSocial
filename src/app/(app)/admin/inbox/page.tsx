@@ -20,14 +20,15 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
+import { useRouter } from "next/navigation";
 export default function AdminInboxPage() {
   const { user } = useAuth();
   const [reports, setReports] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
-
+  
+  const router = useRouter();
   useEffect(() => {
     const fetchData = async () => {
       const reportsSnap = await getDocs(
@@ -39,7 +40,7 @@ export default function AdminInboxPage() {
       const paymentsSnap = await getDocs(
         query(collection(db, "payments"), orderBy("createdAt", "desc"))
       );
-
+console.log("admins", reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
       setReports(reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       setMessages(messagesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       setPayments(paymentsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
@@ -71,7 +72,7 @@ export default function AdminInboxPage() {
 
       <Tabs defaultValue="reports" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="reports">Bug-Reports</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
@@ -82,14 +83,27 @@ export default function AdminInboxPage() {
             {reports.length === 0 && (
               <p className="text-muted-foreground">No bug reports found.</p>
             )}
+
+
             {reports.map((r) => (
               <Card key={r.id}>
                 <CardHeader>
+
+                  <h1>From User-Email: {r.email}</h1>
+                  <h2>
+                    userId : {r.userId}
+                  </h2>
+                            <div className="flex items-center gap-2 pt-2 sm:pt-0">
+
+                  <Button onClick={() =>  router.push(`/profile/${r.userId}`)}>View User</Button>
+                  </div>
                   <CardTitle className="text-sm text-muted-foreground">
                     {r.message}
                   </CardTitle>
+
                 </CardHeader>
                 <CardContent>
+
                   <p className="text-xs text-gray-500">
                     Submitted {r.createdAt?.toDate()?.toLocaleString()}
                   </p>

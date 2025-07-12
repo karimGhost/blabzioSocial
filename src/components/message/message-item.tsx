@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, isValid } from 'date-fns';
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
-import { MoreVertical, Reply } from "lucide-react";
+import { Heart, LucideReply, MoreVertical, Reply } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMessageTime } from "./formatMessageTime";
 import {
@@ -17,7 +17,8 @@ import {
   orderBy,
   limit,
   getDocs,
-  updateDoc
+  updateDoc,
+  getDoc
 } from "firebase/firestore";
 
 import LinkPreview from "./LinkPreview";
@@ -60,7 +61,8 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [startX, setStartX] = useState<number | null>(null);
   const [translateX, setTranslateX] = useState(0);
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [bubbleKey, setBubbleKey] = useState(0); // 👈 force rerender
+  const [bubbleKey, setBubbleKey] = useState(0); //  force rerender
+  const [Dropdown,setDropdown] =useState<string | null>(null);
 const touchStartYRef = useRef<number | null>(null); // track Y for scroll
 
   const TRIGGER_THRESHOLD = 60;
@@ -71,6 +73,12 @@ const touchStartYRef = useRef<number | null>(null); // track Y for scroll
   const TRIGGER = 60;
 const [Touch,setTouch] = useState(true)
   const handleStart = (e: React.TouchEvent | React.MouseEvent) => {
+const timer = setTimeout(() => {
+  Dropdown === null &&
+    setDropdown(message.conversationId)
+}, 600);
+  setLongPressTimer(timer);
+
     setTouch(false)
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -142,6 +150,27 @@ const [Touch,setTouch] = useState(true)
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
+async function setLikeit(conversationId: string, messageId: string) {
+  const messageRef = doc(dbc, "conversations", conversationId, "messages", messageId);
+
+  try {
+    const docSnap = await getDoc(messageRef);
+    if (!docSnap.exists()) {
+      console.error("Message not found");
+      return;
+    }
+
+    const currentLikes = docSnap.data().likes;
+
+    await updateDoc(messageRef, {
+      likes: !currentLikes, // toggle like
+    });
+
+    console.log("Message liked/unliked successfully");
+  } catch (error) {
+    console.error("Error toggling like:", error);
+  }
+}
 
 function extractUrl(text: string): string | null {
   const match = text.match(/https?:\/\/[^\s]+/);
@@ -206,7 +235,7 @@ async function deleteMessageAndUpdateLast(conversationId: string, messageId: str
 
       console.log("✅ lastMessage updated with most recent message.");
     } else {
-      // 4. No messages left — clear lastMessage
+      // 4. No messages left — clear lastMessage Last seen
       await updateDoc(doc(dbc, "conversations", conversationId), {
         lastMessage: null,
         updatedAt: new Date().toISOString(),
@@ -220,12 +249,17 @@ async function deleteMessageAndUpdateLast(conversationId: string, messageId: str
 }
 
 
-
-
+  // const formattedTime =
+  //   messageDate && isValid(messageDate) ? format(messageDate, "p") : "";
+const formattedTime = new Date(message?.timestamp).toLocaleTimeString([], {
+  hour: '2-digit',
+  minute: '2-digit'
+});
 
 
 const doubleClicked = (mess : any) => {
     setReplyTo(null)
+    open === null &&
    setOpen(mess)
     triggeredRef.current = true;
 
@@ -243,7 +277,7 @@ const doubleClicked = (mess : any) => {
         isOwnMessage ? "justify-end" : "justify-start"
       )}
       onDoubleClick={() => doubleClicked(message.conversationId)}
-     
+    
     onScroll={() => setTouch(true)}
       onTouchStart={handleStart}
       onTouchMove={handleMove}
@@ -268,7 +302,9 @@ const doubleClicked = (mess : any) => {
 {isOwnMessage &&
 
     <DropdownMenu            
- open={open === message.conversationId} onOpenChange={() => setOpen(null)}>
+ open={open === message.conversationId}  onOpenChange={(isOpen) =>
+    setOpen(isOpen ? message.conversationId : null)
+  }>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" style={{float:"right",width:"0px", height:"0px", padding:"0px", margin:"0px"}} > </Button>
             </DropdownMenuTrigger>
@@ -284,6 +320,49 @@ const doubleClicked = (mess : any) => {
 
 
         }
+
+{!isOwnMessage &&
+
+    <DropdownMenu            
+ open={Dropdown === message.conversationId}
+ onOpenChange={(isOpen) =>
+    setDropdown(isOpen ? message.conversationId : null)
+  }>
+             <DropdownMenuTrigger asChild>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="w-0 h-0 p-0 m-0"
+    />
+  </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" style={{position:"absolute"}}>
+        
+<DropdownMenuItem
+  onSelect={(e) => {
+        e.preventDefault(); // ✅ Prevent dropdown from reopening
+        setLikeit(message.conversationId, message.id);
+        setDropdown(null); // ✅ Close the dropdown
+      }}>
+  like 
+           <Heart  className={`h-4 w-4  fill-destructive  `} />
+
+</DropdownMenuItem>
+<DropdownMenuItem
+onSelect={(e) => {
+        e.preventDefault(); // ✅ Prevent dropdown from reopening
+       onReply && onReply(message)
+        setDropdown(null); // ✅ Close the dropdown
+      }}>
+  reply 
+  <LucideReply />
+</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+
+        }
+
+        
 
 {isOwnMessage &&
 <Link href={`#${message?.conversationId}`} onClick={(e) => e.preventDefault()}>
@@ -304,7 +383,7 @@ const doubleClicked = (mess : any) => {
 
       <div
         className={cn(
-          "max-w-[70%] rounded-xl px-4 py-2.5 shadow-md",
+          "max-w-[70%] rounded-xl px-4 py-2.5 shadow-md relative",
           isOwnMessage
             ? "bg-primary text-primary-foreground rounded-br-none"
             : "bg-card text-card-foreground rounded-bl-none border"
@@ -314,6 +393,23 @@ const doubleClicked = (mess : any) => {
 
 
       >
+
+{ !isOwnMessage && message.likes &&
+ <div  style={{position:"absolute", borderBottomLeftRadius:"100%", borderBottomRightRadius:"100%" }} className={`${ isOwnMessage ? "right-0 -bottom-4 bg-primary" : " text-card-foreground left-0 -bottom-4 bg-card" }`}>
+         <Heart onClick={() =>  setLikeit(message.conversationId, message.id)}  className={`h-4 w-4  fill-destructive  `} />
+     </div>
+}
+  {!isOwnMessage &&
+     <div style={{position:"absolute",left:"20px", bottom:"-20px"}}>
+         <p className="text-muted text-dark " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>hold to react . slide to reply</p>
+
+     </div>}
+
+      {isOwnMessage &&
+     <div style={{position:"absolute",left:"20px", bottom:"-20px"}}>
+         <p className="text-muted text-dark " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>double tap to delete</p>
+
+     </div>}
 {message.type === "image" ? (
   <img
     src={message.content}
@@ -364,9 +460,12 @@ const doubleClicked = (mess : any) => {
 )
 
 }
+
+
      
     </div>
   )}
+
 
    
 
@@ -380,7 +479,7 @@ const doubleClicked = (mess : any) => {
 )}
 
 
-
+  
 
   <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
@@ -399,7 +498,11 @@ const doubleClicked = (mess : any) => {
         )}>
             {formatMessageTime(message.timestamp, "ago")}
         </p>
+       
+
       </div>
+   
+
       {isOwnMessage && (
         <Avatar className="h-8 w-8 self-start">
           <AvatarImage src={userData?.avatarUrl} alt={userData?.fullName} data-ai-hint="user avatar" />
@@ -440,6 +543,7 @@ const doubleClicked = (mess : any) => {
      </div>
      </Link>
 }
+
     </div>
   );
 }
