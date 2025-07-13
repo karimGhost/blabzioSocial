@@ -22,10 +22,12 @@ import { Loader2, Plus } from "lucide-react";
 
 import { useState, useRef } from "react";
 
-import { doc, updateDoc, deleteDoc, setDoc, getDoc, addDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, setDoc, getDoc, addDoc, collection, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { db, dbb, dbd, dbe } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";  
 import { MessageButton } from "../MessageButton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { Input } from "../ui/input";
 interface ProfileHeaderProps {
     Blocked: boolean;
   userData: User;
@@ -45,7 +47,7 @@ const [isEditable, setIsEditable] = useState(false)
 
 const [uploading, setUploading] = useState(false);
 const [uploadingC, setUploadingC] = useState(false);
-
+const [reason, setReason] = useState("");
 const [isOnline, setIsOnline] = useState(userData?.privacySettings?.activityStatus);
 
 const {toast} = useToast();
@@ -371,8 +373,58 @@ formData.append("overwrite", "true");
 const profileUrl = `https://blabzio.com/profile/${userData.uid}`; 
 
 
+const reactivateAccount = async (uid: string) => {
+  const userRef = doc(db, "users", uid);
+  await updateDoc(userRef, {
+    terminated: false,
+    terminatedAt: "",
+    terminationReason: "",
+    deactivated: false,
+  });
+};
+
+if(userData?.terminated ){
+  return(
+     <div className="text-red-600 font-bold text-sm">
+    🚫 Terminated Account Reason : {userData?.reason}
+    {
+(!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
+           ""
+            :
+    <Button onClick={() => reactivateAccount(userData.uid)}>Reactivate Account</Button>
+
+    }
+  </div>
+  )
+}
 
 
+
+const handleTerminateAccount = async (uid: string) => {
+  try {
+    const userDocRef = doc(db, "users", uid);
+    await updateDoc(userDocRef, {
+      terminated: true,
+      reason,
+      terminatedAt: serverTimestamp(),
+      terminationReason: "Violated community guidelines", // optional
+      deactivated: true, // optional if you want to prevent login
+      isPremium: false,
+    });
+  toast({
+        title: "Terminated",
+        description: "Account terminated.",
+      });
+
+  
+  } catch (error) {
+    console.error("Failed to terminate account:", error);
+     toast({
+        title: "Failed ",
+        description: "Failed to terminate account.",
+      });
+  }
+};
    
 
 
@@ -543,17 +595,7 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
                 </DropdownMenuItem>
 }
 
-{
-(!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
-           ""
-            :
 
-            <DropdownMenuItem style={{background:"red"}}>
-                  <ShieldAlert className="mr-2 h-4 w-4" />
-                  
-                  Terminate Account
-                </DropdownMenuItem>
-        }
                 {!isCurrentUserProfile && (
                   <>
                     <DropdownMenuItem onClick={() => handleMuteUser(userData?.uid, userData?.fullName)}>Mute @{userData?.username}</DropdownMenuItem>
@@ -572,6 +614,51 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
             </DropdownMenu>
 
             }
+
+
+{
+  (!user || user.email !== "abdulkarimkassimsalim@gmail.com") ? null : (
+  <DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="outline">Options</Button>
+  </DropdownMenuTrigger>
+
+  <DropdownMenuContent>
+    <Dialog>
+      <DialogTrigger asChild>
+        <DropdownMenuItem
+          className="text-red-600"
+          onSelect={(e) => {
+            e.preventDefault(); // Prevent Radix from auto-closing the dropdown
+          }}
+        >
+          <ShieldAlert className="mr-2 h-4 w-4" />
+          Terminate Account
+        </DropdownMenuItem>
+      </DialogTrigger>
+
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Terminate Account</DialogTitle>
+          <DialogDescription>Provide a reason for termination.</DialogDescription>
+        </DialogHeader>
+
+        <Input
+          placeholder="Enter reason..."
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+
+        <Button onClick={() => handleTerminateAccount(userData?.uid)}>
+          Confirm Termination
+        </Button>
+      </DialogContent>
+    </Dialog>
+  </DropdownMenuContent>
+</DropdownMenu>
+
+  )
+}
           </div>
         </div>
 

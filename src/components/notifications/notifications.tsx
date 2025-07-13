@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 interface Notification {
   id: string;
-  type: "follow" | "like" | "comment" | "shared" | "reply";
+  type: "follow" | "like" | "comment" | "shared" | "reply" | "PolicyViolation";
        fullName: string;
     avatarUrl: string;
 

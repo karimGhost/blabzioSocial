@@ -386,7 +386,7 @@ const userId = user?.uid;
         setAppInstalled(APPP)
   
       }
-    },[])
+    },[user])
 
    return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:hidden">

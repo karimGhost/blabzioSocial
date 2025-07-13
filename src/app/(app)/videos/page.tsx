@@ -96,7 +96,7 @@ const {user} = useAuth()
   
           const authorMap: Record<
             string,
-            { isPrivate: boolean; isPremium?: boolean; blockedUids: string[] }
+            { isPrivate: boolean; isPremium?: boolean; blockedUids: string[]; terminated: boolean }
           > = {};
   
           authorDocs.forEach((doc) => {
@@ -105,6 +105,8 @@ const {user} = useAuth()
                 isPrivate: doc.data?.privacySettings?.privateAccount|| false,
                 isPremium: doc.data?.isPremium || false,
                 blockedUids: doc.blockedUids || [],
+               terminated: doc.data?.terminated || false,
+
               };
             }
           });
@@ -126,8 +128,16 @@ const {user} = useAuth()
             // Always show my own videos
             if (authorId === user?.uid) return true;
   
+//check account Termination then dont allow 
+  const terminated = authorMap[authorId]?.terminated;
+     if(terminated) return false;
+
+
+
             const isPrivate = authorMap[authorId]?.isPrivate;
   
+
+
             // Show if not private
             if (!isPrivate) return true;
   

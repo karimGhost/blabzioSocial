@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, fetchSignInMethodsForEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, fetchSignInMethodsForEmail, signOut } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { Loader2 } from "lucide-react";
 import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+
 import { decodeAction } from "next/dist/server/app-render/entry-base";
 export function LoginForm() {
   const router = useRouter();
@@ -50,7 +51,19 @@ const getFriendlyError = (code: string) => {
   
   }
 };
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+
+
+ const handleLogout = async () => {
+    try {
+      await signOut(auth);
+            localStorage.clear();
+      router.push("/"); // or home, wherever you want
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
   event.preventDefault();
   setError("");
   setLoading(true);
@@ -63,44 +76,53 @@ const getFriendlyError = (code: string) => {
     // 2. Get Firebase ID token
     const idToken = await user.getIdToken();
 
-    // 3. Set session cookie on backend
+    // 3. Check if user is terminated BEFORE setting session cookie
+    const userDocRef = doc(db, "users", user.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data();
+
+      if (userData.terminated) {
+          handleLogout();
+        throw new Error("Your account has been terminated.");
+      }
+
+      if (userData.deactivation === true) {
+        await updateDoc(userDocRef, { deactivation: false });
+
+        toast({
+          title: "Account Activated",
+          description: "Welcome back!",
+        });
+      }
+    }
+
+    // 4. Set session cookie
     await fetch("/api/session", {
       method: "POST",
       body: JSON.stringify({ idToken }),
       headers: { "Content-Type": "application/json" },
     });
 
-    // 4. Check if user account is deactivated, and activate it
-    if (user?.uid) {
-      const userDocRef = doc(db, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        if (userData.deactivation === true) {
-          await updateDoc(userDocRef, { deactivation: false });
-
-          toast({
-            title: "Account Activated",
-            description: "Welcome back!",
-          });
-        }
-      }
-
-      // 5. Redirect to feed
-      router.push("/feed");
-    } else {
-      setLoading(false);
-      BlabzioLoader(); // Only call this if needed – make sure it's a visual component or effect
-    }
+    // 5. Redirect to feed
+    router.push("/feed");
   } catch (err: any) {
-    const errorCode = err.code || "";
-    const friendlyMessage = getFriendlyError(errorCode);
-    setError(friendlyMessage);
     setLoading(false);
+    const message =
+      err?.message === "Your account has been terminated."
+        ? err.message
+        : getFriendlyError(err.code || "");
+
+    setError(message);
+    toast({
+      title: "Login Failed",
+      description: message,
+      variant: "destructive",
+    });
+handleLogout()
   }
 };
-
 
 
 
@@ -113,75 +135,77 @@ const handleGoogleLogin = async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-
     let useis = user.email?.split("@")[0] || "";
-    
-    // Check if that username is already taken
+
+    // Check if username is taken
     const usersRef = collection(db, "users");
     const qp = query(usersRef, where("username", "==", useis));
     const querySnapshot = await getDocs(qp);
-    
-    // If taken, append timestamp or random number
+
     if (!querySnapshot.empty) {
-      useis = useis + Date.now().toString().slice(-4); // e.g., "john1234"
+      useis = useis + Date.now().toString().slice(-4);
     }
-    
-    // Step 2: Check if user exists in Firestore
+
+    // Step 2: Check if user exists
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
 
     if (!userDocSnap.exists()) {
-      
-          const keywords = user?.displayName?.toLowerCase().split(" ")
+      const keywords = user?.displayName?.toLowerCase().split(" ") || [];
 
       await setDoc(userDocRef, {
         uid: user.uid,
         fullName: user.displayName || "",
         username: useis,
         email: user.email || "",
-        keywords:keywords,
+        keywords: keywords,
         avatarUrl: user.photoURL || "",
         createdAt: serverTimestamp(),
         postsCount: 0,
         followersCount: 0,
         followingCount: 0,
-             theme:"",
-             deactivated:false,
- premiumExpires:"",
- isPremium: false,
-  premiumSince: "",
-  paymentMethod: "",
-  paymentId: "",
-  premiumBadge: "",
- subscriptionMonths: "",
-      expiresAt:"",
-
-  
-
-     
-
-  bio:"",
-        DOB:"",
+        theme: "",
+        terminated: false,
+        terminationReason: "",
+        terminatedAt: "",
+        deactivated: false,
+        premiumExpires: "",
+        isPremium: false,
+        premiumSince: "",
+        paymentMethod: "",
+        paymentId: "",
+        premiumBadge: "",
+        subscriptionMonths: "",
+        expiresAt: "",
+        bio: "",
+        DOB: "",
         oneTimeNotification: false,
-        fcmToken:"",
-        notificationSettings:{
-        directMessage: true,
-        newFollower:true,
-        postComment: true,
-        replies:true,
-        postLike:true,
-},
-
-        privacySettings:{
-        activityStatus:true,
-        privateAccount:false,
-
-}
-
+        fcmToken: "",
+        notificationSettings: {
+          directMessage: true,
+          newFollower: true,
+          postComment: true,
+          replies: true,
+          postLike: true,
+        },
+        privacySettings: {
+          activityStatus: true,
+          privateAccount: false,
+        },
       });
     }
 
-      //  session cookie logic:
+    // Check if terminated BEFORE setting session
+    const freshSnap = await getDoc(userDocRef);
+    const userData = freshSnap.data();
+
+    if (userData?.terminated) {
+        handleLogout();
+      throw new Error("Your account has been terminated.");
+     
+    }
+
+    // Session cookie logic
     const idToken = await user.getIdToken();
     await fetch("/api/session", {
       method: "POST",
@@ -189,32 +213,29 @@ const handleGoogleLogin = async () => {
       headers: { "Content-Type": "application/json" },
     });
 
-
-
-     if (user?.uid) {
-      const userDocRef = doc(db, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        if (userData.deactivation === true) {
-          await updateDoc(userDocRef, { deactivation: false });
-
-          toast({
-            title: "Account Activated",
-            description: "Welcome back!",
-          });
-        }
-      }
+    if (userData?.deactivation === true) {
+      await updateDoc(userDocRef, { deactivation: false });
+      toast({
+        title: "Account Activated",
+        description: "Welcome back!",
+      });
     }
-    //  Navigate to feed
+
     router.push("/feed");
-
   } catch (err: any) {
-    const errorCode = err.code || "";
-  const friendlyMessage = getFriendlyError(errorCode);
-  setError(friendlyMessage);
+    const errorMessage =
+      err?.message === "Your account has been terminated."
+        ? err.message
+        : getFriendlyError(err.code || "");
 
+
+    setError(errorMessage);
+    toast({
+      title: "Login Failed",
+      description: errorMessage,
+      variant: "destructive",
+    });
+    handleLogout()
   } finally {
     setLoading(false);
   }
@@ -306,7 +327,9 @@ function BlabzioLoader() {
 
            
             {error && <p className="text-red-500 text-sm">{error}</p>}
-          
+          {error && (
+  <p className="mt-2 text-sm text-red-500">{error}</p>
+)}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? (
           <span className="flex items-center justify-center gap-2">

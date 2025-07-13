@@ -636,13 +636,39 @@ const CommentTexts = post.content;
     toUser: post.author.uid,
     postId,
     commentId: post.id,
-     fullName: "Admin" ,
+     fullName: "Admin@Blabzio" ,
     avatarUrl: userData.avatarUrl,
     CommentTexts,
     timestamp:  Date.now(),
     read: false,
   });
 
+
+
+  const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
+
+                  const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+                  const postLike = otherUserSnap?.data()?.notificationSettings?.postLike;
+
+if (recipientFCMToken && postLike) {
+  try {
+
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: recipientFCMToken,
+        title: "Admin@Blabzio - Your post has been removed due to blabzio Policy Violation! ⚠️",
+        body:   "View",
+       clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
+
+      }),
+    });
+    console.log("📩 Notification sent to:", recipientFCMToken);
+  } catch (err) {
+    console.error("🔥 Failed to send notification:", err);
+  }
+}
 
   } catch (error) {
     console.error("Error deleting post:", error);

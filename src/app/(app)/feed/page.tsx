@@ -78,7 +78,7 @@ useEffect(() => {
 );
 const authorMap: Record<
   string,
-  { isPrivate: boolean; isPremium: boolean; blockedUids: string[] }
+  { isPrivate: boolean; isPremium: boolean; blockedUids: string[] ; terminated: boolean;}
 > = {};
 
        authorDocs.forEach(author => {
@@ -88,6 +88,7 @@ const authorMap: Record<
       isPrivate: data?.privacySettings?.privateAccount ?? false,
       isPremium: data?.isPremium ?? false,
       blockedUids: author.blockedUids,
+      terminated: data?.terminated ?? false,
     };
   }
 });
@@ -99,14 +100,22 @@ const authorMap: Record<
     const authorId = post.author?.uid;
     if (!authorId) return false;
 
-    // 1. Hide posts from authors *this user* has blocked
+    // 1. Hide posts from authors *this user* has blocked id
     if (blockedUids.includes(authorId)) return false;
 
     // 2. Hide posts from authors who have blocked *this user*
     const blockedMe = authorMap[authorId]?.blockedUids.includes(user.uid);
     if (blockedMe) return false;
 
+        // 3. Check for termination account logic
+
+    const terminated = authorMap[authorId]?.terminated;
+     if(terminated) return false;
+
+
     // 3. Check for private account logic
+   
+
     const isPrivate = authorMap[authorId]?.isPrivate;
    
   if (user.uid === authorId) return true;

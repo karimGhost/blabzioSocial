@@ -120,6 +120,9 @@ if (!querySnapshot.empty) {
         bio:"",
         DOB:"",
         fcmToken:"",
+        terminated: false,
+terminationReason: "",
+terminatedAt: "",
      deactivated:false,
     isPremium: false,
   premiumSince: "",
@@ -181,110 +184,121 @@ if (!querySnapshot.empty) {
   }
 };
 
+
+ const handleLogout = async () => {
+    try {
+      await signOut(auth);
+            localStorage.clear();
+      router.push("/"); // or home, wherever you want
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+  
 const handleGoogleSignup = async () => {
   const provider = new GoogleAuthProvider();
   try {
-
-
-
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
-
-
 
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists()) {
-          const keywords = user?.displayName?.toLowerCase().split(" ")
-
-      try {
-let useis = user.email?.split("@")[0] || "";
-
-// Check if that username is already taken
-const usersRef = collection(db, "users");
-const qp = query(usersRef, where("username", "==", useis));
-const querySnapshot = await getDocs(qp);
-
-// If taken, append timestamp or random number
-if (!querySnapshot.empty) {
-  useis = useis + Date.now().toString().slice(-4); // e.g., "john1234"
-}
-
-        await setDoc(userRef, {
-          uid: user.uid,
-          fullName: user.displayName || "",
-          email: user.email || "",
-        username: useis,
-          keywords:keywords,
-          createdAt: Date.now(),
-          postsCount: 0,
-          DOB:"",
-          followersCount: 0,
-          followingCount: 0,
-          avatarUrl: user.photoURL || "",
-         theme:"",
-       deactivated:false,
-     premiumExpires:"",
-
- isPremium: false,
-  premiumSince: "",
-  paymentMethod: "",
-  paymentId: "",
-  premiumBadge: "",
- subscriptionMonths: "",
-      expiresAt:"",
-        bio:"",
-        oneTimeNotification: false,
-        fcmToken:"",
-        notificationSettings:{
-        directMessage: true,
-        newFollower:true,
-        postComment: true,
-        replies:true,
-        postLike:true,
-},
-
-        privacySettings:{
-        activityStatus:true,
-        privateAccount:false,
-
-}
-
-        });
-
-   //  session cookie logic:
-    const idToken = await user.getIdToken();
-    await fetch("/api/session", {
-      method: "POST",
-      body: JSON.stringify({ idToken }),
-      headers: { "Content-Type": "application/json" },
-    });
-         toast({
-          title: "Account Created ",
-          description: "Proceed to Login using your creditials.",
-          // variant: "success",
-        });
-
-
-
-
-        
-
-              router.push("/");
-
-      } catch (firestoreError) {
+    // ✅ Check if user already exists AND is terminated
+    if (userSnap.exists()) {
+      const existingData = userSnap.data();
+      if (existingData.terminated) {
+          handleLogout();
         toast({
-          title: "Error",
-          description: "Google account linked, but failed to save your data.",
-          // variant: "destructive",
+          title: "Account Blocked",
+          description: "Your account has been terminated and cannot be used.",
+          variant: "destructive",
         });
         return;
       }
+
+      // If user exists but not terminated, do nothing (or optionally auto-login)
+      router.push("/"); // or router.push("/feed") if you want auto login
+      return;
     }
 
-  
+    // ✅ User doesn't exist — create new user
+    try {
+      const keywords = user?.displayName?.toLowerCase().split(" ") || [];
+      let useis = user.email?.split("@")[0] || "";
 
+      const usersRef = collection(db, "users");
+      const qp = query(usersRef, where("username", "==", useis));
+      const querySnapshot = await getDocs(qp);
+
+      if (!querySnapshot.empty) {
+        useis = useis + Date.now().toString().slice(-4);
+      }
+
+      await setDoc(userRef, {
+        uid: user.uid,
+        fullName: user.displayName || "",
+        email: user.email || "",
+        username: useis,
+        keywords: keywords,
+        createdAt: Date.now(),
+        postsCount: 0,
+        DOB: "",
+        followersCount: 0,
+        followingCount: 0,
+        avatarUrl: user.photoURL || "",
+        theme: "",
+        deactivated: false,
+        premiumExpires: "",
+        terminated: false,
+        terminationReason: "",
+        terminatedAt: "",
+        isPremium: false,
+        premiumSince: "",
+        paymentMethod: "",
+        paymentId: "",
+        premiumBadge: "",
+        subscriptionMonths: "",
+        expiresAt: "",
+        bio: "",
+        oneTimeNotification: false,
+        fcmToken: "",
+        notificationSettings: {
+          directMessage: true,
+          newFollower: true,
+          postComment: true,
+          replies: true,
+          postLike: true,
+        },
+        privacySettings: {
+          activityStatus: true,
+          privateAccount: false,
+        },
+      });
+
+      // ✅ Set session cookie
+      const idToken = await user.getIdToken();
+      await fetch("/api/session", {
+        method: "POST",
+        body: JSON.stringify({ idToken }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      toast({
+        title: "Account Created",
+        description: "Welcome to Blabzio!",
+      });
+
+      router.push("/");
+
+    } catch (firestoreError) {
+      toast({
+        title: "Firestore Error",
+        description: "Google account linked, but failed to save your data.",
+        variant: "destructive",
+      });
+      return;
+    }
   } catch (err: any) {
     toast({
       title: "Google Signup Failed",

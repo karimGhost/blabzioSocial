@@ -39,6 +39,14 @@ const handleOpenPost = (post: any) => setselectedPost(post);
 const handleClosePost= () => setselectedPost(null);
 
 
+
+
+if(userData?.terminated ){
+  return(
+<></>
+  )
+}
+
   const isprivate = userData?.privacySettings?.privateAccount ;
 
 const isNotOwner = userData.uid !== user?.uid;

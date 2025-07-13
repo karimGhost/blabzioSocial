@@ -67,6 +67,8 @@ const heartId = useRef(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
  const [commentcount, setCommentComunt] =  useState<number >()
 const [showConfirm, setShowConfirm] = useState(false);
+const [showConfirmAdmin, setShowConfirmAdmin] = useState<string | null>(null);
+
   const router = useRouter();
   const {toast} = useToast();
  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://blabzio.vercel.app";
@@ -318,6 +320,7 @@ const [showControls, setShowControls] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const userWantsSound = useRef(false); // 🔥 track if user tapped unmute once
+const [selectedVideo, setSelectedVideo] = useState<Post | null>(null);
 
  useEffect(() => {
     if (showControls) {
@@ -444,6 +447,50 @@ const handleGlobalUnmute = () => {
     // ✅ DON'T call play()
   }
 };
+
+async function DeleteVidAdmin(postId: string, video: any) {
+  try {
+    // 1. Delete the video from Cloudinary & Firestore
+    await deleteVideo({
+      videoId: video.id,
+      cloudinaryUrl: video.url,
+      userId: video.user.uid ,
+      ownerId: video.user.uid,
+    });
+
+
+    // 2. Close confirmation modal and refresh UI
+    setShowConfirm(false);
+
+    console.log("confirmDelete", showConfirm )
+    router.refresh(); // Or router.push("/videos");
+
+    // 3. Notify the video owner that their video was deleted
+    const otherUserSnap = await getDoc(doc(db, "users", video.user.uid));
+    const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+
+    if (recipientFCMToken) {
+      try {
+        await fetch("/api/send-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: recipientFCMToken,
+            title: `${userData?.fullName || "Admin"} removed your video`,
+            body: "Your video was removed for policy reasons. Tap to view.",
+            clickAction: `https://blabzio-social.vercel.app/videos/${postId}`,
+          }),
+        });
+        console.log("📩 Notification sent to:", recipientFCMToken);
+      } catch (err) {
+        console.error("🔥 Failed to send notification:", err);
+      }
+    }
+  } catch (err) {
+    alert("Failed to delete video.");
+    console.error(err);
+  }
+}
 
  useEffect(() => {
     const handleUnmute = () => {
@@ -613,6 +660,69 @@ return (
   report
 </DropdownMenuItem>
     
+
+
+
+
+
+    </DropdownMenuContent>
+  </DropdownMenu>
+
+
+
+ <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="ghost" size="icon"><MoreVertical /></Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent>
+     
+{
+(!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
+           ""
+            :
+
+<>
+
+
+
+
+            <DropdownMenuItem
+    onClick={(e) => {
+      e.preventDefault();
+      setSelectedVideo(video);
+   showConfirmAdmin === null &&    setShowConfirmAdmin(video.id);
+    
+    }}
+ style={{background:"red"}} >
+ RemovePost
+   </DropdownMenuItem>
+
+
+
+
+<AlertDialog open={showConfirmAdmin === video.id} onOpenChange={(isOpen) =>  setShowConfirmAdmin(isOpen ? video.id : null)}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Remove this video?</AlertDialogTitle>
+      <AlertDialogDescription>
+        This action cannot be undone. It will permanently delete this video from user Account.
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancel</AlertDialogCancel>
+      <AlertDialogAction
+        onClick={() => DeleteVidAdmin(video.id, video, )}
+      >
+        Remove Video
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+</>
+   
+
+}
+    
     </DropdownMenuContent>
   </DropdownMenu>
 
@@ -719,6 +829,9 @@ return (
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>
+
+
+
 
 </>
 )}
