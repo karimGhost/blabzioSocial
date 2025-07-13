@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { dbb, db } from "@/lib/firebase";
+import { dbb, db, dbe } from "@/lib/firebase";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation"; // or next/router if using older Next.js
 import PostMediaSlider from "@/components/feed/PostMediaSlider";
+import { DialogContent,Dialog,  DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
 interface Comment {
@@ -97,18 +98,22 @@ function RepliesList({ postId, commentId }: RepliesListProps) {
 
 export default function PostPage() {
 
- const {user, userData} = useAuth()
+ const {user, userData} = useAuth();
+   const [post, setPost] = useState<any>(null);
+
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [replyMap, setReplyMap] = useState<Record<string, string>>({});
+  const [showConfirmDialogAdmin, setShowConfirmDialogAdmin] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+ 
 const router = useRouter();
 const {toast} = useToast();
 
 
 
   const { id } = useParams();
-  const [post, setPost] = useState<any>(null);
 
 
 
@@ -291,12 +296,82 @@ const handleReportPost = async (id: any) => {
   }
 };
 
+
+const ConfirmDeleteAdmin = async (post: any) => {
+  if (!post?.id) {
+    console.error("Post ID is missing");
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(dbb, "posts", post.id));
+    console.log("Post deleted successfully");
+   
+
+    const postId = post.id;
+
+const CommentTexts = post.content;
+
+       await addDoc(collection(dbe, "notifications"), {
+    type: "PolicyViolation",
+    fromUser: "Blabzio",
+    toUser: post.author.uid,
+    postId,
+    commentId: post.id,
+     fullName: "Admin@Blabzio" ,
+    avatarUrl: userData.avatarUrl,
+    CommentTexts,
+    timestamp:  Date.now(),
+    read: false,
+  });
+
+
+
+  const otherUserSnap = await getDoc(doc(db, "users", post.author.uid));
+
+                  const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
+                  const postLike = otherUserSnap?.data()?.notificationSettings?.postLike;
+
+if (recipientFCMToken && postLike) {
+  try {
+
+    await fetch("/api/send-notification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: recipientFCMToken,
+        title: "Admin@Blabzio - Your post has been removed due to blabzio Policy Violation! ⚠️",
+        body:   "View",
+       clickAction: `https://blabzio-social.vercel.app/feed/${postId}`,
+
+      }),
+    });
+    console.log("📩 Notification sent to:", recipientFCMToken);
+  } catch (err) {
+    console.error("🔥 Failed to send notification:", err);
+  }
+}
+
+  } catch (error) {
+    console.error("Error deleting post:", error);
+  }
+};
+
+
+
+
+
+
   if (!post) return <p>Loading...</p>;
     const timeAgo = post?.timestamp ? formatDistanceToNow(new Date(post.timestamp), { addSuffix: true }) : "";
 
   function handleShareToFeed(post: any): void {
     throw new Error("Function not implemented.");
   }
+
+
+
+
 
   return (
     <Card className="overflow-hidden shadow-lg">
@@ -355,6 +430,8 @@ const handleReportPost = async (id: any) => {
 <DropdownMenuItem onClick={() => handleBlockUser(post.author.name)}>
   Block @{post.author.name}
 </DropdownMenuItem>
+
+
     <DropdownMenuItem
       className="text-destructive"
       onClick={() => handleReportPost(post?.id)}
@@ -363,6 +440,26 @@ const handleReportPost = async (id: any) => {
     </DropdownMenuItem>
     </>
     }
+
+
+
+{
+(!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
+           ""
+            :
+            <DropdownMenuItem
+    onClick={() => {
+      setSelectedPost(post);
+      setShowConfirmDialogAdmin(true);
+    }}
+ style={{background:"red"}} >
+ RemovePost
+   </DropdownMenuItem>
+
+}
+
+
+
   </DropdownMenuContent>
 </DropdownMenu>
 
@@ -494,6 +591,34 @@ const handleReportPost = async (id: any) => {
   </div>
 )}
 
+
+
+
+<Dialog open={showConfirmDialogAdmin} onOpenChange={setShowConfirmDialogAdmin}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Are you sure ?</DialogTitle>
+      <DialogDescription>
+        This will permanently delete the post.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="flex justify-end gap-2">
+      <Button variant="ghost" onClick={() => setShowConfirmDialogAdmin(false)}>
+        Cancel
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={() => {
+          if (selectedPost) ConfirmDeleteAdmin(selectedPost);
+          setShowConfirmDialogAdmin(false);
+        }}
+      >
+        Confirm Remove
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
     </Card>
   );
 }

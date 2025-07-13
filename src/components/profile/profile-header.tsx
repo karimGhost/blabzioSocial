@@ -23,7 +23,7 @@ import { Loader2, Plus } from "lucide-react";
 import { useState, useRef } from "react";
 
 import { doc, updateDoc, deleteDoc, setDoc, getDoc, addDoc, collection, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import { db, dbb, dbd, dbe } from "@/lib/firebase";
+import { Admin, db, dbb, dbd, dbe } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";  
 import { MessageButton } from "../MessageButton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
@@ -39,6 +39,7 @@ interface ProfileHeaderProps {
 export function ProfileHeader({followers, following, Blocked, userData, isCurrentUserProfile }: ProfileHeaderProps) {
   const { user, userD } = useAuth();
 const [showShareModal, setShowShareModal] = useState(false);
+const [showReportModal, setShowReportModal] = useState<string | null>(null);
 
 const [isEditable, setIsEditable] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false);
@@ -397,7 +398,10 @@ if(userData?.terminated ){
   </div>
   )
 }
+const handleReportUser = (uid: string) =>{
 
+
+}
 
 
 const handleTerminateAccount = async (uid: string) => {
@@ -426,6 +430,38 @@ const handleTerminateAccount = async (uid: string) => {
   }
 };
    
+
+const submitReport = async (postId: string, reason: string) => {
+    if (!user) return;
+
+
+   
+
+  try {
+    await addDoc(collection(Admin, "reportedUsers"), {
+      type: "Profile",
+      reportedUser:postId ,
+      reason,
+      reportedBy: user?.uid ?? null,
+      createdAt: serverTimestamp(),
+    });
+    setShowReportModal(null);
+
+toast({
+        title: "Thanks .",
+        description: "Your report has been submitted!.",
+      
+      });
+  } catch (err) {
+    console.error("Report error:", err);
+    toast({
+        title: "Failed .",
+        description: "Failed to submit report. try again after some time .",
+      
+      });
+  }
+};
+
 
 
   useEffect(() => {
@@ -606,15 +642,63 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
 <DropdownMenuItem onClick={() => setShowShareModal(true)}>
   Share Profile
 </DropdownMenuItem>   
-{user?.uid ? <></> :
-  <DropdownMenuItem>Report Profile</DropdownMenuItem>
+{user?.uid ?  
+<DropdownMenuItem
+  className="text-destructive"
+
+
+  onSelect={(e) => {
+        e.preventDefault();
+ showReportModal === null && setShowReportModal(userData?.uid)
+  }}
+>
+  Report {userData?.fullName}
+</DropdownMenuItem>
+
+  :
+
+  <>
+  
+  
+   
+  </>
 }           
   
               </DropdownMenuContent>
             </DropdownMenu>
 
             }
-
+  
+    <Dialog open={ showReportModal === userData?.uid} onOpenChange={(isOpen) =>  setShowReportModal(isOpen ? userData?.uid: null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Report {userData.fullName}</DialogTitle>
+          <DialogDescription>Select a reason for reporting {userData.fullName}.</DialogDescription>
+        </DialogHeader>
+  
+        <div className="space-y-2">
+       {[
+  "Fake account or impersonation",
+  "Inappropriate profile photo",
+  "Offensive or abusive behavior",
+  "Harassment or bullying",
+  "Scam or fraud",
+  "Hate speech or discrimination",
+  "Underage user",
+ 
+].map((reason) => (
+            <Button
+              key={reason}
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => {  submitReport(userData?.uid, reason), setShowReportModal(null);}}
+            >
+              {reason}
+            </Button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
 
 {
   (!user || user.email !== "abdulkarimkassimsalim@gmail.com") ? null : (
@@ -706,6 +790,11 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
     </div>
   </div>
 )}
+
+
+
+
+
     </div>
   );
 }

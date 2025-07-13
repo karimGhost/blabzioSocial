@@ -119,6 +119,7 @@ interface PostItemProps {
 export function PostItem({ post }: PostItemProps) {
   const router = useRouter();
 const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
 const [showConfirmDialogAdmin, setShowConfirmDialogAdmin] = useState(false);
 
 const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -614,6 +615,21 @@ const ConfirmDelete = async (post: Post) => {
   }
 };
 
+
+
+const deleteComment = (id: Boolean) =>{
+
+}
+
+
+const handleDeleteComment = async (postId: string, commentDocId: string) => {
+  try {
+    await deleteDoc(doc(dbb, "posts", postId, "comments", commentDocId));
+    console.log("Comment deleted.");
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+  }
+};
  
 const ConfirmDeleteAdmin = async (post: Post) => {
   if (!post?.id) {
@@ -951,7 +967,46 @@ post.mediaUrl && post.mediaType === "image" ?
                     <p className="font-medium">{comment?.author?.name}</p>
                     <p>{comment?.text}</p>
                   </div>
-                </div>
+
+                  { user?.uid === comment?.uid &&
+
+ <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              
+{ user?.uid === comment?.uid &&
+   <DropdownMenuItem onClick={() => handleDeleteComment(post?.id,comment.id)}>Delete</DropdownMenuItem>
+
+}
+             
+
+</DropdownMenuContent>
+</DropdownMenu>
+    
+}
+     {/* { user?.uid !== comment?.uid &&
+
+ <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              
+{ user?.uid !== comment?.uid &&
+   <DropdownMenuItem>report</DropdownMenuItem>
+
+}
+             
+
+</DropdownMenuContent>
+</DropdownMenu>
+    
+} */}
+    
+                    </div>
+               
 
                 <RepliesList postId={post.id} commentId={comment.id} />
 

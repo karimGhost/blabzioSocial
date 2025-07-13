@@ -256,7 +256,7 @@ const submitReport = async (postId: string, reason: string, postOwner: string) =
 
   try {
     await addDoc(collection(Admin, "Postsreports"), {
-      type: "post",
+      type: "video",
       itemId: postId,
       reason,
       postOwner,

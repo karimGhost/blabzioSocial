@@ -27,7 +27,11 @@ export default function AdminInboxPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
-  
+
+  const [reportedUsers, setreportedUsers] = useState<any[]>([]);
+
+    const [Postsreports, setPostsreports] = useState<any[]>([]);
+
   const router = useRouter();
   useEffect(() => {
     const fetchData = async () => {
@@ -37,11 +41,28 @@ export default function AdminInboxPage() {
       const messagesSnap = await getDocs(
         query(collection(Admin, "supportMessages"), orderBy("createdAt", "desc"))
       );
+
+
+      const PostsreportsSnap = await getDocs(
+        query(collection(Admin, "Postsreports"), orderBy("createdAt", "desc"))
+      );
+
+const reportedUsersSnap  = await getDocs(
+        query(collection(Admin, "reportedUsers"), orderBy("createdAt", "desc"))
+      );
+
+
       const paymentsSnap = await getDocs(
         query(collection(db, "payments"), orderBy("createdAt", "desc"))
       );
-console.log("admins", reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+
+console.log("admins", reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+setPostsreports(PostsreportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+
+console.log("Reports", PostsreportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) )
+
       setReports(reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      setreportedUsers(reportedUsersSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
       setMessages(messagesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       setPayments(paymentsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     };
@@ -66,6 +87,11 @@ console.log("admins", reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data()
     return <p className="text-red-500 p-4 text-center">Access denied</p>;
   }
 
+
+
+
+
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">📥 Admin Inbox</h1>
@@ -75,6 +101,9 @@ console.log("admins", reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data()
           <TabsTrigger value="reports">Bug-Reports</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
+       <TabsTrigger value="Postsreports">Postsreports</TabsTrigger>
+       <TabsTrigger value="reportedUsers">reportedUsers</TabsTrigger>
+
         </TabsList>
 
         {/* Bug Reports */}
@@ -113,6 +142,51 @@ console.log("admins", reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data()
           </div>
         </TabsContent>
 
+
+{/*reportedUsers */}
+
+<TabsContent value="reportedUsers">
+  <div className="grid gap-4">
+    {reportedUsers.length === 0 && (
+      <p className="text-muted-foreground">No reported users found.</p>
+    )}
+    {reportedUsers.map((report) => (
+      <Card key={report.id}>
+        <CardHeader>
+          <CardTitle>Reported User ID: {report.reportedUser}</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            Reason: {report.reason}
+          </CardDescription>
+          <div className="flex items-center gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                router.push(`/profile/${report.reportedUser}`)
+              }
+            >
+              View Reported Profile
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                router.push(`/profile/${report.reportedBy}`)
+              }
+            >
+              View Reporting User
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-gray-500">
+            Submitted:{" "}
+            {report.createdAt?.toDate()?.toLocaleString() ?? "Pending"}
+          </p>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+</TabsContent>
+
         {/* Support Messages */}
         <TabsContent value="support">
           <div className="grid gap-4">
@@ -146,6 +220,40 @@ console.log("admins", reportsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data()
             ))}
           </div>
         </TabsContent>
+
+<TabsContent value="Postsreports">
+  <div className="grid gap-4">
+    {Postsreports.length === 0 && (
+      <p className="text-muted-foreground">No Postsreports found.</p>
+    )}
+    {Postsreports.map((r) => (
+      <Card key={r.id}>
+        <CardHeader>
+          <h1>Reported By User ID: {r.reportedBy}</h1>
+          <h2>Item ID: {r.itemId}</h2>
+
+          <div className="flex items-center gap-2 pt-2 sm:pt-0">
+            <Button onClick={() => router.push(`/profile/${r.reportedBy}`)}>
+              View Reporting User
+            </Button>
+            <Button onClick={() => router.push(`/feed/${r.itemId}`)}>
+              View Reported Post
+            </Button>
+          </div>
+
+          <CardTitle className="text-sm text-muted-foreground">
+            Reason: {r.reason}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-gray-500">
+            Submitted: {r.createdAt?.toDate()?.toLocaleString()}
+          </p>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+</TabsContent>
 
         {/* Premium Payments */}
         <TabsContent value="payments">
