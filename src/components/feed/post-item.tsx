@@ -20,7 +20,6 @@ import useClipboard from "react-use-clipboard";
 import { useToast } from "@/hooks/use-toast";
 import ShareDropdown from "../shareDropdown";
 import { ProfileBadge } from "../profile/ProfileBadge";
-import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css'; // basic styles
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
@@ -217,7 +216,7 @@ const existingQuery = query(
 
 const existingSnapshot = await getDocs(existingQuery);
 
-// 2. Only add if not already exists
+// 2. Only add if not already exists swiper
 if (existingSnapshot.empty) {
   await addDoc(notificationsRef, {
     type: "like",
@@ -543,7 +542,7 @@ const handleReportPost = async (id: string) => {
       postId: post.id,
       reporterId: user.uid,
       reportedAt: Date.now(),
-      reason: "Inappropriate content", // Or ask user for reason
+      reason: "Inappropriate content", // Or ask user for reason share
     });
     alert("Post reported. Thanks for your feedback.");
   } catch (err) {
@@ -896,10 +895,9 @@ post.mediaUrl && post.mediaType === "image" ?
 
         <p className="whitespace-pre-wrap text-sm">{post.content}</p>
 }
-        {post.mediaUrl && post.mediaType === "image" && (
-     <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl}/>
-
-        )}
+        {Array.isArray(post.mediaUrl) && post.mediaUrl.length > 0 && post.mediaType === "image" && (
+  <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl} />
+)}
       </CardContent>
 
       <CardFooter className="flex flex-col items-start gap-3 p-4 pt-0">
@@ -990,7 +988,7 @@ post.mediaUrl && post.mediaType === "image" ?
 
  <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button> copu
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               

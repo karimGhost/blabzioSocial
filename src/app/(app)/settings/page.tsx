@@ -890,6 +890,8 @@ if (changedTwice && updatedRecently) {
       <h4 className="font-medium">{item.label}</h4>
       <p className="text-sm text-muted-foreground">{item.description}</p>
     </div>
+
+    <div style={{display:"flex", flexDirection:"column"}}>
     <Switch
       id={item.id}
       checked={notifications[item.id]}
@@ -897,6 +899,8 @@ if (changedTwice && updatedRecently) {
         setNotifications((prev) => ({ ...prev, [item.id]: value }))
       }
     />
+       { notifications[item.id] ? <i style={{fontSize:"10px"}}> on  </i> : <i style={{fontSize:"10px"}}> off </i> }
+    </div>
   </div>
 ))}
 
@@ -930,13 +934,18 @@ if (changedTwice && updatedRecently) {
           Only approved followers can see your posts.
         </p>
       </div>
-      <Switch
+      <div style={{display:"flex", flexDirection:"column"}}>
+  <Switch
         id="privateAccount"
         checked={privacySettings.privateAccount}
         onCheckedChange={(val) =>
           setPrivacySettings((prev) => ({ ...prev, privateAccount: val }))
-        }
-      />
+        }  
+      /> 
+      {privacySettings.privateAccount ?  <i style={{fontSize:"10px"}}>  on</i> :   <i style={{fontSize:"10px"}}> off</i>}
+
+      </div>
+    
     </div>
 
     <div className="flex items-center justify-between rounded-lg border p-4">
@@ -946,14 +955,23 @@ if (changedTwice && updatedRecently) {
           Allow others to see when you're active.
         </p>
       </div>
-      <Switch
+
+      <div style={{display:"flex", flexDirection:"column"}}>
+
+ <Switch
         id="activityStatus"
         checked={privacySettings.activityStatus}
         onCheckedChange={(val) =>
           setPrivacySettings((prev) => ({ ...prev, activityStatus: val }))
         }
       />
+
+      {privacySettings.activityStatus ?  <i style={{fontSize:"10px"}}>on </i>:   <i style={{fontSize:"10px"}}> off </i> }
+</div>
+    
+     
     </div>
+
   </CardContent>
   <CardFooter className="border-t px-6 py-4">
     <Button type="button" onClick={handleSavePrivacy}>
@@ -976,9 +994,13 @@ if (changedTwice && updatedRecently) {
         <h4 className="font-medium">Theme</h4>
         <p className="text-sm text-muted-foreground">Choose between light or dark mode.</p>
       </div>
+      <div style={{display:"flex", flexDirection:"column"}}>
+
       <Button variant="outline" onClick={toggleTheme}>
-        Toggle Theme
+        Toggle {theme === "dark" ? "light" : "dark"} Theme
       </Button>
+      </div>
+
     </div>
   </CardContent>
 </Card>

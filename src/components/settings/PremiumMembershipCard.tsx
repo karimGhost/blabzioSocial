@@ -133,7 +133,7 @@ const handleStartMpesaPayment = async () => {
               ))}
             </div>
 
-            {!showPayPal ? (
+            {/* {!showPayPal ? (
               <div className="flex flex-col gap-3 pt-4">
                 <Button
                   onClick={() => setShowPayPal(true)}
@@ -141,13 +141,13 @@ const handleStartMpesaPayment = async () => {
                 >
                   Pay with PayPal
                 </Button>
-               <input
+               {/* <input
   type="text"
   placeholder="Enter phone number"
   value={phoneNumber}
   onChange={(e) => setPhoneNumber(e.target.value)}
 />
-
+ 
 <Button
                   className="bg-green-600 text-white hover:bg-green-700"
 
@@ -156,9 +156,10 @@ onClick={handleStartMpesaPayment}>Pay with M-Pesa</Button>
 <Button
                   className="bg-green-600 text-white hover:bg-green-700"
 
-onClick={handleMpesaPayment}>Enter M-Pesa Receipt Manually</Button>
-              </div>
-            ) : (
+onClick={handleMpesaPayment}>Enter M-Pesa Receipt Manually</Button> </div> */}
+             
+            
+
               <div className="pt-4">
                 <PayPalScriptProvider
                   options={{
@@ -201,7 +202,7 @@ onClick={handleMpesaPayment}>Enter M-Pesa Receipt Manually</Button>
                   />
                 </PayPalScriptProvider>
               </div>
-            )}
+          
           </>
         )}
       </CardContent>

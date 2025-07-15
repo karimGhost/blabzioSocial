@@ -101,6 +101,7 @@ const removeMedia = (indexToRemove: number) => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
   event.preventDefault();
+   setIsPosting(true);
 if (!user) return toast({title:"Please login first"});
 
   console.log("Auth currentUser:", user?.uid);
@@ -111,9 +112,11 @@ if (!user) return toast({title:"Please login first"});
   }
   if (!content.trim() && !mediaFile) return;
 
-  setIsPosting(true);
+
 let mediaUrls: string[] = [];
 
+
+ 
   try {
     // 1. Upload media to Cloudinary (if provided)
    if (mediaFiles.length > 0) {
