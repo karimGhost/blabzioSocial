@@ -14,7 +14,6 @@ export default function RootLayout({
 }>) {
 
 
-
   
   return (
     <html lang="en">
@@ -46,14 +45,16 @@ export default function RootLayout({
 <script
   dangerouslySetInnerHTML={{
     __html: `
-      try {
-        const theme = localStorage.getItem('darkMode');
-        if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      } catch (_) {}
+      (function () {
+        try {
+          const theme = localStorage.getItem("theme");
+          if (theme === "dark" || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        } catch (_) {}
+      })();
     `,
   }}
 />

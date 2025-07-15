@@ -101,6 +101,19 @@ const handleReactivateAccount = async () => {
   // Optionally reload user data or redirect
 };
 
+
+useEffect(() => {
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const storedTheme = localStorage.getItem("darkMode");
+
+  // If no stored theme, match system preference
+  const initialTheme = storedTheme || (prefersDark ? "dark" : "light");
+
+  document.documentElement.classList.toggle("dark", initialTheme === "dark");
+  localStorage.setItem("darkMode", initialTheme);
+}, []);
+
+
 useEffect(() => {
   if (!user?.uid) return;
 
@@ -113,22 +126,30 @@ useEffect(() => {
 
       const data = docSnap.data();
 
-      // Theme
+      // 🔒 Force device preference to take priority
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      if (prefersDark) {
+        setTheme("dark");
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("darkMode", "dark");
+        return; // stop here — device dark wins
+      }
+
+      // ⬇️ Otherwise, fall back to saved user setting
       const savedTheme = data.theme;
       if (savedTheme === "dark" || savedTheme === "light") {
         setTheme(savedTheme);
         document.documentElement.classList.toggle("dark", savedTheme === "dark");
-        
-                localStorage.setItem("darkMode",  savedTheme === "dark" ? "true" : "false")
-
+        localStorage.setItem("darkMode", savedTheme === "dark" ? "dark" : "light");
       }
 
-      // Notifications
+      // ✅ Notifications
       if (data.notificationSettings) {
         setNotifications(data.notificationSettings);
       }
 
-      // Privacy
+      // ✅ Privacy
       if (data.privacySettings) {
         setPrivacySettings(data.privacySettings);
       }
@@ -139,6 +160,7 @@ useEffect(() => {
 
   fetchSettings();
 }, [user]);
+
 
 
 
@@ -373,7 +395,7 @@ const toggleTheme = async () => {
   const newTheme: ThemeMode = theme === "light" ? "dark" : "light";
   localStorage.setItem("darkMode", newTheme); // 🔁 save as "dark" or "light"
   document.documentElement.classList.toggle("dark", newTheme === "dark");
-  
+
   setTheme(newTheme);
 
   toast({ title: `Switched to ${newTheme === "dark" ? "Dark" : "Light"} Mode` });
@@ -586,7 +608,7 @@ const handlePayPalPayment = async () => {
     });
 
     
-      // Optional: Refresh user data or UI
+      // Optional: Refresh user data or UI dark
     } else {
    
          toast({
@@ -994,7 +1016,7 @@ if (changedTwice && updatedRecently) {
       </div>
     </div>
   </CardContent>
-
+ 
 </Card>
 <PremiumMembershipCard userId={userData?.id} isPremium={userData?.isPremium} />
 

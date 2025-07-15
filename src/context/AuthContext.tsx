@@ -32,12 +32,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     
 
-  useEffect(() => {
-    
-    const theme = localStorage.getItem("darkMode");
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, []);
+useEffect(() => {
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const storedTheme = localStorage.getItem("darkMode");
 
+  // If no stored theme, match system preference
+  const initialTheme = storedTheme || (prefersDark ? "dark" : "light");
+
+  document.documentElement.classList.toggle("dark", initialTheme === "dark" );
+  localStorage.setItem("darkMode", initialTheme);
+}, []);
 
 
   useEffect(() => {
