@@ -8,7 +8,7 @@ interface Props {
 }
 
 // ✅ SERVER-ONLY
-export async function generateMetadata({ params }: { params: { id: string } }) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
  const snap = await secondAdminDb.collection('posts').doc(params.id).get();
   const post = snap.exists ? snap.data() : null;
