@@ -232,6 +232,7 @@ const stopRecording = () => {
       description,
       keywords:keywords,
       timestamp: serverTimestamp(),
+      mediaType: "video",
       user: {
         uid: user.uid,
         name: userData.fullName,
