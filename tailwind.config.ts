@@ -16,6 +16,9 @@ export default {
 
         code: ['monospace'],
       },
+        spacing: {
+    'titlebar': 'env(titlebar-area-height, 30px)',
+  },
       colors: {
  ringColor: {
         DEFAULT: 'hsl(30, 95%, 55%)', // Orange ring

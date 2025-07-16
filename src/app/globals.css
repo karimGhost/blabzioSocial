@@ -21,7 +21,7 @@ body {
     --muted: 0 0% 96.1%; /* Very light gray */
     --muted-foreground: 210 5% 55%; /* Softer text color */
  --accent: 26 85% 85%;          /* Light orange accent */
---accent-foreground: 0 0% 10%; /* Dark text on accent */
+--accent-foreground: 0 0% 10%; /* Dark text on accent class*/ 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 88%;
@@ -137,6 +137,9 @@ body {
   }
 }
 
+
+
+
 .text-smLogo {
     font-size: .65rem;
     margin-right: -3px;
@@ -157,6 +160,10 @@ width: 70vw;
 
 
 } */
+
+
+
+
 .heartbeat-dot {
   @apply absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500;
   animation: heartbeat 1.2s infinite;
@@ -230,3 +237,33 @@ padding-left: 80px !important;
   background-color: #f97316 !important; /* Tailwind orange-500 */
 }
 
+
+
+
+/* Custom title bar when window-controls-overlay is active */
+.titlebarMobApp {
+  height: env(titlebar-area-height, 30px);
+  width: env(titlebar-area-width, 100%);
+  padding-left: env(titlebar-area-x, 0px);
+  padding-top: env(titlebar-area-y, 0px);
+  background-color: #0f0f0f;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  -webkit-app-region: drag; /* allows window dragging on desktop */
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  padding-right: 16px;
+  box-sizing: border-box;
+    position: sticky;
+  top: 0;
+  z-index: 99;
+  transition: transform 0.3s ease;
+}
+
+.titlebarMobApp button {
+  -webkit-app-region: no-drag; /* make buttons clickable */
+}

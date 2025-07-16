@@ -3,6 +3,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
+import Titlebar from '@/components/Titlebar';
 
 export const metadata: Metadata = {
   title: 'Blabzio',
@@ -64,9 +65,15 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
+             <Titlebar />
+
+                <main className='pt-titlebar' style={{ paddingTop: 'env(titlebar-area-height, 30px)' }}>
+
         <AuthProvider>
+      
           {children}
         </AuthProvider>
+        </main>
         <Toaster />
       </body>
     </html>

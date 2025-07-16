@@ -1,13 +1,14 @@
 {
   "name": "Blabzio",
   "short_name": "Blabzio",
+  "id": "/?source=pwa",
   "start_url": "/",
-  "id":"/",
+  "scope": "/",
   "display": "standalone",
- "background_color": "#1a1d21", 
-  "theme_color": "#1a1d21",
-
-  "description": "Blabzio Social",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#ffffff",
+  "theme_color": "#0f0f0f",
+  "description": "Chat, connect, and socialize with Blabzio.",
   "icons": [
     {
       "src": "/icons/android-chrome-192x192.png",
@@ -20,20 +21,20 @@
       "type": "image/png"
     }
   ],
-  "screenshots": [
+  "shortcuts": [
     {
-      "src": "/screenshoots/mobile1.png",
-      "sizes": "512x1024",
-      "type": "image/png",
-      "form_factor": "narrow"
-    },
-    {
-      "src": "/screenshoots/desktop1.png",
-      "sizes": "1891x831",
-      "type": "image/png",
-      "form_factor": "wide"
+      "name": "Open Feed",
+      "short_name": "Feed",
+      "url": "/feed",
+      "icons": [
+        {
+          "src": "/icons/feed.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
-  ]
+  ],
+  "categories": ["social", "communication", "messaging"],
+  "prefer_related_applications": false
 }
-
-
