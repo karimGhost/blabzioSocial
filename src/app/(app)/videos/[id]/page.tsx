@@ -8,6 +8,7 @@ import { collection, onSnapshot,doc, orderBy, query, getDocs, getDoc } from "fir
 import { db, dbd } from "@/lib/firebase";
 import { VideoItem } from "@/components/video/video-item";
 import { useParams } from "next/navigation";
+import Head from "next/head";
 interface VideoUser {
   uid: string;
   name: string;
@@ -116,6 +117,26 @@ useEffect(() => {
 
 
   return (
+
+    <>
+     <Head>
+        { videos.map((video) => ( <>
+        
+       <title>{video?.description || "Blabzio Feed"}</title>
+            <meta property="og:title" content={video?.description || "Blabzio scroll"} />
+                   <meta property="og:description" content={video.description?.slice(0, 100) || "View this post on Blabzio!"} />
+    
+            <meta property="og:image" content={video?.url  || "/android-chrome-192x192.png"} />
+            <meta property="og:url" content={`https://blabzio.vercel.app/feed/${video.id}`} />
+            <meta property="og:type" content="video" />
+            <meta name="twitter:card" content="summary_large_image" />
+             </>  
+        ))}
+          </Head>
+    
+
+
+   
     <div className="flex flex-col items-center gap-4 p-4 text-white">
       {videos.length === 0 ? (
         <p className="text-gray-400 text-center mt-12">No videos yet. Upload one to get started!</p>
@@ -139,5 +160,6 @@ useEffect(() => {
         </Link>
       </div>
     </div>
+     </>
   );
 }

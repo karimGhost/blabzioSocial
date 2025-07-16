@@ -5,31 +5,68 @@ import clsx from 'clsx';
 
 export default function Titlebar() {
   const [hidden, setHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [idleTimeout, setIdleTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    let lastScrollY = window.scrollY;
-
-    const onScroll = () => {
+    const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      setHidden(currentScrollY > lastScrollY);
-      lastScrollY = currentScrollY;
+
+      // Hide on scroll down, show on scroll up
+      if (currentScrollY > lastScrollY) {
+        setHidden(true);
+      } else {
+        setHidden(false);
+      }
+
+      setLastScrollY(currentScrollY);
+
+      // Reset the auto-hide timer
+      if (idleTimeout) clearTimeout(idleTimeout);
+      const timeout = setTimeout(() => setHidden(true), 5000); // hide after 5s idle
+      setIdleTimeout(timeout);
     };
 
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (idleTimeout) clearTimeout(idleTimeout);
+    };
+  }, [lastScrollY, idleTimeout]);
+
+
+ 
+ const [isDark, setIsDark] = useState<boolean>(false);
+
+  useEffect(() => {
+    const localD = localStorage.getItem('darkMode');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    const shouldUseDark = localD === 'dark' || (!localD && prefersDark);
+
+    setIsDark(shouldUseDark);
+    document.documentElement.classList.toggle('dark', shouldUseDark);
   }, []);
 
+  const handleToggleT = () => {
+    const newTheme = isDark ? 'light' : 'dark';
+    localStorage.setItem('darkMode', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    setIsDark(newTheme === 'dark');
+  };
   return (
     <div
       className={clsx(
-        'titlebarMobApp transition-transform duration-300 fixed w-full z-50 bg-black text-white px-4 py-2 flex justify-between items-center',
+        'titlebarMobApp fixed top-0 left-0 right-0 z-50 transition-transform duration-300 bg-black text-white px-4 py-2 flex justify-between items-center',
         hidden ? '-translate-y-full' : 'translate-y-0'
       )}
+      style={{ paddingTop: 'env(safe-area-inset-top)', height: 'env(titlebar-area-height, 30px)' }}
     >
-      <span className="font-bold">Blabzio</span>
+      <span style={{color: isDark ? "black"  : "white"}} className="font-bold mt-1">Blabzio</span>
       <div className="flex gap-2">
-        <button className="text-white">⚙️</button>
-      </div>
+ <button onClick={handleToggleT} className="text-white text-xl">
+      {isDark ? '🌙' : '☀️'}
+    </button>      </div>
     </div>
   );
 }
