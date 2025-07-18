@@ -14,8 +14,12 @@ import { collection, addDoc } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { ImageIcon, Video, VideoIcon , MapPin, Smile, X, Loader2  } from "lucide-react";
-export function CreatePostForm() {
+
+export function CreatePostForm({setShowPost} : any) {
   const [content, setContent] = useState("");
+    const [contentTitle, setContentTitle] = useState("");
+
+  
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
@@ -44,17 +48,36 @@ const handleSelectFeeling = (f: string) => {
 const {user, userData} = useAuth();
 
 const MAX_FILES = 5;
+const MAX_VIDEO_SIZE_MB = 20;
 
 const handleMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-
   const files = event.target.files;
   if (!files || files.length === 0) return;
 
-  let selectedFiles = Array.from(files).slice(0, MAX_FILES); // ⛔ limit to 5
-  setMediaFiles(selectedFiles);
+  let selectedFiles = Array.from(files)
+    .slice(0, MAX_FILES) // Limit to 5
+    .filter((file) => {
+      // Only allow images or videos
+      const isImage = file.type.startsWith("image");
+      const isVideo = file.type.startsWith("video");
 
-  const previews: string[] = [];
-  const types: string[] = [];
+      if (!isImage && !isVideo) return false;
+
+      // Reject videos larger than 20MB
+      if (isVideo && file.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+        console.warn(`Video too large: ${file.name}`);
+        return false;
+      }
+
+      return true;
+    });
+
+  if (selectedFiles.length === 0) {
+    alert("Only images and videos under 20MB are allowed.");
+    return;
+  }
+
+  setMediaFiles(selectedFiles);
 
   const readFiles = selectedFiles.map(
     (file) =>
@@ -67,7 +90,7 @@ const handleMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => 
               ? "image"
               : file.type.startsWith("video")
               ? "video"
-              : "other",
+              : "other", // won't happen due to filter but safe fallback
           });
         };
         reader.onerror = reject;
@@ -83,8 +106,6 @@ const handleMediaChange = async (event: React.ChangeEvent<HTMLInputElement>) => 
     console.error("Error reading files:", error);
   }
 };
-
-
 
 
 const removeMedia = (indexToRemove: number) => {
@@ -110,7 +131,7 @@ if (!user) return toast({title:"Please login first"});
     console.warn("User not authenticated.");
     return;
   }
-  if (!content.trim() && !mediaFile) return;
+  if (!content.trim() && !mediaFile && !contentTitle.trim()) return;
 
 
 let mediaUrls: string[] = [];
@@ -140,12 +161,13 @@ let mediaUrls: string[] = [];
     }
   }
 }
-              const keywords = content.trim().toLowerCase().split(" ")
-
+              const keywords = contentTitle?.trim().toLowerCase().split(" ")
 
   
-    // 2. Save post to Firestore
+    // 2. Save post to Firestore  ,
+
    const newPost = {
+    title: contentTitle.trim() || null,
   content: content.trim() || null,
   createdAt: Date.now(),
   mediaUrl: mediaUrls || null,
@@ -185,7 +207,10 @@ console.log("dataB", newPost);
       variant: "destructive",
     });
   } finally {
+
     setIsPosting(false);
+                  setShowPost(false)
+
   }
 };
 
@@ -232,7 +257,7 @@ useEffect(() => {
                 size="icon"
                 className="   text-secondary group-hover:opacity-100 bg-primary transition-opacity"
  onClick={() => {
-                router.push("/");
+              setShowPost(false)
               }}              
               >
                 <X className="h-4 w-4" />
@@ -253,6 +278,16 @@ useEffect(() => {
               <p className="font-semibold">{userData.fullName}</p>
               <p className="text-sm text-muted-foreground">@{userData.fullName}</p>
             </div>
+
+  <Textarea
+            placeholder={`whats this Post About ? `}
+            value={contentTitle}
+            onChange={(e) => setContentTitle(e.target.value)}
+            className="min-h-[20px] h-10 text-base resize-none focus-visible:ring-primary"
+            required
+          />
+
+
           </div>
           <Textarea
             placeholder={`What's on your mind, ${userData.fullName} ?`}
@@ -266,6 +301,7 @@ useEffect(() => {
   <div className="relative group grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
     {mediaPreviews.map((src, i) => (
       <div key={i} className="relative">
+        {mediaTypes[i] === "image" ?
         <Image
           src={src}
           alt={`preview-${i}`}
@@ -273,6 +309,18 @@ useEffect(() => {
           height={300}
           className="rounded-lg object-cover w-full max-h-[300px]"
         />
+
+        :
+
+   <video
+          src={src}
+      
+          width={500}
+          height={300}
+          className="rounded-lg object-cover w-full max-h-[300px]"
+        />
+}
+
         <Button
           type="button"
           variant="destructive"
@@ -300,7 +348,8 @@ useEffect(() => {
 <input
   type="file"
   id="media-upload"
-  accept="image/*,video/*"
+    accept="image/*,video/*"  
+
   multiple
   className="hidden"
   disabled={mediaFiles.length >= 5}
@@ -380,7 +429,7 @@ useEffect(() => {
    <Button
   type="submit"
   className="w-full sm:w-auto flex items-center justify-center gap-2"
-  disabled={(!content.trim() && mediaFiles.length === 0) || isPosting}
+  disabled={(!content.trim() && mediaFiles.length === 0 && !contentTitle.trim()) || isPosting}
 >
   {isPosting ? (
     <>

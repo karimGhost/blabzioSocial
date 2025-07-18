@@ -12,6 +12,8 @@ import { Image as ImageIcon, Video as VideoIcon, Smile } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { CreatePostForm } from "@/components/forms/create-post-form";
+
 export default function FeedPage() {
   const router = useRouter();
 const {user,userData} = useAuth();
@@ -160,17 +162,25 @@ const authorMap: Record<
   fetchBlockedAndPosts();
 }, [user]);
 
+const [showPost, setShowPost] =useState(false);
+
+if(showPost){
+            
+  return(<CreatePostForm setShowPost={setShowPost} />)
+
+}
 
 
   return (
     <div className="max-w-2xl mx-auto w-full space-y-6">
       <Card className="shadow-md">
         <CardHeader style={{padding:"0px", margin:"0px", marginBottom:"10px"}}>
-          {/* <CardTitle className="font-headline text-lg">Create Post</CardTitle> */}
+          {/* <CardTitle className="font-headline text-lg">Create Post</CardTitle>    router.push("/create-post"); */}
         </CardHeader>
         <CardContent className="space-y-3 p-1 "  onClick={() => {
-                router.push("/create-post");
+              setShowPost(true)
               }}>
+               
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage
@@ -184,7 +194,7 @@ const authorMap: Record<
             placeholder={`What's on your mind, ${userData?.fullName} ?`}
               className="flex-1 rounded-full bg-muted border-transparent focus-visible:ring-primary focus-visible:ring-2"
               onClick={() => {
-                router.push("/create-post");
+              setShowPost(true)
               }}
               readOnly
             />

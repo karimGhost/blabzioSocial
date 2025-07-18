@@ -242,28 +242,38 @@ padding-left: 80px !important;
 
 /* Custom title bar when window-controls-overlay is active */
 .titlebarMobApp {
-  height: env(titlebar-area-height, 30px);
-  width: env(titlebar-area-width, 100%);
-  padding-left: env(titlebar-area-x, 0px);
-  padding-top: env(titlebar-area-y, 0px);
-  background-color: #0f0f0f;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  -webkit-app-region: drag; /* allows window dragging on desktop */
   position: fixed;
   top: 0;
+  right: 0;
   left: 0;
-  z-index: 50;
-  padding-right: 16px;
-  box-sizing: border-box;
-    position: sticky;
-  top: 0;
-  z-index: 99;
+
+  z-index: 299;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  height: env(titlebar-area-height, 40px);
+  padding-top: env(safe-area-inset-top);
+
+  /* Glass effect */
+  backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+justify-content: center;
+  /* V/Flag shape */
+  clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%);
+  border-radius: 0 0 12px 12px;
+
+  -webkit-app-region: drag;
   transition: transform 0.3s ease;
 }
 
 .titlebarMobApp button {
-  -webkit-app-region: no-drag; /* make buttons clickable */
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: white;
 }

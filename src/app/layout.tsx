@@ -65,8 +65,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-             <Titlebar />
+        
+        <div>
+         <Titlebar />
 
+          </div>    
                 <main className='pt-titlebar' style={{ paddingTop: 'env(titlebar-area-height, 30px)' }}>
 
         <AuthProvider>

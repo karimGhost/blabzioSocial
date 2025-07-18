@@ -2,7 +2,7 @@
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
@@ -296,17 +296,33 @@ const handleSearch = (e: React.FormEvent) => {
   };
 const unreadCount = useUnreadMessages(user?.uid);
   const { isInstallable, promptInstall } = useInstallPrompt();
+ const [showInput, setShowInput] = useState(false);
 
+  const [visible, setVisible] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
+   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setVisible(false);
+          setShowInput(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const [userData, setUserData] = useState<any>(null);
   const [Loading, setLoading] = useState(true);
 
 
 
- const [showInput, setShowInput] = useState(false);
 
-  const toggleInput = () => setShowInput(!showInput);
+  const toggleInput = () =>{
+    setShowInput(!showInput);
+    setVisible((v) => !v)
+  } 
 
 
 useEffect(() => {
@@ -484,19 +500,37 @@ const userId = user?.uid;
   <div className="relative flex items-center w-full md:w-auto">
             <form className="w-ful"style={{width:"90%",margin:"auto",zIndex:"99", position:"fixed",top:"50px",left:"0", right:"0" }}  onSubmit={handleSearch}>
 
-      {/* Search Input */}
-      <Input
-        type="search"
-        value={querys}
-        onChange={(e) => setQuerys(e.target.value)}
-        placeholder="Search Blabzio..."
-        className={cn(
+
+
+
+
+  {visible && (
+        <div ref={wrapperRef} className="absolute left-0 right-0 z-50 flex justify-center mt-2">
+          <form onSubmit={handleSearch} className="w-full sm:w-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+           
+                 {/* Search Input */}
+
+              <Input
+                type="search"
+                value={querys}
+                onChange={(e) => setQuerys(e.target.value)}
+                placeholder="Search Blabzio..."
+className={cn(
           "bg-muted pl-9 rounded-full transition-all shadow-none",
           "absolute left-0 top-0 w-full", // mobile
           "md:static md:w-64 md:opacity-100", // desktop
           showInput ? "opacity-100" : "opacity-0 pointer-events-none md:opacity-100"
-        )}
-      />
+        )}              />
+            </div>
+          </form>
+        </div>
+      )}
+
+
+
+   
 </form>
 
 

@@ -23,7 +23,7 @@ export default function Titlebar() {
 
       // Reset the auto-hide timer
       if (idleTimeout) clearTimeout(idleTimeout);
-      const timeout = setTimeout(() => setHidden(true), 5000); // hide after 5s idle
+      const timeout = setTimeout(() => setHidden(true), 3000); // hide after 5s idle
       setIdleTimeout(timeout);
     };
 
@@ -56,17 +56,22 @@ export default function Titlebar() {
   };
   return (
     <div
-      className={clsx(
-        'titlebarMobApp fixed top-0 left-0 right-0 z-50 transition-transform duration-300 bg-black text-white px-4 py-2 flex justify-between items-center',
-        hidden ? '-translate-y-full' : 'translate-y-0'
-      )}
-      style={{ paddingTop: 'env(safe-area-inset-top)', height: 'env(titlebar-area-height, 30px)' }}
-    >
-      <span style={{color: isDark ? "black"  : "white"}} className="font-bold mt-1">Blabzio</span>
-      <div className="flex gap-2">
- <button onClick={handleToggleT} className="text-white text-xl">
-      {isDark ? '🌙' : '☀️'}
-    </button>      </div>
-    </div>
+  className={clsx(
+    'titlebarMobApp',
+    hidden ? '-translate-y-full' : 'translate-y-0'
+  )}
+>
+  <span
+   // Tailwind's orange-500 hex
+    className="font-bold mt-1 text-orange-500"
+  >
+    Blabzio
+  </span>
+  <div className="flex gap-2">
+    <button onClick={handleToggleT}>
+      {isDark ? '☀️' : '🌙'}
+    </button>
+  </div>
+</div>
   );
 }

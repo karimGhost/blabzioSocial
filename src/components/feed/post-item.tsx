@@ -690,7 +690,19 @@ if (recipientFCMToken && postLike) {
   }
 };
 
+const [readMoreMap, setReadMoreMap] = useState<{ [postId: string]: number }>({});
+const visibleChars = readMoreMap[post.id] || 500;
+const shouldShowMore = post.content.length > visibleChars;
 
+
+
+const handleReadMore = (postId: string, contentLength: number) => {
+  setReadMoreMap((prev) => {
+    const current = prev[postId] || 500;
+    const next = Math.min(current + 800, contentLength); // Don't exceed total length
+    return { ...prev, [postId]: next };
+  });
+};
   return (
     <Card className={` overflow-hidden shadow-lg     ${post?.isprofile && 'w-full  object-cover'} `  }  style={{height: post?.isprofile && "250px"}}>
       <CardHeader className="flex flex-row items-center gap-3 p-4">
@@ -875,9 +887,14 @@ post.mediaUrl && post.mediaType === "image" ?
   </DropdownMenuContent>
 </DropdownMenu>
 
-      </CardHeader>
 
+      </CardHeader>
       <CardContent className="p-4 pt-0">
+
+             { post.content.length > 500 && Array.isArray(post.mediaUrl) && post.mediaUrl.length > 0 && post.mediaType === "image" && (
+  <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl} />
+
+)}
 {
  post.isprofile ? 
 
@@ -887,16 +904,33 @@ post.mediaUrl && post.mediaType === "image" ?
 
         :
          <p className="whitespace-pre-wrap text-sm">{   post.isprofile ?   post.content.length > 30 ?  post.content.slice(0, 30 ) + "..." : post.content
-        :  post.content}</p>
+        :  post.content }</p>
          )
       
 :
 
-
-        <p className="whitespace-pre-wrap text-sm">{post.content}</p>
+<p className="whitespace-pre-wrap text-sm">
+  {post.content.slice(0, visibleChars)}
+  {shouldShowMore && (
+    <button
+      onClick={() => handleReadMore(post.id, post.content.length)}
+      className="text-blue-500 underline ml-1"
+      style={{ cursor: 'pointer' }}
+    >
+      ...Read More
+    </button>
+  )}
+</p>
+    
 }
-        {Array.isArray(post.mediaUrl) && post.mediaUrl.length > 0 && post.mediaType === "image" && (
+
+ 
+
+        { post.content.length <= 500 && Array.isArray(post.mediaUrl) && post.mediaUrl.length > 0 && post.mediaType === "image" && (
+          
+          
   <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl} />
+
 )}
       </CardContent>
 
