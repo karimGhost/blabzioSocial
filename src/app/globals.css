@@ -229,7 +229,7 @@ padding-left: 80px !important;
 
 
 .swiper-pagination-bullet {
-  background-color: #d1d5db !important; /* muted default (Tailwind gray-300) */
+  background-color: #d1d5db !important; /* muted default (Tailwind gray-300) shadow */
   opacity: 1 !important;
 }
 
@@ -251,7 +251,7 @@ padding-left: 80px !important;
   display: flex;
   align-items: center;
   padding: 8px 16px;
-  height: env(titlebar-area-height, 40px);
+  height: env(titlebar-area-height, 25px);
   padding-top: env(safe-area-inset-top);
 
   /* Glass effect */

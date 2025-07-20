@@ -294,6 +294,7 @@ const handleSearch = (e: React.FormEvent) => {
     if (!querys.trim()) return;
     router.push(`/search?q=${encodeURIComponent(querys.trim())}`);
   };
+
 const unreadCount = useUnreadMessages(user?.uid);
   const { isInstallable, promptInstall } = useInstallPrompt();
  const [showInput, setShowInput] = useState(false);
@@ -498,7 +499,6 @@ const userId = user?.uid;
 
 
   <div className="relative flex items-center w-full md:w-auto">
-            <form className="w-ful"style={{width:"90%",margin:"auto",zIndex:"99", position:"fixed",top:"50px",left:"0", right:"0" }}  onSubmit={handleSearch}>
 
 
 
@@ -506,7 +506,7 @@ const userId = user?.uid;
 
   {visible && (
         <div ref={wrapperRef} className="absolute left-0 right-0 z-50 flex justify-center mt-2">
-          <form onSubmit={handleSearch} className="w-full sm:w-auto">
+          <form  style={{width:"90%",margin:"auto",zIndex:"99", position:"fixed",top:"50px",left:"0", right:"0" }}  onSubmit={handleSearch} className="w-full sm:w-auto">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
            
@@ -515,8 +515,11 @@ const userId = user?.uid;
               <Input
                 type="search"
                 value={querys}
+                name="search"
                 onChange={(e) => setQuerys(e.target.value)}
                 placeholder="Search Blabzio..."
+                  autoComplete="off"
+
 className={cn(
           "bg-muted pl-9 rounded-full transition-all shadow-none",
           "absolute left-0 top-0 w-full", // mobile
@@ -531,7 +534,7 @@ className={cn(
 
 
    
-</form>
+
 
 
         <Button         onClick={toggleInput}

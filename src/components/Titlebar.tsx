@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
-
+import { useAuth } from '@/hooks/useAuth';
 export default function Titlebar() {
+  const {user} = useAuth();
   const [hidden, setHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [idleTimeout, setIdleTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -32,7 +33,7 @@ export default function Titlebar() {
       window.removeEventListener('scroll', handleScroll);
       if (idleTimeout) clearTimeout(idleTimeout);
     };
-  }, [lastScrollY, idleTimeout]);
+  }, [lastScrollY, idleTimeout, user]);
 
 
  
@@ -69,7 +70,7 @@ export default function Titlebar() {
   </span>
   <div className="flex gap-2">
     <button onClick={handleToggleT}>
-      {isDark ? '☀️' : '🌙'}
+      {isDark ? '🌙' : '☀️'}
     </button>
   </div>
 </div>
