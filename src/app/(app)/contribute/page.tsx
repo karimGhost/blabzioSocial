@@ -2,6 +2,9 @@ import Header from '@/components/layout/Header';
 import ContributeForm from '@/components/contribution/ContributeForm';
 
 export default function ContributePage() {
+
+   
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />

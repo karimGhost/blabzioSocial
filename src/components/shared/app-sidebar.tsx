@@ -48,6 +48,7 @@ import { dbe } from '@/lib/firebase';
 const navItems = [
   { href: "/feed", icon: Home, label: "Feed" },
   { href: "/videos", icon: Video, label: "Videos" },
+    { href: "/News", icon: Video, label: "News" },
   { href: "/messages", icon: MessageSquare, label: "Messages" },
   { href: "/profile/me", icon: User, label: "Profile" },
   { href: "/settings", icon: Settings, label: "Settings" },
@@ -382,7 +383,7 @@ const userId = user?.uid;
     return () => clearTimeout(firstTimer); // cleanup
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { 
     if (timedouts) {
       // Second timeout after 5 seconds when timedouts becomes true
       const secondTimer = setTimeout(() => {
@@ -475,6 +476,7 @@ const userId = user?.uid;
                  <PlusSquare className="mr-2 h-4 w-4" /> Create Post
               </Link>
             </DropdownMenuItem>
+
             <DropdownMenuSeparator/>
             <DropdownMenuItem asChild>
                <button

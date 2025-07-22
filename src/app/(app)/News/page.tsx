@@ -9,7 +9,7 @@ export default function News() {
   const trendingTags = getTrendingTags();
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div  style={{zIndex:"200" , margin:"auto", left:"0", right :"0"}} className="flex flex-col  min-h-screen bg-background">
       <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">

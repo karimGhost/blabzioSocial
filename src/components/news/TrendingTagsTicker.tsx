@@ -10,7 +10,7 @@ export default function TrendingTagsTicker({ tags }: TrendingTagsTickerProps) {
     return null;
   }
 
-  // Duplicate the tags to create a seamless looping effect
+  // Duplicate the tags to create a seamless looping effect animation
   const extendedTags = [...tags, ...tags];
 
   return (

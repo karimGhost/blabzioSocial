@@ -13,7 +13,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Wand2, X, Loader2 } from 'lucide-react';
-
+import { useRouter } from 'next/navigation';
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters long.' }),
   content: z.string().min(50, { message: 'Content must be at least 50 characters long.' }),
@@ -25,6 +25,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ContributeForm() {
   const { toast } = useToast();
+  const route = useRouter();
   const [tags, setTags] = useState<string[]>([]);
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,7 +57,7 @@ export default function ContributeForm() {
       toast({ variant: 'destructive', title: 'Error', description: result.error });
     } else if (result.tags) {
       setTags(Array.from(new Set([...tags, ...result.tags])));
-      toast({ title: 'Success', description: 'AI-powered tags have been added.' });
+      toast({ title: 'Success', description: 'tags have been added.' });
     }
   };
 
@@ -84,6 +85,7 @@ export default function ContributeForm() {
       });
     }
     setIsSubmitting(false);
+    // route.push("/News")
   };
 
   return (
@@ -163,7 +165,7 @@ export default function ContributeForm() {
                         </Badge>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground px-1">Generate tags using AI or they will be added upon publishing.</p>
+                      <p className="text-sm text-muted-foreground px-1">Generate tags from your content.</p>
                     )}
                   </div>
                 </div>
