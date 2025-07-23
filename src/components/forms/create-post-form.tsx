@@ -161,9 +161,10 @@ let mediaUrls: string[] = [];
     }
   }
 }
-              const keywords = contentTitle?.trim().toLowerCase().split(" ")
-
-  
+              const keywords = [
+  ...contentTitle?.trim().toLowerCase().split(" ") || [],
+  ...content?.trim().toLowerCase().split(" ") || [],
+];
     // 2. Save post to Firestore  ,
 
    const newPost = {
@@ -257,7 +258,12 @@ useEffect(() => {
                 size="icon"
                 className="   text-secondary group-hover:opacity-100 bg-primary transition-opacity"
  onClick={() => {
-              setShowPost(false)
+if(setShowPost){
+  setShowPost(false)  
+}else{
+  router.back()
+}
+              
               }}              
               >
                 <X className="h-4 w-4" />

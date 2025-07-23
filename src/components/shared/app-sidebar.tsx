@@ -45,10 +45,10 @@ import { notification } from "../notifications/notifications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { collection,doc, getDocs, orderBy, query, where, writeBatch } from "firebase/firestore";
 import { dbe } from '@/lib/firebase';
+import { CreatePostForm } from "../forms/create-post-form";
 const navItems = [
   { href: "/feed", icon: Home, label: "Feed" },
   { href: "/videos", icon: Video, label: "Videos" },
-    { href: "/News", icon: Video, label: "News" },
   { href: "/messages", icon: MessageSquare, label: "Messages" },
   { href: "/profile/me", icon: User, label: "Profile" },
   { href: "/settings", icon: Settings, label: "Settings" },
@@ -56,6 +56,7 @@ const navItems = [
 
 
 
+    // { href: "/News", icon: Video, label: "News" create },
 
 
 export function AppSidebar() {
@@ -92,7 +93,7 @@ useEffect(() => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
 
-
+            
 
   function clearUserCache(uid?: string) {
   if (uid) {
@@ -113,7 +114,7 @@ useEffect(() => {
     try {
 
       await signOut(auth);
-      router.push("/"); // or home, wherever you want messages dark
+      router.push("/"); // or home, wherever you want messages dark News
       clearUserCache()
     } catch (error) {
       console.error("Logout failed:", error);

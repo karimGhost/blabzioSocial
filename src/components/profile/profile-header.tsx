@@ -34,9 +34,10 @@ interface ProfileHeaderProps {
     followers: User[]; 
    following: User[];
   isCurrentUserProfile: boolean;
+  isDp: boolean
 }
 
-export function ProfileHeader({followers, following, Blocked, userData, isCurrentUserProfile }: ProfileHeaderProps) {
+export function ProfileHeader({followers, following, Blocked, userData, isCurrentUserProfile, isDp}: ProfileHeaderProps) {
   const { user, userD } = useAuth();
 const [showShareModal, setShowShareModal] = useState(false);
 const [showReportModal, setShowReportModal] = useState<string | null>(null);
@@ -62,7 +63,7 @@ const requestPermission = async () => {
       vapidKey: "YOUR_PUBLIC_VAPID_KEY",
     });
     console.log("Notification token:", token);
-    // Save this token to Firestore under the user document
+    // Save this token to Firestore under the user document search
   } catch (err) {
     console.error("Notification permission denied", err);
   }
@@ -448,6 +449,7 @@ const submitReport = async (postId: string, reason: string) => {
     setShowReportModal(null);
 
 toast({
+  
         title: "Thanks .",
         description: "Your report has been submitted!.",
       
@@ -493,7 +495,7 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
 
   return (
     <div className="relative">
-      {/* Cover Photo */}
+      {/* Cover Photo orange */}
       <div className="h-48 sm:h-64 bg-muted rounded-t-lg overflow-hidden relative"
                   onClick={isCurrentUserProfile && isEditable ? triggerFileCSelect : undefined}
 
@@ -547,7 +549,7 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
       {(userData?.fullName ?? "").substring(0, 2) || "??"}
     </AvatarFallback>
 
-    {/* Spinner overlay while uploading */}
+    {/* Spinner overlay while uploading dark options*/}
     {uploading && (
       <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
         <Loader2 className="h-8 w-8 text-white animate-spin" />
@@ -701,10 +703,10 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
     </Dialog>
 
 {
-  (!user || user.email !== "abdulkarimkassimsalim@gmail.com") ? null : (
+  (!user ||  user?.email !== "abdulkarimkassimsalim@gmail.com"  )    ? null : (
   <DropdownMenu>
   <DropdownMenuTrigger asChild>
-    <Button variant="outline">Options</Button>
+ { !isDp && <Button variant="outline">Options</Button> }
   </DropdownMenuTrigger>
 
   <DropdownMenuContent>

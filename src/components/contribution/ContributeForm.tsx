@@ -175,7 +175,7 @@ export default function ContributeForm() {
                   ) : (
                     <Wand2 className="mr-2 h-4 w-4" />
                   )}
-                  Generate with AI
+                  Generate 
                 </Button>
               </div>
             </FormItem>

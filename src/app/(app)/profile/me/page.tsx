@@ -94,7 +94,9 @@ useEffect(() => {
   return () => unsubscribe();
 }, [user]);
 
+  const [isDp, setisDp] = useState(true)
 
+ 
 
   if (loading || Loading) return <div>Loading...</div>;
   if (!userData) return <div>User not found.</div>;
@@ -105,12 +107,16 @@ useEffect(() => {
         <ProfileHeader
          followers={followers}
         following={following}
+        
+              isDp = {isDp}
         userData={userData} isCurrentUserProfile Blocked={false}   />
       </Card>
       <ProfileTabs
         followers={followers}
         following={following}
         userVids={userVids}
+        
+           
         userData={userData} userPosts={userPosts} Blocked={false} />
     </div>
   );

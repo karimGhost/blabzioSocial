@@ -49,6 +49,7 @@ const {user} = useAuth();
   const [loading, setLoading] = useState(true);
 const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
+  const [isDp, setisDp] = useState(false)
 //   type UserData = {
 //   id: string;
 //   uid: string;
@@ -356,11 +357,15 @@ useEffect(() => {
         <ProfileHeader Blocked={Blocked}
           followers={followers}
         following={following}
+
+      isDp = {isDp}
         userData={userData} isCurrentUserProfile={isCurrentUserProfile} />
       </Card>
       <ProfileTabs
        Blocked={Blocked}
       userData={userData}
+
+  
       userVids={userVids}
         userPosts={userPosts}
         followers={followers}

@@ -56,23 +56,18 @@ export default function Titlebar() {
     setIsDark(newTheme === 'dark');
   };
   return (
-    <div
+   <div
   className={clsx(
     'titlebarMobApp',
     hidden ? '-translate-y-full' : 'translate-y-0'
   )}
 >
-  <span
-   // Tailwind's orange-500 hex
-    className="font-bold mt-1 text-orange-500"
-  >
-    Blabzio
-  </span>
-  <div className="flex gap-2">
+  <div className="flex gap-2 s">
     <button onClick={handleToggleT}>
       {isDark ? '🌙' : '☀️'}
     </button>
   </div>
 </div>
+
   );
 }

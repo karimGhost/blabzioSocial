@@ -243,37 +243,31 @@ padding-left: 80px !important;
 /* Custom title bar when window-controls-overlay is active */
 .titlebarMobApp {
   position: fixed;
-  top: 0;
+  top: -10px;
   right: 0;
-  left: 0;
-
+ 
   z-index: 299;
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  height: env(titlebar-area-height, 25px);
+  justify-content: center;
+  width: 60px;
+  height: 60px;
   padding-top: env(safe-area-inset-top);
-
-  /* Glass effect */
   backdrop-filter: blur(10px);
-  background-color: rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   -webkit-backdrop-filter: blur(10px);
-justify-content: center;
-  /* V/Flag shape */
-  clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%);
-  border-radius: 0 0 12px 12px;
-
+  background-color: #0000004d;
+  border-bottom: 1px solid #ffffff1a;
+  box-shadow: 0 2px 6px #0003;
   -webkit-app-region: drag;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
-
 .titlebarMobApp button {
   -webkit-app-region: no-drag;
   background: none;
   border: none;
   font-size: 1.25rem;
+z-index: 300;
   cursor: pointer;
   color: white;
 }
