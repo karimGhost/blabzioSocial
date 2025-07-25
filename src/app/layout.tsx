@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import Titlebar from '@/components/Titlebar';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Blabzio',
@@ -47,22 +48,20 @@ export default function RootLayout({
           rel="stylesheet"
         />
         {/* Dark Mode Script */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function () {
-                try {
-                  const theme = localStorage.getItem("theme");
-                  if (theme === "dark" || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add("dark");
-                  } else {
-                    document.documentElement.classList.remove("dark");
-                  }
-                } catch (_) {}
-              })();
-            `,
-          }}
-        />
+        <Script id="theme-toggle" strategy="beforeInteractive">
+          {`
+            (function () {
+              try {
+                const theme = localStorage.getItem("theme");
+                if (theme === "dark" || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add("dark");
+                } else {
+                  document.documentElement.classList.remove("dark");
+                }
+              } catch (_) {}
+            })();
+          `}
+        </Script>
       </head>
       <body className="font-body antialiased">
         

@@ -8,12 +8,17 @@ import { cn } from "@/lib/utils";
 import {isValid, formatDistanceToNow } from "date-fns";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, getDoc, doc, onSnapshot, writeBatch } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc, onSnapshot, writeBatch, setDoc } from "firebase/firestore";
 import { dbc, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserDoc } from "@/utils/getUserDoc";
 import { useUnreadMessages } from "../shared/useUnreadMessages";
+import { The_Nautigal } from "next/font/google";
+import { currentUser } from "@/lib/dummy-data";
+
 interface ChatSidebarProps {
+  setConversation: (conversation: any) => void;
+
   selectedConversationId?: string;
 }
 
@@ -39,11 +44,16 @@ interface ConversationWithMeta {
   };
 }
 
-export function ChatSidebar({ selectedConversationId }: ChatSidebarProps) {
+export function ChatSidebar({
+  setConversation,
+  selectedConversationId,
+}: ChatSidebarProps) {
+  
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationWithMeta[]>([]);
 const unreadCount = useUnreadMessages(user?.uid);
 
+const [loading, setLoading] = useState(false);
 
 
 const setRead = async (convId: string) => {
@@ -122,8 +132,105 @@ const [searchTerm, setSearchTerm] = useState("");
 
 const filteredConversations = conversations.filter((conv) =>
   conv?.participant?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+
 );
 const listToRender = searchTerm.length > 0 ? filteredConversations : conversations;
+
+
+const [users, setUsers] = useState<{ id: string; fullName?: string; photoURL?: string }[]>([]);
+
+useEffect(() => {
+
+  console.log("term", searchTerm)
+  const runSearch = async () => {
+    if (!searchTerm.trim()) return;
+
+    setLoading(true);
+
+    try {
+      const normalizedSearch = searchTerm.toLowerCase();
+
+      // First: check if any local conversation matches
+      const filteredConvos = conversations.filter((conv) =>
+        conv?.participant?.fullName?.toLowerCase().includes(normalizedSearch)
+      );
+
+      if (filteredConvos.length > 0) {
+        // ✅ Matching conversation exists – don't proceed to Firestore
+        setUsers([]); // Optional: clear remote results if you show both
+        return;
+      }
+
+      // 🔍 No match found locally, proceed with Firestore query
+      const userQuery = query(
+        collection(db, "users"),
+        where("keywords", "array-contains", normalizedSearch)
+      );
+
+      const userSnapshot = await getDocs(userQuery);
+      const foundUsers = userSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setUsers(foundUsers);
+
+    } catch (err) {
+      console.error("Search error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  runSearch();
+}, [searchTerm, conversations]);
+
+
+const generateConversationId = (uid1: string | undefined, uid2: any) => {
+  return [uid1, uid2].sort().join("_");
+};
+
+const handleUserClick = async (userId: string | undefined) => {
+  if (!user?.uid || !userId) return;
+
+  try {
+    const conversationId = generateConversationId(userId, user.uid);
+    const conversationRef = doc(db, "conversations", conversationId);
+    const snapshot = await getDoc(conversationRef);
+
+    if (!snapshot.exists()) {
+      // Conversation does not exist, create it
+      const newConversation = {
+        id: conversationId,
+        participants: [user.uid, userId],
+        createdAt: new Date(),
+        // Add any other initial fields you want
+      };
+
+      await setDoc(conversationRef, newConversation);
+      setConversation(newConversation);
+      return;
+    }
+
+    // Conversation exists — fetch and set as before
+    const data = snapshot.data();
+    const otherUserId = data.participants.find((id: string) => id !== user.uid);
+    const participantDoc = await getUserDoc(otherUserId);
+    const participant = { id: otherUserId, ...participantDoc };
+
+    setConversation({
+      id: snapshot.id,
+      ...data,
+      participant,
+    });
+
+    // Optional: clear search
+    setSearchTerm("");
+    setUsers([]);
+  } catch (err) {
+    console.error("Failed to load or create conversation:", err);
+  }
+};
 
 
 
@@ -138,12 +245,46 @@ const listToRender = searchTerm.length > 0 ? filteredConversations : conversatio
   placeholder="Search messages..."
   className="pl-8 rounded-full bg-background"
   value={searchTerm}
+  
   onChange={(e) => setSearchTerm(e.target.value)}
 />        </div>
       </div>
+
+
+      {!loading && searchTerm && users.length > 0 && (
+  <div        
+ className="absolute z-10 bg-white border rounded shadow w-full max-h-60 overflow-y-auto">
+    {users?.map((userd) => (
+      <div
+        onClick={() => handleUserClick(userd)}
+        key={userd?.id}
+        style={{background:"black"}}
+        className="p-2 flex items-center cursor-pointer bg-dark hover:bg-gray-100"
+      >
+        <img
+          src={userd?.photoURL || "/default-avatar.png"}
+          alt={userd?.fullName}
+          className="w-8 h-8 rounded-full mr-2"
+        />
+        <div>
+          <div className="font-medium">{userd?.fullName}</div>
+          {/* Optional: last message preview or status */}
+          <div className="text-sm text-gray-500">{userd?.lastMessage?.text || "No messages yet"}</div>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
       <ScrollArea className="flex-1">
+
+
+
+
         <div className="p-2 space-y-1">
  
+
+
+
 
           {conversations.length === 0 ? (
             <p className="text-center text-muted-foreground text-sm">No conversations</p>

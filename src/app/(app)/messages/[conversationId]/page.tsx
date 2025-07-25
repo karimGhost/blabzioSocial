@@ -79,7 +79,7 @@ console.log("convo", otherUserId)
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <ChatSidebar selectedConversationId={conversationId} />
+            <ChatSidebar setConversation={setConversation} selectedConversationId={conversationId} />
           </div>
         )}
 
@@ -100,7 +100,7 @@ console.log("convo", otherUserId)
 
       {/* Desktop layout */}
       <div className="hidden sm:grid sm:grid-cols-[320px_1fr] h-full">
-        <ChatSidebar selectedConversationId={conversationId} />
+        <ChatSidebar  setConversation={setConversation}  selectedConversationId={conversationId} />
         {conversation ? (
           <ChatArea conversation={conversation} />
         ) : (
