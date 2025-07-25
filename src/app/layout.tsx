@@ -5,7 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import Titlebar from '@/components/Titlebar';
 import Script from 'next/script';
-
+import Head from 'next/head';
 export const metadata: Metadata = {
   title: 'Blabzio',
   description: 'Connect and Share with Blabzio',
@@ -39,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
+      <Head>
         {/* Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -62,7 +62,7 @@ export default function RootLayout({
             })();
           `}
         </Script>
-      </head>
+      </Head>
       <body className="font-body antialiased">
         
         <div>

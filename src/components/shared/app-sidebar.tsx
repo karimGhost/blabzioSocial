@@ -4,13 +4,13 @@ import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
+import { db , dbForums} from "@/lib/firebase";
 import Link from "next/link";
 import { onSnapshot } from "firebase/firestore";
 import { useUnreadMessages } from "./useUnreadMessages";
 import { usePathname } from "next/navigation";
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
-
+import { getDoc } from "firebase/firestore";
 import {
   Home,
   PlusSquare,
@@ -26,6 +26,7 @@ import {
   HelpCircle,
   ChevronUp,
   ChevronDown,
+  Group,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,8 @@ import { dbe } from '@/lib/firebase';
 import { CreatePostForm } from "../forms/create-post-form";
 const navItems = [
   { href: "/feed", icon: Home, label: "Feed" },
+    { href: "/forums", icon:Group  , label: "Forums" },
+
   { href: "/videos", icon: Video, label: "Videos" },
   { href: "/messages", icon: MessageSquare, label: "Messages" },
   { href: "/profile/me", icon: User, label: "Profile" },
@@ -114,12 +117,52 @@ useEffect(() => {
     try {
 
       await signOut(auth);
-      router.push("/"); // or home, wherever you want messages dark News
+      router.push("/"); // or home, wherever you want messages dark News video
       clearUserCache()
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
+
+
+const dropdownRef = useRef<HTMLDivElement | null>(null);
+useEffect(() => {
+  const handleClickOutside = (e: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(e.target as Node)
+    ) {
+      setShowForumDropdown(false);
+    }
+  };
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+
+  const [showForumDropdown, setShowForumDropdown] = useState(false);
+  const [joinedForums, setJoinedForums] = useState<string[]>([]);
+  const [trendingForums, setTrendingForums] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchForums = async () => {
+      if (!user?.uid) return;
+
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      setJoinedForums(userDoc.data()?.interests || []);
+
+      const forumSnap = await getDocs(collection(db, "forums"));
+      const trending = forumSnap.docs
+        .map((d) => ({ name: d.id, posts: d.data().postCount || 0 }))
+        .sort((a, b) => b.posts - a.posts)
+        .slice(0, 5)
+        .map((f) => f.name);
+      setTrendingForums(trending);
+    };
+
+    fetchForums();
+  }, [user]);
+
+
   return (
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-card sm:flex  smflexx">
       <div className="flex h-16 items-center border-b px-6">
@@ -131,38 +174,93 @@ useEffect(() => {
 </span>
         </Link>
       </div>
-      <nav className="flex-1 overflow-y-auto py-4 px-4 text-sm font-medium">
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              <>
-              
-                <Link
+   <nav className="flex-1 overflow-y-auto py-4 px-4 text-sm font-medium">
+      <ul className="space-y-1">
+        {navItems.map((item) => (
+          <li key={item.label} className="relative">
+            {item.label !== "Forums" ? (
+              <Link
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-accent hover:text-accent-foreground",
-                  pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href))
+                  pathname === item.href ||
+                    (item.href !== "/feed" && pathname.startsWith(item.href))
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
                     : "text-muted-foreground"
                 )}
               >
-
                 <item.icon className="h-5 w-5" />
-
                 {item.label}
-                   {/* 🔴 Unread badge for Messages */}
-            {item.href === "/messages" && unreadCount > 0 && (
-              <span className=" right-3 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
+                {item.href === "/messages" && unreadCount > 0 && (
+                  <span className="ml-auto right-3 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Link>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowForumDropdown((prev) => !prev)}
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-accent hover:text-accent-foreground",
+                    pathname.startsWith("/forums")
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <Group className="h-5 w-5" />
+                  Forums
+                  <ChevronDown className="ml-auto h-4 w-4" />
+                </button>
+{showForumDropdown && (
+  <div
+    ref={dropdownRef}
+    className="absolute z-50 mt-2 ml-2 w-64 p-3 bg-white dark:bg-zinc-900 border rounded-lg shadow-xl text-sm"
+  >
+    {joinedForums.length > 0 && (
+      <div className="mb-3">
+        <p className="text-muted-foreground font-semibold mb-2">Your Forums</p>
+        {joinedForums.map((f, i) => (
+          <Link
+            key={i}
+            href={`/forums/${f}`}
+            className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+          >
+            <span>{f?.emoji || "💬"}</span> #{f}
+          </Link>
+        ))}
+      </div>
+    )}
+
+    {trendingForums.length > 0 && (
+      <div className="mb-3">
+        <p className="text-muted-foreground font-semibold mb-2">Trending</p>
+        {trendingForums.map((f, i) => (
+          <Link
+            key={i}
+            href={`/forums/${f}`}
+            className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+          >
+            <span>{f.emoji || "🔥"}</span> #{f}
+          </Link>
+        ))}
+      </div>
+    )}
+
+    <Link
+      href="/forums"
+      className="block text-center mt-2 text-blue-600 hover:underline text-xs"
+    >
+      View All Forums
+    </Link>
+  </div>
+)}
               </>
-            
-            </li>
-          ))}
-        </ul>
-      </nav>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
       <div className="mt-auto border-t p-4">
          <Link href="/create-post">
             <Button className="w-full">

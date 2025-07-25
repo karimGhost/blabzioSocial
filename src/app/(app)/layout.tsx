@@ -1,11 +1,11 @@
 import { AppSidebar, MobileAppHeader } from "@/components/shared/app-sidebar";
 import { AppHeader } from "@/components/shared/app-header";
-
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
   return (
    <div className="min-h-screen w-full grid grid-cols-1 sm:grid-cols-[240px_1fr]">
   {/* Sidebar */}

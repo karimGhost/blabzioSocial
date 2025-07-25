@@ -92,6 +92,19 @@ const firebaseAdmin = {
 };
 
 
+
+const firebaseforums = {
+  apiKey: "AIzaSyBW_5nWLQg31jkxLUu8qPIWg6OcZ6FBMeQ",
+  authDomain: "jjji-ca115.firebaseapp.com",
+  projectId: "jjji-ca115",
+  storageBucket: "jjji-ca115.firebasestorage.app",
+  messagingSenderId: "260723319303",
+  appId: "1:260723319303:web:7c0cf2d498b7e4840380a2",
+  measurementId: "G-5HGWYV56X4"
+
+};
+
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const app2 = initializeApp(firebaseConfig2, "app2"); // 
@@ -100,7 +113,7 @@ const app4 = initializeApp(firebaseConfig4, "app4"); //
 const app5 = initializeApp(firebaseConfig5, "app5"); // 
 const app6 = initializeApp(firebaseConfig6, "app6"); // 
 const appadmin = initializeApp(firebaseAdmin, "appadmin"); // 
-
+const appforums = initializeApp(firebaseforums, "appforums");
 
 export const rtdb = getDatabase(app6); // 
 
@@ -115,7 +128,7 @@ const dbc =getFirestore(app3)
 const dbd =getFirestore(app4)
 const dbe =getFirestore(app5)
 
-
+const dbForums =getFirestore(appforums)
 
 
 export const getFirebaseMessaging = async () => {
@@ -128,5 +141,5 @@ export const getFirebaseMessaging = async () => {
 
 
 // ✅ Export both
-export { dbb,db, auth, app2, dbc, dbd,dbe, Admin };
+export {dbForums, dbb,db, auth, app2, dbc, dbd,dbe, Admin };
 

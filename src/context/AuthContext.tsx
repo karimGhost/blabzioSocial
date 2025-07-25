@@ -6,7 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-
+import OccupationPopup from "@/components/OccupationPopup";
 type AuthContextType = {
   user: User | null;
   userData: any; // Firestore user data
@@ -26,10 +26,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+ 
 
  
  type ThemeMode = "light" | "dark";
-    
     
 
 useEffect(() => {
@@ -75,8 +75,18 @@ useEffect(() => {
     }
   }, [user, loading, router]);
 
+const [interest, setIntrest] = useState(false)
+
+  useEffect(()=>{
+    if(!userData) return;
+    if(userData?.interests && userData.length <= 0){
+setIntrest(true)
+    }
+  }, [userData]);
+
   return (
     <AuthContext.Provider value={{ user, userData, loading }}>
+    { interest ?  <OccupationPopup /> : <></>}
       {children}
     </AuthContext.Provider>
   );
