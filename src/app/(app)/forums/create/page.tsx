@@ -26,7 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { X } from "lucide-react";
+import { Image, X } from "lucide-react";
 import {
   collection,
   query,
@@ -40,6 +40,8 @@ import {
 } from "firebase/firestore";
 import { db, dbForums } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
+import { randomUUID } from "crypto";
+import { SelectContent, SelectItem, SelectValue,Select, SelectTrigger } from "@/components/ui/select";
 const formSchema = z.object({
   name: z.string().min(3, "Forum name must be at least 3 characters.").max(50),
   category: z.string().min(2, "Category is required.").max(30),
@@ -93,10 +95,21 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
     const forumRef = await addDoc(collection(dbForums, "forums"), {
       ...values,
       slug,
+          settings: {
+  allowPublicPosting: true
+},
+  id: randomUUID,
+  memberCount: '0',
+creatorId:user.uid,
       adminId: user.uid,
       moderators: [],
+      requests:[],
       createdAt: new Date(),
     });
+
+
+  
+
 
     // 2. Write the forum's id *into* the forum document
     await setDoc(forumRef, { id: forumRef.id }, { merge: true });
@@ -150,8 +163,8 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Cloudinary upload widget */}
-              <FormItem>
-                <FormLabel>Header Image</FormLabel>
+              <FormItem style={{display:"flex", flexDirection:"column"}}>
+                <FormLabel>Header Image    </FormLabel> 
          <CldUploadWidget
   uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME!}
   onSuccess={(result) => {
@@ -168,6 +181,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
       {form.watch("headerImageUrl")
         ? "Change Image"
         : "Upload Header Image"}
+        <Image />
     </Button>
   )}
 </CldUploadWidget>
@@ -195,19 +209,35 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Science" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+  control={form.control}
+  name="category"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Category</FormLabel>
+      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          <SelectItem value="Science">Science</SelectItem>
+          <SelectItem value="Technology">Technology</SelectItem>
+          <SelectItem value="Gaming">Gaming</SelectItem>
+          <SelectItem value="Education">Education</SelectItem>
+          <SelectItem value="Health">Health</SelectItem>
+          <SelectItem value="Business">Business</SelectItem>
+          <SelectItem value="Lifestyle">Lifestyle</SelectItem>
+          <SelectItem value="Entertainment">Entertainment</SelectItem>
+          <SelectItem value="Politics">Politics</SelectItem>
+          <SelectItem value="Other">Other</SelectItem>
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
               <FormField
                 control={form.control}
                 name="description"

@@ -37,6 +37,7 @@ export default function ForumPage() {
 const params = useParams();
   const slug = params?.slug as string;
 const router = useRouter();
+const [isAdmin, setIsAdmin] = useState(true);
 
 const [articles, setArticles] = useState<any[]>([]);
 const [members, setMembers] = useState<any[]>([]);
@@ -86,19 +87,32 @@ useEffect(() => {
       }));
       setMembers(membersData);
 
+
+
+
+
       // 4. (Optional) Set admin info from members
-      const admin = membersData.find((m) => m.role === "Admin");
-      if (admin) {
-        setForum((prev) => ({
-          ...prev,
-          admin,
-        }));
-      }
+     const admin = membersData.find((m) => m.role === "Admin");
+    const currentMember = membersData.find((m) => m.id === user.uid);
+
+    if (admin) {
+      setForum((prev) => ({
+        ...prev,
+        admin,
+      }));
+    }
+
+    if (currentMember?.role === "Admin") {
+      setIsAdmin(true);
+    }
+  
+
     } catch (error) {
       console.error("Error fetching forum data:", error);
     }
   };
 
+  
   fetchForumData();
 }, [slug]);
 
@@ -109,7 +123,7 @@ useEffect(() => {
   router.push(`/users/${userId}`)
 }
 
-const toast = useToast();
+const {toast} = useToast()
 const handlePromoteToMod = async (userId: string) => {
   try {
     await fetch(`/api/forums/${forum.id}/promote`, {
@@ -117,10 +131,13 @@ const handlePromoteToMod = async (userId: string) => {
       body: JSON.stringify({ userId }),
       headers: { "Content-Type": "application/json" }
     })
-    toast.success("User promoted to moderator!")
+        toast({ title: "Promoted", description: "User promoted to moderator!." });
+
     // Re-fetch members if needed
   } catch (err) {
-    toast.error("Failed to promote user.")
+            toast({ title: "Failed", variant:"destructive",  description: "Failed to promote user." });
+
+    
   }
 }
 
@@ -133,10 +150,12 @@ const handleRemoveUser = async (userId: string) => {
       body: JSON.stringify({ userId }),
       headers: { "Content-Type": "application/json" }
     })
-    toast.success("User removed from forum.")
+                toast({ title: "success", description: "User removed from forum.." });
+
     // Re-fetch members if needed
   } catch (err) {
-    toast.error("Failed to remove user.")
+                toast({ title: "Failed",variant:"destructive", description: "Failed to remove user.." });
+
   }
 }
 
@@ -150,7 +169,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
     {/* Top banner image */}
     <div className="relative h-40 md:h-56 w-full">
       <Image
-        src={forum.imageUrl}
+                  src={forum.headerImageUrl || `https://placehold.co/1200x400.png?text=${forum.name}`}
         alt={forum.name}
         fill
         className="object-cover"
@@ -173,13 +192,15 @@ if (!forum) return <div className="container py-12">Loading...</div>;
       </div>
 
       {/* Admin / Mod Controls (currentUser?.role === "Admin" || currentUser?.role === "Moderator") && */}
-      { (
-        <div className="space-x-2 flex-shrink-0">
-          <Button variant="outline">Manage Users</Button>
-          <Button className='bg-orange-400'>Edit Forum</Button>
-          <Button variant="destructive">Delete Forum</Button>
-        </div>
-      )}
+     {isAdmin && (
+  <div className="space-x-2 flex-shrink-0">
+    <Button className='bg-orange-400'>Edit Forum</Button>
+    <Button variant="destructive">Delete Forum</Button>
+    <Button onClick={() => router.push(`/forums/${forum.slug}/settings`)}>
+      Forum Settings
+    </Button>
+  </div>
+)}
     </CardContent>
   </Card>
 </div>
@@ -260,10 +281,13 @@ if (!forum) return <div className="container py-12">Loading...</div>;
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleViewProfile(member.id)}>
+                      <DropdownMenuItem style={
+                        
+                        {cursor:"pointer"}
+                      } className='pointer-cursor' onClick={() => handleViewProfile(member.id)}>
                         View Profile
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handlePromoteToMod(member.id)}>
+                      <DropdownMenuItem className='cursor-pointer' onClick={() => handlePromoteToMod(member.id)}>
                         Promote to Mod
                       </DropdownMenuItem>
                       <DropdownMenuItem
