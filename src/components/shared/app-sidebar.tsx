@@ -238,8 +238,8 @@ useEffect(() => {
         {trendingForums.map((f, i) => (
           <Link
             key={i}
-            href={`/forums/${f}`}
-            className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+ href={`/forums/${f.slug}`}
+             className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
           >
             <span>{f.emoji || "🔥"}</span> #{f}
           </Link>

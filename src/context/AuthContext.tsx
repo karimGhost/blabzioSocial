@@ -75,18 +75,10 @@ useEffect(() => {
     }
   }, [user, loading, router]);
 
-const [interest, setIntrest] = useState(false)
 
-  useEffect(()=>{
-    if(!userData) return;
-    if(userData?.interests && userData.length <= 0){
-setIntrest(true)
-    }
-  }, [userData]);
 
   return (
     <AuthContext.Provider value={{ user, userData, loading }}>
-    { interest ?  <OccupationPopup /> : <></>}
       {children}
     </AuthContext.Provider>
   );
