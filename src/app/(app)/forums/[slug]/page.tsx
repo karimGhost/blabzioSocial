@@ -31,14 +31,13 @@ import { DropdownMenuItem,DropdownMenu, DropdownMenuTrigger,DropdownMenuContent 
 import { useToast } from '@/hooks/use-toast';
 import { dbForums } from '@/lib/firebase';
 import { useParams, useRouter } from "next/navigation";
-
 export default function ForumPage() {
   const [forum, setForum] = useState<any>(null);
 const params = useParams();
   const slug = params?.slug as string;
 const router = useRouter();
 const [isAdmin, setIsAdmin] = useState(true);
-
+const {user} = useAuth();
 const [articles, setArticles] = useState<any[]>([]);
 const [members, setMembers] = useState<any[]>([]);
 useEffect(() => {
@@ -87,13 +86,13 @@ useEffect(() => {
       }));
       setMembers(membersData);
 
-
+console.log("members", membersData)
 
 
 
       // 4. (Optional) Set admin info from members
-     const admin = membersData.find((m) => m.role === "Admin");
-    const currentMember = membersData.find((m) => m.id === user.uid);
+     const admin = membersData.find((m) => m?.role === "Admin");
+    const currentMember = membersData.find((m) => m.id === user?.uid);
 
     if (admin) {
       setForum((prev) => ({
@@ -264,7 +263,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={member?.avatarUrl} alt={member.name} />
-                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{member?.name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-semibold">{member.name}</p>

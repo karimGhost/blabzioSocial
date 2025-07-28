@@ -98,7 +98,8 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
           settings: {
   allowPublicPosting: true
 },
-  id: randomUUID,
+
+  id: crypto.randomUUID(),
   memberCount: '0',
 creatorId:user.uid,
       adminId: user.uid,

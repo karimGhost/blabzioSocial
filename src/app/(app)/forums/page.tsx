@@ -117,7 +117,7 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
     setForums(allForums);
 
     if (user) {
-      const my = allForums.filter((forum) => forum.creatorId === user.uid);
+      const my = allForums.filter((forum) => forum.creatorId === user.uid || forum.adminId === user?.uid);
       const joined = [] as Forum[];
 
       for (const forum of allForums) {
@@ -132,10 +132,10 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
 
       const moderator = allForums.filter(
         (forum) =>
-          forum.moderators?.includes(user.uid) ? true : false &&
-          forum.creatorId !== user?.uid ? true : false || forum.adminId !== user.uid ? true : false
-      );
+          forum.moderators?.includes(user.uid)  
 
+
+      );
       setMyForums(my);
       setJoinedForums(joined);
       setmoderator(moderator);
@@ -187,9 +187,12 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
      {data.slice(0, visibleCount).map((forum) => {
 const isCreator = forum.creatorId === user?.uid || forum.adminId === user?.uid;
   const isMember = joinedForums.some(f => f.id === forum.id);
+
 const hasRequested =
   user?.uid && forum.requests?.includes(user.uid) ? true : false;
+
 const isModerator = forum.moderators?.includes(user?.uid) ? true : false;
+
 useEffect(() => {
 console.log("mod", forum.moderators?.includes(user?.uid))
 
@@ -207,12 +210,15 @@ console.log("mod", forum.moderators?.includes(user?.uid))
                   data-ai-hint={forum.aiHint}
                 />
               </div>
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-2 items-center">
+                 <div  className="flex gap-1 items-center">
                     <Badge variant="secondary">{forum.category}</Badge>
                     {isNewForum(forum.createdAt) && <Badge className="bg-green-500 text-white">New</Badge>}
                   </div>
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                
+               
+
                   <div className="flex items-center gap-4">
                     {forum.is18Plus && (
                       <Badge variant="destructive">18+</Badge>
@@ -241,13 +247,13 @@ console.log("mod", forum.moderators?.includes(user?.uid))
                 {(forum.memberCount || 0).toLocaleString()} members
               </div>
 
-        <Link href={`/forums/${forum.slug}`}>
+        <Link  href= {forum.isPrivate && !isCreator && !isMember && !isModerator  ? '' : `/forums/${forum.slug}`}>
          <Button
 
          variant={
   isCreator
     ? "secondary"
-    : moderator
+    : isModerator
     ? "ghost"
     : forum.isPrivate
     ? "outline"
@@ -267,7 +273,7 @@ console.log("mod", forum.moderators?.includes(user?.uid))
 >
   {isCreator
     ? "My Forum"
-    : moderator
+    : isModerator
     ? "Moderator"
     : isMember
     ? "Joined"
@@ -297,7 +303,9 @@ console.log("mod", forum.moderators?.includes(user?.uid))
 
   const uniqueCategories = Array.from(new Set(forums.map((f) =>  f.category)));
 
-     
+     useEffect(() => {
+console.log("mode", moderator)
+     },[moderator])
 
   return (
     <section className="py-12 md:py-20 lg:py-14">
@@ -362,7 +370,7 @@ console.log("mod", forum.moderators?.includes(user?.uid))
           <>
             {myForums.length > 0 && <ForumGrid title="My Forums" data={myForums} />}
             {joinedForums.length > 0 && <ForumGrid title="Joined Forums" data={joinedForums} />}
-            {moderator.length > 0 && (
+            { moderator.length > 0 &&  moderator  && (
   <ForumGrid title="Moderator In" data={moderator} />
 )}
           </>
