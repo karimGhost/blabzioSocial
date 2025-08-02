@@ -42,9 +42,10 @@ import { db, dbForums } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { randomUUID } from "crypto";
 import { SelectContent, SelectItem, SelectValue,Select, SelectTrigger } from "@/components/ui/select";
+import { MultiSelectCategory } from "./MultiSelectCategory";
 const formSchema = z.object({
   name: z.string().min(3, "Forum name must be at least 3 characters.").max(50),
-  category: z.string().min(2, "Category is required.").max(30),
+category: z.array(z.string().min(2)).min(1, "At least one category is required"),
   description: z.string().min(10, "Description must be at least 10 characters.").max(500),
   isPrivate: z.boolean().default(false),
   is18Plus: z.boolean().default(false),
@@ -57,7 +58,7 @@ export default function CreateForumPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      category: "",
+      category: [],
       description: "",
       isPrivate: false,
       is18Plus: false,
@@ -214,29 +215,16 @@ creatorId:user.uid,
   control={form.control}
   name="category"
   render={({ field }) => (
-    <FormItem>
-      <FormLabel>Category</FormLabel>
-      <Select onValueChange={field.onChange} defaultValue={field.value}>
-        <FormControl>
-          <SelectTrigger>
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-        </FormControl>
-        <SelectContent>
-          <SelectItem value="Science">Science</SelectItem>
-          <SelectItem value="Technology">Technology</SelectItem>
-          <SelectItem value="Gaming">Gaming</SelectItem>
-          <SelectItem value="Education">Education</SelectItem>
-          <SelectItem value="Health">Health</SelectItem>
-          <SelectItem value="Business">Business</SelectItem>
-          <SelectItem value="Lifestyle">Lifestyle</SelectItem>
-          <SelectItem value="Entertainment">Entertainment</SelectItem>
-          <SelectItem value="Politics">Politics</SelectItem>
-          <SelectItem value="Other">Other</SelectItem>
-        </SelectContent>
-      </Select>
-      <FormMessage />
-    </FormItem>
+<FormItem>
+  <FormLabel>Category</FormLabel>
+  <FormControl>
+    <MultiSelectCategory
+      value={field.value || []}
+      onChange={field.onChange}
+    />
+  </FormControl>
+  <FormMessage />
+</FormItem>
   )}
 />
               <FormField

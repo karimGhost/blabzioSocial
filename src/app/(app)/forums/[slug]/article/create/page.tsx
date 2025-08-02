@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 export default function CreateArticlePage() {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const params = useParams();
   const slug = params?.slug as string;
   const router = useRouter();
@@ -23,7 +23,8 @@ export default function CreateArticlePage() {
   const [isAllowed, setIsAllowed] = useState(false);
 const [mediaFiles, setMediaFiles] = useState<File[]>([]);
 const [mediaURLs, setMediaURLs] = useState<string[]>([]);
-const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});const [uploading, setUploading] = useState(false);
+const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+const [uploading, setUploading] = useState(false);
 async function uploadToCloudinary(file: File, onProgress?: (percent: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
     const url = 'https://api.cloudinary.com/v1_1/dtdlgromw/upload';
@@ -121,8 +122,8 @@ async function uploadToCloudinary(file: File, onProgress?: (percent: number) => 
       createdAt: new Date(),
       author: {
         id: user?.uid,
-        name: user?.displayName,
-        avatarUrl: user?.photoURL || '',
+        name: userData?.fullName,
+        avatarUrl: userData?.avatarUrl || '',
       },
       reactions: { hearts: 0, likes: 0 },
       commentCount: 0,
@@ -225,7 +226,7 @@ variant: "destructive"
   <div key={i}>
     <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mt-1">
       <div
-        className="h-2 bg-blue-500 transition-all duration-300"
+        className="h-2 bg-orange-400 transition-all duration-300"
         style={{ width: `${uploadProgress[file.name] || 0}%` }}
       />
     </div>

@@ -47,7 +47,7 @@ const sortOptions = [
 ];
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const [forums, setForums] = useState<Forum[]>([]);
   const [myForums, setMyForums] = useState<Forum[]>([]);
   const [joinedForums, setJoinedForums] = useState<Forum[]>([]);
@@ -62,9 +62,17 @@ const {toast} = useToast()
 
 const handleRequestToJoin = async (forumId: string, userId: string) => {
   try {
+
+     const Requested = {
+      name: userData?.fullName,
+      userid: user?.uid,
+      avatarUrl: userData?.avatarUrl,
+      role: "member",
+      joinedAt: Date.now(),
+    };
     await setDoc(
       doc(dbForums, "forums", forumId, "requests", userId),
-      { requestedAt: Date.now() }
+     Requested
     );
     toast({ title: "Request Sent", description: "Your request to join has been sent." });
   } catch (err) {
@@ -75,20 +83,37 @@ const handleRequestToJoin = async (forumId: string, userId: string) => {
 }
 
 
-
 const handleJoinPublicForum = async (forumId: string, userId: string) => {
   try {
+    const userMember = {
+      name: userData?.fullName,
+      userid: user?.uid,
+      avatarUrl: userData?.avatarUrl,
+      role: "member",
+      joinedAt: Date.now(),
+    };
+
+    // Use userId as the document ID
     await setDoc(
       doc(dbForums, "forums", forumId, "members", userId),
-      { joinedAt: Date.now() }
+      userMember
     );
-    toast({ title: "Joined", description: "You have joined the forum." });
-    // Optionally update state
+
+    toast({
+      title: "Joined",
+      description: "You have joined the forum jjjj.",
+    });
+
+    // Optionally update state after joining
   } catch (err) {
     console.error("Error joining forum:", err);
-    toast({ title: "Error", description: "Could not join the forum." });
+    toast({
+      title: "Error",
+      description: "Could not join the forum.",
+    });
   }
 };
+
 
   useEffect(() => {
   const fetchForums = async () => {
@@ -151,7 +176,7 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
     return now - created < 7 * 24 * 60 * 60 * 1000;
   };
 
-//isCreator
+//isCreator  Articles
   const filteredForums = forums
     .filter((forum) => {
       const term = searchTerm.toLowerCase();

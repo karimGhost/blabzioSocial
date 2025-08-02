@@ -36,50 +36,47 @@ const {toast} = useToast()
   const [allowPublicPosting, setAllowPublicPosting] = useState(false);
 
   useEffect(() => {
-    if (!slug || !user) return;
+  if (!slug || !user) return;
 
-    const fetchForumData = async () => {
-      const forumQuery = query(
-        collection(dbForums, 'forums'),
-        where('slug', '==', slug),
-        limit(1)
-      );
-      const forumSnap = await getDocs(forumQuery);
-      if (forumSnap.empty) {
-        router.push('/forums');
-        return;
-      }
+  const fetchForumData = async () => {
+    // ✅ Directly fetch doc if slug is actually the Firestore doc ID
+    const forumRef = doc(dbForums, "forums", slug);
+    const forumSnap = await getDoc(forumRef);
 
-      const forumDoc = forumSnap.docs[0];
-      const forumData = { id: forumDoc.id, ...forumDoc.data() };
+    if (!forumSnap.exists()) {
+      router.push("/forums");
+      return;
+    }
 
-      // Ensure current user is Admin
-      const adminDoc = await getDoc(
-        doc(dbForums, 'forums', forumData.id, 'members', user.uid)
-      );
-      const adminData = adminDoc.exists() ? adminDoc.data() : null;
+    const forumData = { id: forumSnap.id, ...forumSnap.data() };
 
-      if (!adminData || adminData.role !== 'Admin') {
-        toast.error('Access denied. Admins only.');
+    // ✅ Check admin role
+    const adminRef = doc(dbForums, "forums", forumData.id);
+    const adminSnap = await getDoc(forumRef);
+    const adminData = adminSnap.exists() ? adminSnap.data() : null;
+
+      if (!adminData || adminData.adminId !== user?.uid) {
         router.push(`/forums/${slug}`);
         return;
       }
 
-      setForum(forumData);
-      setAllowPublicPosting(forumData.settings?.allowPublicPosting ?? false);
+    setForum(forumData);
+    setAllowPublicPosting(forumData.settings?.allowPublicPosting ?? false);
 
-      const membersSnap = await getDocs(
-        collection(dbForums, 'forums', forumData.id, 'members')
-      );
-      const membersData = membersSnap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setMembers(membersData);
-    };
+    // ✅ Fetch members
+    const membersSnap = await getDocs(
+      collection(dbForums, "forums", forumData.id, "members")
+    );
+    const membersData = membersSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setMembers(membersData);
+  };
 
-    fetchForumData();
-  }, [slug, user]);
+  fetchForumData();
+}, [slug, user]);
+
 
   const handleSaveSettings = async () => {
     try {
@@ -121,7 +118,7 @@ const {toast} = useToast()
   <h1 className="text-2xl font-bold">Forum Settings: {forum.name}</h1>
   <Button
     variant="outline"
-    onClick={() => router.push(`/forums/${slug}`)}
+    onClick={() => router.back()}
   >
     Back to Forum
   </Button>
@@ -133,9 +130,23 @@ const {toast} = useToast()
           checked={allowPublicPosting}
           onCheckedChange={setAllowPublicPosting}
         />
+
+              <Button variant="destructive">Delete Forum</Button>
+
+
       </div>
 
+
+
       <Button onClick={handleSaveSettings}>Save Settings</Button>
+
+
+
+
+
+
+
+
 
       {/* --- MANAGE USERS --- */}
       <div>
@@ -149,8 +160,8 @@ const {toast} = useToast()
             >
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={member.avatarUrl} alt={member.name} />
-                  <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={member?.avatarUrl} alt={member.name} />
+                  <AvatarFallback>{member?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-semibold">{member.name}</p>

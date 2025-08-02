@@ -10,7 +10,16 @@ import {
   getDocs,
   doc,
   getDoc,
+  setDoc,
+  deleteDoc,
+  updateDoc,
+  increment,
+  onSnapshot,
+  arrayUnion,
 } from "firebase/firestore";
+ import { MultiSelectCategory } from '../create/MultiSelectCategory';
+import CommentThread from './article/CommentThread';
+
 
  import { useEffect, useState } from 'react';
  import { useAuth } from "@/hooks/useAuth";
@@ -26,20 +35,30 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Heart, PlusCircle, UserX, Crown, MoreVertical } from 'lucide-react';
+import { MessageSquare, Heart, PlusCircle, UserX, Crown, MoreVertical, LogOutIcon, Pen, Settings, BadgeCheck, Award, Save, X } from 'lucide-react';
 import { DropdownMenuItem,DropdownMenu, DropdownMenuTrigger,DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { dbForums } from '@/lib/firebase';
 import { useParams, useRouter } from "next/navigation";
+import ForumMediaSlider from '@/components/feed/ForumMediaSlider';
+import { formatDistanceToNow } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 export default function ForumPage() {
   const [forum, setForum] = useState<any>(null);
 const params = useParams();
   const slug = params?.slug as string;
 const router = useRouter();
 const [isAdmin, setIsAdmin] = useState(true);
-const {user} = useAuth();
+const {user, userData} = useAuth();
 const [articles, setArticles] = useState<any[]>([]);
+ const [PreviewUrl, setPreviewUrl] = useState();
 const [members, setMembers] = useState<any[]>([]);
+const [Requests, setRequests] = useState<any[]>([]);
+
+const [Mod, setMod] = useState<any[]>([]);
+
+const [canAddArticle , setcanAddArticle] = useState(true);
 useEffect(() => {
   if (!slug) return;
 
@@ -52,18 +71,13 @@ useEffect(() => {
         limit(1)
       );
       const forumSnapshot = await getDocs(forumQuery);
-
-      if (forumSnapshot.empty) {
-        router.push("/forums");
-        return;
-      }
+      if (forumSnapshot.empty) return;
 
       const forumDoc = forumSnapshot.docs[0];
       const forumData = {
         id: forumDoc.id,
         ...forumDoc.data(),
       };
-
       setForum(forumData);
 
       // 2. Fetch articles
@@ -76,6 +90,60 @@ useEffect(() => {
       }));
       setArticles(articlesData);
 
+      // 🔹 Attach listeners for each article's comments & reactions
+      articlesData.forEach((art) => {
+        const commentsRef = collection(
+          dbForums,
+          "forums",
+          forumDoc.id,
+          "articles",
+          art.id,
+          "comments"
+        );
+
+        const reactionsRef = collection(
+          dbForums,
+          "forums",
+          forumDoc.id,
+          "articles",
+          art.id,
+          "reactions"
+        );
+
+        // Listen for comments
+        onSnapshot(commentsRef, (snapshot) => {
+          setArticles((prev) =>
+            prev.map((a) =>
+              a.id === art.id ? { ...a, commentCount: snapshot.size } : a
+            )
+          );
+        });
+
+        // Listen for reactions
+        onSnapshot(reactionsRef, (snapshot) => {
+  let hearts = 0;
+  let likes = 0;
+  let userReaction: "heart" | "like" | null = null;
+
+  snapshot.docs.forEach((docSnap) => {
+    const data = docSnap.data();
+    if (data.type === "heart") hearts++;
+    if (data.type === "like") likes++;
+    if (docSnap.id === user?.uid) {
+      userReaction = data.type;
+    }
+  });
+
+  setArticles((prev) =>
+    prev.map((a) =>
+      a.id === art.id
+        ? { ...a, reactions: { hearts, likes }, userReaction }
+        : a
+    )
+  );
+        });
+});
+
       // 3. Fetch members
       const membersSnapshot = await getDocs(
         collection(dbForums, "forums", forumDoc.id, "members")
@@ -86,70 +154,155 @@ useEffect(() => {
       }));
       setMembers(membersData);
 
-console.log("members", membersData)
+      // 4. Fetch moderators
+      const ModSnap = await getDocs(
+        collection(dbForums, "forums", forumDoc.id, "moderators")
+      );
+      setMod(ModSnap.docs.map((doc) => ({ id: doc.id })));
 
+      // 5. Fetch join requests
+      const RequestsSnapshot = await getDocs(
+        collection(dbForums, "forums", forumDoc.id, "requests")
+      );
+      setRequests(
+        RequestsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+      );
 
-
-      // 4. (Optional) Set admin info from members
-     const admin = membersData.find((m) => m?.role === "Admin");
-    const currentMember = membersData.find((m) => m.id === user?.uid);
-
-    if (admin) {
-      setForum((prev) => ({
-        ...prev,
-        admin,
-      }));
-    }
-
-    if (currentMember?.role === "Admin") {
-      setIsAdmin(true);
-    }
-  
-
+      // 6. Set admin info
+      const admin = membersData.find((m) => m?.role === "Admin");
+      if (admin) {
+        setForum((prev) => ({
+          ...prev,
+          admin,
+        }));
+        setIsAdmin(true);
+      }
     } catch (error) {
       console.error("Error fetching forum data:", error);
     }
   };
 
-  
   fetchForumData();
 }, [slug]);
 
+const handleToggleReaction = async (
+  forumId?: string,
+  articleId?: string,
+  reactionType: "heart" | "like"
+) => {
+  if (!user?.uid) return;
+  if (!forumId || !articleId) {
+    console.error("Forum ID or Article ID is missing");
+    return;
+  }
+
+  const reactionRef = doc(
+    dbForums,
+    "forums",
+    forumId,
+    "articles",
+    articleId,
+    "reactions",
+    user.uid
+  );
+
+  const reactionSnap = await getDoc(reactionRef);
+
+  if (reactionSnap.exists() && reactionSnap.data().type === reactionType) {
+    await deleteDoc(reactionRef);
+  } else {
+    await setDoc(reactionRef, {
+      type: reactionType,
+      createdAt: new Date(),
+      userId: user.uid
+    });
+  }
+};
 
 
   const handleViewProfile = (userId: string) => {
   // You could navigate to a user profile page
-  router.push(`/users/${userId}`)
+  router.push(`/profile/${userId}`)
 }
 
-const {toast} = useToast()
-const handlePromoteToMod = async (userId: string) => {
+const {toast} = useToast();
+
+
+
+
+const handleRemoveMod = async (forumId:string,userId: string) => {
   try {
-    await fetch(`/api/forums/${forum.id}/promote`, {
-      method: "POST",
-      body: JSON.stringify({ userId }),
-      headers: { "Content-Type": "application/json" }
-    })
-        toast({ title: "Promoted", description: "User promoted to moderator!." });
+    // const userMember = {
+    //   name: userId?.name,
+    //   userid: userId?.id,
+    //   avatarUrl: userId?.avatarUrl,
+    //   role: "member",
+    //   joinedAt: Date.now(),
+    // };
 
-    // Re-fetch members if needed
+    // 1️⃣ Add user to members
+   
+
+        await deleteDoc(doc(dbForums, "forums", forumId, "moderators", userId));
+
+    // 2️⃣ Remove from requests
+
+    toast({
+      title: "Approved",
+      description: "User has been Removed as moderator.",
+    });
+
+    // Optionally refresh state here
   } catch (err) {
-            toast({ title: "Failed", variant:"destructive",  description: "Failed to promote user." });
-
-    
+    console.error("Error adding Removing:", err);
+    toast({
+      title: "Error",
+      description: "Could not remove the user as Mod",
+    });
   }
 }
 
-const handleRemoveUser = async (userId: string) => {
+const handlePromoteToMod = async (forumId:string,userId: string) => {
+  try {
+   
+    await setDoc(
+      doc(dbForums, "forums", forumId, "moderators", userId),{
+            joinedAt: Date.now()
+    }
+    );
+
+    // 2️⃣ Remove from requests
+
+    toast({
+      title: "Approved",
+      description: "User has been added as moderator.",
+    });
+
+    // Optionally refresh state here
+  } catch (err) {
+    console.error("Error adding user:", err);
+    toast({
+      title: "Error",
+      description: "Could not add the user as a Mod.",
+    });
+  }
+}
+
+const handleRemoveUser = async (forumId: string,userId: string) => {
   if (!confirm("Are you sure you want to remove this user?")) return
 
   try {
-    await fetch(`/api/forums/${forum.id}/remove`, {
-      method: "POST",
-      body: JSON.stringify({ userId }),
-      headers: { "Content-Type": "application/json" }
-    })
-                toast({ title: "success", description: "User removed from forum.." });
+   
+            await deleteDoc(doc(dbForums, "forums", forumId,  userId));
+
+    
+        await deleteDoc(doc(dbForums, "forums", forumId, "moderators", userId));
+
+
+    toast({ title: "success", description: "User removed from forum.." });
 
     // Re-fetch members if needed
   } catch (err) {
@@ -157,6 +310,189 @@ const handleRemoveUser = async (userId: string) => {
 
   }
 }
+
+
+
+
+const categoryColors = {
+    Science: "bg-blue-500 text-white",
+    Technology: "bg-indigo-500 text-white",
+    Gaming: "bg-purple-500 text-white",
+    Education: "bg-green-500 text-white",
+    Health: "bg-emerald-500 text-white",
+    Business: "bg-yellow-500 text-black",
+    Lifestyle: "bg-pink-500 text-white",
+    Entertainment: "bg-red-500 text-white",
+    Politics: "bg-orange-500 text-white",
+    Other: "bg-gray-500 text-white",
+  };
+
+const HandleRequestRemove = async (forumId: string, userId: string) => {
+  if (!confirm("Are you sure you want to remove this user request?")) return;
+
+  try {
+    await deleteDoc(doc(dbForums, "forums", forumId, "requests", userId));
+
+    toast({
+      title: "Success",
+      description: "User request removed from forum.",
+    });
+
+    // Optional: Update local state here so UI updates instantly
+    // setRequests((prev) => prev.filter(req => req.userid !== userId));
+  } catch (err) {
+    console.error("Error removing user request:", err);
+    toast({
+      title: "Failed",
+      variant: "destructive",
+      description: "Failed to remove user request.",
+    });
+  }
+};
+
+
+
+
+
+
+const handleAddUser = async (forumId: string, userId: any) => {
+  try {
+    const userMember = {
+      name: userId?.name,
+      userid: userId?.id,
+      avatarUrl: userId?.avatarUrl,
+      role: "member",
+      joinedAt: Date.now(),
+    };
+
+    // 1️⃣ Add user to members
+    await setDoc(
+      doc(dbForums, "forums", forumId, "members", userId.id),
+      userMember
+    );
+
+    // 2️⃣ Remove from requests
+    await deleteDoc(doc(dbForums, "forums", forumId, "requests", userId.id));
+
+    toast({
+      title: "Approved",
+      description: "User has been added to the forum.",
+    });
+
+    // Optionally refresh state here
+  } catch (err) {
+    console.error("Error adding user:", err);
+    toast({
+      title: "Error",
+      description: "Could not add the user to the forum.",
+    });
+  }
+};
+
+
+const [readMoreMap, setReadMoreMap] = useState<{ [postId: string]: number }>({});
+// const visibleChars = readMoreMap[post.id] || 500;
+// const shouldShowMore = post.content.length > visibleChars;
+
+
+const handleReadMore = (postId: string, contentLength: number) => {
+  setReadMoreMap((prev) => {
+    const current = prev[postId] || 500;
+    const next = Math.min(current + 800, contentLength); // Don't exceed total length
+    return { ...prev, [postId]: next };
+  });
+
+};
+
+const handleReaction = async (
+  forumId: string,
+  article: any,
+  type: "hearts" | "likes"
+) => {
+  if (!user) {
+    toast({ title: "Login Required", description: "Sign in to react." });
+    return;
+  }
+
+  // Prevent duplicate reactions from the same user
+  if (article.reactedUsers?.includes(user.uid)) {
+    toast({ title: "Already Reacted", description: "You already reacted to this post." });
+    return;
+  }
+
+  try {
+    const articleRef = doc(dbForums, "forums", forumId, "articles", article.id);
+
+    await updateDoc(articleRef, {
+      [`reactions.${type}`]: increment(1),
+      reactedUsers: arrayUnion(user.uid) // track who reacted
+    });
+
+    toast({ title: "Reaction Added", description: `You ${type === "hearts" ? "loved" : "liked"} this post.` });
+  } catch (err) {
+    console.error("Reaction error:", err);
+    toast({ title: "Error", description: "Failed to react to this article." });
+  }
+};
+
+
+
+
+ const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: forum?.name || "",
+    description: forum?.description || "",
+    category: forum?.category || [], // ✅ This should now be an array
+  });
+
+const [edited, setedited] = useState(false)
+
+useEffect(() => {
+
+if(edited)return;
+
+  if (forum) {
+  
+    setFormData({
+      name: forum.name || "",
+      description: forum.description || "",
+      category: Array.isArray(forum.category) ? forum.category : [],
+    });
+  }
+
+
+}, [forum, isEditing]);
+
+useEffect(() => {
+console.log("formData", formData)
+},[formData])
+
+  const handleSave = async (formData: { name: any; description: any; category: any; }) => {
+ setedited(true)
+
+    try {
+      const forumRef = doc(dbForums, "forums", forum.id);
+      await updateDoc(forumRef, {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        slug:formData.name,
+      });
+      setIsEditing(false);
+      setForum((prev: any) => ({
+        ...prev,
+ name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        }));
+      
+
+    } catch (error) {
+      console.error("Error updating forum:", error);
+    }
+  };
+
+
 
 if (!forum) return <div className="container py-12">Loading...</div>;
 
@@ -181,25 +517,105 @@ if (!forum) return <div className="container py-12">Loading...</div>;
     <CardContent className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-6 py-6">
       {/* Forum Info */}
       <div className="flex flex-col">
-        <h1 className="font-headline text-3xl md:text-4xl font-bold text-foreground">
-          {forum.name}
-        </h1>
-        <p className="max-w-2xl mt-2 text-muted-foreground">{forum.description}</p>
-        <div className="mt-3">
-          <Badge variant="secondary">{forum.category}</Badge>
-        </div>
+        {isEditing ? (
+        <>
+          {/* Editable fields */}
+          <Input
+            value={formData.name}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+
+            }
+            placeholder='change name'
+          />
+
+          <Textarea
+            value={formData.description}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, description: e.target.value }))
+            }
+            placeholder="Forum Description"
+          />
+
+          {/* MultiSelectCategory instead of Input */}
+          <MultiSelectCategory
+            value={formData.category}
+            onChange={(newCategories: any) =>
+              setFormData((prev) => ({ ...prev, category: newCategories }))
+            }
+          />
+
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                handleSave(formData);
+                setIsEditing(false);
+              }}
+              className="bg-orange-500 text-white"
+            >
+              <Save className="h-4 w-4 mr-1" /> Save
+            </Button>
+            <Button
+              variant="outlined"
+              className='outline'
+              onClick={() => {setedited(false); setIsEditing(false)}}
+            >
+              <X className="h-4 w-4 mr-1" /> Cancel
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Display mode */}
+          <h1 className="font-headline text-3xl md:text-4xl font-bold text-foreground">
+            {formData.name}
+          </h1>
+          <p className="max-w-2xl mt-2 text-muted-foreground">
+            {formData.description}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-1">
+            {Array.isArray(formData.category) &&
+              formData.category.map((cat: string) => (
+                <Badge
+                  key={cat}
+                  className={`${categoryColors[cat] || "bg-gray-500 text-white"} text-xs font-medium`}
+                >
+                  {cat}
+                </Badge>
+              ))}
+          </div>
+        </>
+      )}
+
       </div>
 
-      {/* Admin / Mod Controls (currentUser?.role === "Admin" || currentUser?.role === "Moderator") && */}
-     {isAdmin && (
+      {/* Admin / Mod Controls (currentUser?.role === "Admin" promote edit || currentUser?.role === "Moderator") settings && */}
+     {  forum.adminId === user?.uid  ? (
   <div className="space-x-2 flex-shrink-0">
-    <Button className='bg-orange-400'>Edit Forum</Button>
-    <Button variant="destructive">Delete Forum</Button>
-    <Button onClick={() => router.push(`/forums/${forum.slug}/settings`)}>
+     {/* Edit Button */}
+      {!isEditing && (
+        <Button
+          className="outline bg-transparent hover:bg-orange-300"
+          onClick={() => setIsEditing(true)}
+        >
+          Edit Forum
+          <Pen className="ml-1 h-4 w-4" />
+        </Button>
+      )}
+    {/* <Button variant="destructive">Delete Forum</Button> */}
+    <Button className=" hover:bg-orange-300" onClick={() => router.push(`/forums/${forum.id}/settings`)}>
       Forum Settings
+      <Settings />
     </Button>
   </div>
-)}
+) : <div className="space-x-2 flex-shrink-0">
+    <Button variant="destructive">Exit Forum
+
+      <LogOutIcon />
+    </Button>
+  </div>}
+
+
     </CardContent>
   </Card>
 </div>
@@ -210,47 +626,121 @@ if (!forum) return <div className="container py-12">Loading...</div>;
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <TabsList>
           <TabsTrigger value="articles">Articles</TabsTrigger>
-          <TabsTrigger value="members">Members ({forum?.memberCount?.toLocaleString()})</TabsTrigger>
+          <TabsTrigger value="members">Members ({members?.length})</TabsTrigger>
           <TabsTrigger value="about">About</TabsTrigger>
+
+          { forum.isPrivate &&  forum.adminId === user?.uid || Mod.some((i) => i.id === user?.uid) && <TabsTrigger value="Requests">Requests</TabsTrigger>}
+
         </TabsList>
-        <Link href={`/forums/${forum.slug}/article/create`}>
+       {canAddArticle && <Link href={`/forums/${forum.slug}/article/create`}>
+        
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Article
           </Button>
-        </Link>
+        
+        </Link> }
       </div>
 
-      {/* --- ARTICLES TAB --- */}
-      <TabsContent value="articles">
-        <div className="grid grid-cols-1 gap-6">
-         {articles.map((article) => (
-            <Card
-              key={article.id}
-              className="hover:bg-card/90 transition-colors"
-            >
-              <CardHeader>
-                <Link href={`/forums/${forum.slug}/article/${article.slug}`}>
-                  <CardTitle className="font-headline text-xl hover:text-primary transition-colors">
-                    {article.title}
-                  </CardTitle>
-                </Link>
-                <CardDescription>by {article.author.name}</CardDescription>
-              </CardHeader>
-              <CardFooter className="flex items-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Heart className="h-4 w-4" /> {article.reactions.hearts + article.reactions.likes} Reactions
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <MessageSquare className="h-4 w-4" /> {article.commentCount} Comments
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </TabsContent>
+      {/* --- ARTICLES TAB about--- */}
+    <TabsContent value="articles">
+  <div className="grid grid-cols-1 gap-6">
 
-      {/* --- MEMBERS TAB --- */}
+{[...articles]
+  .sort((a, b) => {
+    const dateA = a.createdAt?.seconds ? a.createdAt.seconds : 0;
+    const dateB = b.createdAt?.seconds ? b.createdAt.seconds : 0;
+    return dateB - dateA; // newest first
+  })
+  .map((article) => (      <Card
+        key={article.id}
+        className="hover:bg-caprimarytransition-colors"
+      >
+        <CardHeader>
+          <Link href={`/forums/${forum.slug}/article/${article.slug}`}>
+            <CardTitle className="font-headline text-xl hover:text-primaryy transition-colors">
+              {article.title}
+            </CardTitle>
+          </Link>
+          <div className="flex items-center gap-2">
+            {article.author.avatarUrl && (
+              <img
+                src={article.author.avatarUrl}
+                alt={article.author.name}
+                className="w-6 h-6 rounded-full"
+              />
+
+
+
+            )}
+<CardDescription>
+  by {article.author.name} ·{" "}
+  {article.createdAt
+    ? formatDistanceToNow(
+        article.createdAt.toDate
+          ? article.createdAt.toDate() // Firestore Timestamp
+          : new Date(article.createdAt), // Already a string/number
+        { addSuffix: true }
+      )
+    : ""}
+</CardDescription>
+          </div>
+        </CardHeader>
+
+        {article.media?.length > 0 && (
+          <div className="px-6 pb-4">
+          
+
+            <ForumMediaSlider post={article.media}  setPreviewUrl={setPreviewUrl}/>
+          </div>
+        )}
+             <CardContent className="p-4 pt-0">
+
+<p className="whitespace-pre-wrap text-sm">
+  {article.content.slice(0, readMoreMap[article.id] || 500)}
+  {article.content.length > readMoreMap[article.id] && (
+    <button
+      onClick={() => handleReadMore(article.id, article.content.length)}
+      className="text-blue-500 underline ml-1"
+      style={{ cursor: 'pointer' }}
+    >
+      ...Read More
+    </button>
+  )}
+</p>
+            </CardContent>
+
+    <CardFooter className="flex items-center gap-6 text-sm text-muted-foreground">
+  <button
+    className={`flex items-center gap-1.5 ${
+      article.userReaction === "heart" ? "text-red-500" : ""
+    }`}
+onClick={() => handleToggleReaction(forum?.id, article?.id, "heart")}
+  >
+    <Heart className="h-4 w-4" />
+    {article.reactions?.hearts || 0}
+  </button>
+
+  <button
+    className={`flex items-center gap-1.5 ${
+      article.userReaction === "like" ? "text-blue-500" : ""
+    }`}
+onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
+  >
+    👍 {article.reactions?.likes || 0}
+  </button>
+
+  <div className="flex   items-center gap-1.5">
+ <CommentThread forumId={forum.id} articleId={article.id} />
+  </div>
+</CardFooter>
+      </Card>
+    ))}
+  </div>
+</TabsContent>
+
+
+      {/* --- MEMBERS TAB Articles  --- */}
       <TabsContent value="members">
         <Card>
           <CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -260,18 +750,103 @@ if (!forum) return <div className="container py-12">Loading...</div>;
                 key={member.id}
                 className="flex items-center justify-between p-3 rounded-md border bg-background"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3" onClick={() => handleViewProfile(member.id)}>
                   <Avatar>
                     <AvatarImage src={member?.avatarUrl} alt={member.name} />
                     <AvatarFallback>{member?.name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">{member.role}</p>
+                    <Link href={`/profile/${member.id}`} className="font-semibold">{member.name}</Link>
+<div style={{display:"flex", flexDirection:"row"}}>
+    { member?.role === "Admin"  &&   <Crown className="h-3 w-3 text-amber-500" /> }
+    { member?.role === "Moderator"  &&   <Badge className="h-3 w-3 text-amber-500" /> }
+<div className='flex'>
+
+   <p className="text-xs text-muted-foreground">{  Mod.some((i) => i.id === member.id)   ? "Moderator" : "Member"}</p>
+                 { Mod.some((i) => i.id === member.id) &&   <Award className="h-3 w-3 text-amber-500" />}
+</div>
+                   
+</div>
+                
                   </div>
                 </div>
 
-                {/*(currentUser.isAdmin || currentUser.isModerator) && member.role !== "Admin" &&*/}
+                {/*(currentUser.isAdmin || currentUser.isModerator) crown && member.role user !== "Admin" settings members &&*/}
+                { member?.role !== "Admin"  &&(
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem style={
+                        
+                        {cursor:"pointer"}
+                      } className='pointer-cursor hover:text-primary' onClick={() => handleViewProfile(member.id)}>
+                        View Profile
+                      </DropdownMenuItem>
+                   {!Mod.some((i) => i.id === member.id) && (
+  <DropdownMenuItem
+    className="cursor-pointer hover:text-primary"
+    onClick={() => handlePromoteToMod(forum.id, member.id)}
+  >
+    Promote to Mod
+  </DropdownMenuItem>
+)}
+
+{/* If member IS a mod → show remove button */}
+{Mod.some((i) => i.id === member.id) && (
+  <DropdownMenuItem
+    className="cursor-pointer hover:text-primary"
+    onClick={() => handleRemoveMod(forum.id, member.id)}
+  >
+    Remove Mod
+  </DropdownMenuItem>
+)}
+                      <DropdownMenuItem
+                      style={
+                        
+                        {cursor:"pointer", borderRadius:"5px"}
+                      }  className="text-destructive hover:bg-destructive hover:text-white"
+                        onClick={() => handleRemoveUser(forum.id,member.id)}
+                      >
+                        Remove User
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+
+
+       {/* --- MEMBERS Requests TAB Articles --- */}
+       { forum.adminId === user?.uid   || Mod.some((i) => i.id === user?.uid)  &&
+      <TabsContent value="Requests">
+        <Card>
+          <CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Requests.map((member) => (
+
+              <div
+                key={member.id}
+                className="flex items-center justify-between p-3 rounded-md border bg-background"
+              >
+                <div className="flex items-center gap-3" onClick={() => handleViewProfile(member.id)}>
+                  <Avatar>
+                    <AvatarImage src={member?.avatarUrl} alt={member.name} />
+                    <AvatarFallback>{member?.name?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div style={{cursor:"pointer"}}>
+                    <Link href={`/profile/${member.id}`} className="font-semibold">{member.name}</Link>
+                    {/* <p className="text-xs text-muted-foreground">{  Mod.some((i) => i.id === member.id)   ? "Moderator" : "Member"}</p> */}
+                  </div>
+                </div>
+
+                {/*(currentUser.isAdmin || currentUser.isModerator) && member.role user !== "Admin" &&*/}
                 { (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -286,14 +861,17 @@ if (!forum) return <div className="container py-12">Loading...</div>;
                       } className='pointer-cursor' onClick={() => handleViewProfile(member.id)}>
                         View Profile
                       </DropdownMenuItem>
-                      <DropdownMenuItem className='cursor-pointer' onClick={() => handlePromoteToMod(member.id)}>
-                        Promote to Mod
+                      <DropdownMenuItem className='cursor-pointer' onClick={() => handleAddUser( forum.id,member)}>
+                       AddUser
                       </DropdownMenuItem>
+
+ 
+
                       <DropdownMenuItem
                         className="text-destructive"
-                        onClick={() => handleRemoveUser(member.id)}
+                        onClick={() => HandleRequestRemove(forum.id, member.id)}
                       >
-                        Remove User
+                        Remove Request
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -303,7 +881,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
           </CardContent>
         </Card>
       </TabsContent>
-
+}
       {/* --- ABOUT TAB --- */}
       <TabsContent value="about">
         <Card>
@@ -321,7 +899,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
                     src={forum.admin?.avatarUrl}
                     alt={forum?.admin?.name}
                   />
-                  <AvatarFallback>{forum?.admin?.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{forum?.admin?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <span>{forum.admin?.name}</span>
               </div>

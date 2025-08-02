@@ -506,148 +506,28 @@ const userId = user?.uid;
     },[user])
 
    return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:hidden">
-        <DropdownMenu>
+    <>
+     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:hidden">
 
-          <DropdownMenuTrigger asChild>      
-
+<div style={{display:"flex", justifyContent:"space-between", width:"100%"}}>
 <div style={{position:"relative", padding:"0px"}}>
-  <Button   className="outline"  style={{color:"black" ,border:"1px solid white", borderColor:"white"}} size="icon">
 
 
-             <BlabzioLogo  style={{width:"40px", height:"40px"}}  className="h-9 w-9 justify m-auto" />
-                
-
-                              
-                <span className="sr-only">Toggle Menu</span>
-                                         {/* <Menu className="h-5 w-5" /> */}
-
-            </Button>
-           <div style={{ position: "absolute", top: "10px", left: "20px", zIndex: 9 }}>
-  {unreadCount > 0 && (
-    <span className="heartbeat-dot"></span>
-  )}
-</div>
-
-</div>
-          
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {navItems.map((item) => (
-                 <DropdownMenuItem key={item.label} asChild>
-                  
-                 <>
-                    <div className="flex ">
-                        
-                      
-                   <Link href={item.href} className={cn(
-                        "flex items-center gap-2 w-full",
-                        pathname === item.href ? "bg-muted" : ""
-                    )}>
-                    
-                        <item.icon className="h-4 w-4"/>
-                        {item.label}
-                    </Link>
-                     
-
-
-                       {/* 🔴 Unread badge for Messages */}
-            {item.href === "/messages" && unreadCount > 0 && (
-              <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
-                {unreadCount > 9 ? "9+" : unreadCount}
-
-              </span>
-
-            )}
-
-             </div>
-                 
-                 </>
-                  
-
-
-
-                 </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator/>
-             <DropdownMenuItem asChild>
-               <Link href="/create-post">
-                 <PlusSquare className="mr-2 h-4 w-4" /> Create Post
-              </Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator/>
-            <DropdownMenuItem asChild>
-               <button
-      onClick={handleLogout}
-      className="flex items-center text-sm text-red-600 hover:underline"
-    >
-      <LogOut className="mr-2 h-4 w-4" />
-      Logout
-    </button>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        
-        <div className="flex-1">
-            <Link href="/feed" className="flex items-center gap-2 font-semibold">
-    <span className="flex items-center font-headline text-xl">
+  <Link href="/feed" className="flex items-center gap-2 font-semibold">
+        <span className="flex items-center font-headline text-xl">
   <b className="text-4xl font-dragon text-orange-400 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
   <span style={{marginBottom:"-4px"}} className="bottom-[-20px]">labzio</span>
 </span>
-           </Link>
-        </div>
+        </Link>
+                    
+</div>
 
 
-  <div className="relative flex items-center w-full md:w-auto">
-
-
-
-
-
-  {visible && (
-        <div ref={wrapperRef} className="absolute left-0 right-0 z-50 flex justify-center mt-2">
-          <form  style={{width:"90%",margin:"auto",zIndex:"99", position:"fixed",top:"50px",left:"0", right:"0" }}  onSubmit={handleSearch} className="w-full sm:w-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-           
-                 {/* Search Input */}
-
-              <Input
-                type="search"
-                value={querys}
-                name="search"
-                onChange={(e) => setQuerys(e.target.value)}
-                placeholder="Search Blabzio..."
-                  autoComplete="off"
-
-className={cn(
-          "bg-muted pl-9 rounded-full transition-all shadow-none",
-          "absolute left-0 top-0 w-full", // mobile
-          "md:static md:w-64 md:opacity-100", // desktop
-          showInput ? "opacity-100" : "opacity-0 pointer-events-none md:opacity-100"
-        )}              />
-            </div>
-          </form>
-        </div>
-      )}
+<div style={{display:"flex", justifyContent:"space-between", width:"100px"}}>
 
 
 
-   
-
-
-
-        <Button         onClick={toggleInput}
- variant="ghost" size="icon" className="rounded-full">
-          
-          {showInput ?  <X className="h-5 w-5" />  :  <Search className="h-5 w-5" /> }
-      
-            <span className="sr-only">Search</span>
-        </Button>
-      </div>
-      
-         <Button onClick={() => markAllAsRead()} variant="ghost" size="icon" className="relative rounded-full">
+    <Button onClick={() => markAllAsRead()} variant="ghost" size="icon" className="relative rounded-full " style={{marginLeft:"-50px"}}>
   <Link href="/notification" className="relative inline-block">
     <Bell className="h-5 w-5" />
     <span className="sr-only">Notifications</span>
@@ -664,17 +544,45 @@ className={cn(
   </Link>
 </Button>
 
-         <DropdownMenu>
+
+   <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="h-9 w-9 cursor-pointer">
                 <AvatarImage src={userData?.avatarUrl} alt="User Avatar" data-ai-hint="user avatar"/>
                 <AvatarFallback>{(userData?.fullName ?? "").substring(0, 2) || "??"}</AvatarFallback>
+                  { unreadCount > 0 && (
+              <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+
+              </span>
+
+            )}
             </Avatar>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                        <DropdownMenuItem asChild><Link href="/profile/me">Profile</Link></DropdownMenuItem>
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link href="/profile/me">Profile</Link></DropdownMenuItem>
+
+                     <div style={{display:"flex"}}>
+                      
+                       <DropdownMenuItem asChild><Link href="/messages">Messages</Link>
+
+
+</DropdownMenuItem>
+
+             { unreadCount > 0 && (
+              <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+
+              </span>
+
+            )} </div> 
+
+                        <DropdownMenuItem asChild><Link href="/Forum">Forum</Link></DropdownMenuItem>
+
             <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
 {
 
@@ -696,18 +604,51 @@ className={cn(
           </DropdownMenuContent>
         </DropdownMenu>
 
-  { isInstallable ? ( AppInstalled ? null :
-  <div
-      className={`slide-container ${timedouts ? "slide-in" : "slide-out"}`}
-    >
-      <Button className="bg-primary" onClick={promptInstall}>
-        Install App
-      </Button>
-    </div>
+</div>
+                    
+ </div>
+                </header>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around border-t bg-background p-2 sm:hidden">
+      {/* Feed */}
+      <Link href="/feed" className="flex flex-col items-center text-sm">
+        <Home className="h-6 w-6" />
+        <span>Feed</span>
+      </Link>
 
-        ) : null}
+      {/* Search */}
+      <Link href="/search" className="flex flex-col items-center text-sm">
+        <Search className="h-6 w-6" />
+        <span>Search</span>
+      </Link>
 
+      {/* Create Post */}
+      <Link href="/create-post" className="flex flex-col items-center text-sm">
+        <PlusSquare className="h-6 w-6" />
+        <span>Create</span>
+      </Link>
+
+      {/* Notifications */}
+      <Link href="/videos" className="relative flex flex-col items-center text-sm">
+        <Video className="h-6 w-6" />
+        <span>Slides</span>
        
-    </header>
+      </Link>
+
+      {/* Profile */}
+      <Link href="/profile/me" className="flex flex-col items-center text-sm">
+        {userData?.avatarUrl ? (
+          <img
+            src={userData.avatarUrl}
+            alt="User Avatar"
+            className="h-6 w-6 rounded-full"
+          />
+        ) : (
+          <User className="h-6 w-6" />
+        )}
+        <span>Profile</span>
+      </Link>
+    </nav>
+    </>
+  
    );
 }
