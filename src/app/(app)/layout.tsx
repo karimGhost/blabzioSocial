@@ -21,8 +21,9 @@ export default function AppLayout({
     <div className="hidden sm:block">
       <AppHeader />
     </div>
-  <main className="flex-1 overflow-auto bg-background px-4 py-4 lg:px-6 lg:py-6">
-  <div className="w-full max-w-[800px] mx-auto">
+  <main className="flex-1 overflow-auto bg-background px-4 py-4 lg:px-6 lg:py-6  sm:mb-6
+">
+  <div className="w-full max-w-[800px] mx-auto ">
     {children}
   </div>
 </main>

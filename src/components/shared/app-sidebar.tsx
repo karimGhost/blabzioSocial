@@ -507,7 +507,7 @@ const userId = user?.uid;
 
    return (
     <>
-     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:hidden">
+     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:hidden -mt-8">
 
 <div style={{display:"flex", justifyContent:"space-between", width:"100%"}}>
 <div style={{position:"relative", padding:"0px"}}>

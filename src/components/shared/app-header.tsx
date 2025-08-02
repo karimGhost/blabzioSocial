@@ -119,7 +119,7 @@ const userId = user?.uid;
 
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 " style={{zIndex:"1"}}>
+    <header className=" sticky top-0 z-30 flex  h-16 items-center gap-4 border-b bg-background px-4 md:px-6  " style={{zIndex:"1"}}>
       {/* Mobile nav toggle - if you add a collapsible sidebar using shadcn/ui Sidebar component */}
      
 {/* 

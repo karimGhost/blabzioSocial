@@ -57,6 +57,7 @@ export default function Titlebar() {
   };
   return (
    <div
+   style={{marginRight:"60px"}}
   className={clsx(
     'titlebarMobApp',
     hidden ? '-translate-y-full' : 'translate-y-0'
