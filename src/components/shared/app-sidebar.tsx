@@ -58,7 +58,24 @@ const navItems = [
 ];
 
 
-
+interface Forum {
+  headerImageUrl: string;
+  adminId: string | undefined;
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  description: string;
+  isPrivate: boolean;
+  is18Plus: boolean;
+  memberCount?: number;
+  imageUrl?: string;
+  aiHint?: string;
+  creatorId?: string;
+  createdAt?: { seconds: number };
+  moderators: any;
+  requests?: string[]; // 👈 ADD THIS
+}
     // { href: "/News", icon: Video, label: "News" create },
 
 
@@ -76,6 +93,14 @@ console.log("unreadCount", unreadCount)
 
   const [userData, setUserData] =useState<any>(null) ;
   const [Loading, setLoading] = useState(true);
+
+
+
+ const [myForums, setMyForums] = useState<Forum[]>([]);
+  const [joinedForums, setJoinedForums] = useState<Forum[]>([]);
+
+
+
 
 useEffect(() => {
   if (!user) return;
@@ -140,27 +165,66 @@ useEffect(() => {
 }, []);
 
   const [showForumDropdown, setShowForumDropdown] = useState(false);
-  const [joinedForums, setJoinedForums] = useState<string[]>([]);
   const [trendingForums, setTrendingForums] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchForums = async () => {
-      if (!user?.uid) return;
 
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      setJoinedForums(userDoc.data()?.interests || []);
 
-      const forumSnap = await getDocs(collection(db, "forums"));
-      const trending = forumSnap.docs
-        .map((d) => ({ name: d.id, posts: d.data().postCount || 0 }))
-        .sort((a, b) => b.posts - a.posts)
-        .slice(0, 5)
-        .map((f) => f.name);
-      setTrendingForums(trending);
-    };
+ useEffect(() => {
+  const fetchForums = async () => {
+    const snapshot = await getDocs(collection(dbForums, "forums"));
 
-    fetchForums();
-  }, [user]);
+    const allForums = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const forumData = doc.data() as Forum;
+
+        let requests: string[] = [];
+        if (user && forumData.isPrivate) {
+          const requestsSnapshot = await getDocs(
+            collection(dbForums, "forums", doc.id, "requests")
+          );
+          requests = requestsSnapshot.docs.map((reqDoc) => reqDoc.id);
+        }
+
+        return {
+          id: doc.id,
+          ...forumData,
+          requests,
+        } as Forum;
+      })
+    );
+
+    // setForums(allForums);
+
+    if (user) {
+      const my = allForums.filter((forum) => forum.creatorId === user.uid || forum.adminId === user?.uid);
+      const joined = [] as Forum[];
+
+      for (const forum of allForums) {
+        if (forum.creatorId === user.uid) continue;
+
+        const memberDoc = await getDoc(
+          doc(dbForums, "forums", forum.id, "members", user.uid)
+        );
+
+        if (memberDoc.exists()) joined.push(forum);
+      }
+
+      const moderator = allForums.filter(
+        (forum) =>
+          forum.moderators?.includes(user.uid)  
+
+
+      );
+      setMyForums(my);
+      setJoinedForums(joined);
+    
+      console.log("joined", joined)
+    }
+  };
+
+  fetchForums();
+}, [user]);
+
 
 
   return (
@@ -217,31 +281,31 @@ useEffect(() => {
     ref={dropdownRef}
     className="absolute z-50 mt-2 ml-2 w-64 p-3 bg-white dark:bg-zinc-900 border rounded-lg shadow-xl text-sm"
   >
-    {joinedForums.length > 0 && (
+    { myForums.length > 0 && (
       <div className="mb-3">
         <p className="text-muted-foreground font-semibold mb-2">Your Forums</p>
-        {joinedForums.map((f, i) => (
+        {myForums.map((f, i) => (
           <Link
             key={i}
-            href={`/forums/${f}`}
+            href={`/forums/${f.name}`}
             className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
           >
-            <span>{f?.emoji || "💬"}</span> #{f}
+            <span>{  "💬"}</span> #{f.name}
           </Link>
         ))}
       </div>
     )}
 
-    {trendingForums.length > 0 && (
+    {joinedForums.length > 0 && (
       <div className="mb-3">
-        <p className="text-muted-foreground font-semibold mb-2">Trending</p>
-        {trendingForums.map((f, i) => (
+        <p className="text-muted-foreground font-semibold mb-2">Joined Forums</p>
+        {joinedForums.map((f, i) => (
           <Link
             key={i}
- href={`/forums/${f.slug}`}
+ href={`/forums/${f.name}`}
              className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
           >
-            <span>{f.emoji || "🔥"}</span> #{f}
+            <span>{ "🔥"}</span> #{f.name}
           </Link>
         ))}
       </div>
@@ -386,7 +450,69 @@ useEffect(() => {
 export function MobileAppHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const {user} = useAuth()
+  const {user} = useAuth();
+
+
+ const [myForums, setMyForums] = useState<Forum[]>([]);
+  const [joinedForums, setJoinedForums] = useState<Forum[]>([]);
+
+
+ useEffect(() => {
+  const fetchForums = async () => {
+    const snapshot = await getDocs(collection(dbForums, "forums"));
+
+    const allForums = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const forumData = doc.data() as Forum;
+
+        let requests: string[] = [];
+        if (user && forumData.isPrivate) {
+          const requestsSnapshot = await getDocs(
+            collection(dbForums, "forums", doc.id, "requests")
+          );
+          requests = requestsSnapshot.docs.map((reqDoc) => reqDoc.id);
+        }
+
+        return {
+          id: doc.id,
+          ...forumData,
+          requests,
+        } as Forum;
+      })
+    );
+
+    // setForums(allForums);
+
+    if (user) {
+      const my = allForums.filter((forum) => forum.creatorId === user.uid || forum.adminId === user?.uid);
+      const joined = [] as Forum[];
+
+      for (const forum of allForums) {
+        if (forum.creatorId === user.uid) continue;
+
+        const memberDoc = await getDoc(
+          doc(dbForums, "forums", forum.id, "members", user.uid)
+        );
+
+        if (memberDoc.exists()) joined.push(forum);
+      }
+
+      const moderator = allForums.filter(
+        (forum) =>
+          forum.moderators?.includes(user.uid)  
+
+
+      );
+      setMyForums(my);
+      setJoinedForums(joined);
+    
+      console.log("joined", joined)
+    }
+  };
+
+  fetchForums();
+}, [user]);
+
 const notifications = notification(user?.uid);
  const [querys, setQuerys] = useState("");
 const handleSearch = (e: React.FormEvent) => {
@@ -503,7 +629,25 @@ const userId = user?.uid;
         setAppInstalled(APPP)
   
       }
-    },[user])
+    },[user]);
+
+  const [showForumDropdown, setShowForumDropdown] = useState(false);
+
+
+const dropdownRef = useRef<HTMLDivElement | null>(null);
+useEffect(() => {
+  const handleClickOutside = (e: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(e.target as Node)
+    ) {
+      setShowForumDropdown(false);
+    }
+  };
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+
 
    return (
     <>
@@ -581,8 +725,95 @@ const userId = user?.uid;
 
             )} </div> 
 
-                        <DropdownMenuItem asChild><Link href="/Forum">Forum</Link></DropdownMenuItem>
+                        {/* <DropdownMenuItem asChild><Link href="/forums">Forum</Link></DropdownMenuItem>  absolute */}
+ <nav className="flex-1 overflow-y-auto py-4 px-3 text-sm font-medium">
+      <ul className="space-y-1">
+        {navItems.map((item) => (
+          <li key={item.label} className="relative">
+            {item.label !== "Forums" ? (
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-accent hover:text-accent-foreground",
+                  pathname === item.href ||
+                    (item.href !== "/feed" && pathname.startsWith(item.href))
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+                {item.href === "/messages" && unreadCount > 0 && (
+                  <span className="ml-auto right-3 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowForumDropdown((prev) => !prev)}
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-accent hover:text-accent-foreground",
+                    pathname.startsWith("/forums")
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <Group className="h-5 w-5" />
+                  Forums
+                  <ChevronDown className="ml-auto h-4 w-4" />
+                </button>
+{showForumDropdown && (
+  <div
+    ref={dropdownRef}
+    style={{zIndex:"199"}}
+    className="absolute z-50 mt-2 ml-2 w-50 p-3 bg-white dark:bg-zinc-900 border rounded-lg shadow-xl text-sm fixed "
+  >
+    { myForums.length > 0 && (
+      <div className="mb-3">
+        <p className="text-muted-foreground font-semibold mb-2">Your Forums</p>
+        {myForums.map((f, i) => (
+          <Link
+            key={i}
+            href={`/forums/${f.name}`}
+            className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+          >
+            <span>{  "💬"}</span> #{f.name}
+          </Link>
+        ))}
+      </div>
+    )}
 
+    {joinedForums.length > 0 && (
+      <div className="mb-3">
+        <p className="text-muted-foreground font-semibold mb-2">Joined Forums</p>
+        {joinedForums.map((f, i) => (
+          <Link
+            key={i}
+ href={`/forums/${f.name}`}
+             className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+          >
+            <span>{ "🔥"}</span> #{f.name}
+          </Link>
+        ))}
+      </div>
+    )}
+
+    <Link
+      href="/forums"
+      className="block text-center mt-2 text-blue-600 hover:underline text-xs"
+    >
+      View All Forums
+    </Link>
+  </div>
+)}
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
             <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
 {
 
