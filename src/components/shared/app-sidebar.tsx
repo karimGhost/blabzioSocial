@@ -453,6 +453,25 @@ useEffect(() => {
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function MobileAppHeader() {
   const pathname = usePathname();
   const router = useRouter();
@@ -711,17 +730,11 @@ useEffect(() => {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                        <DropdownMenuItem asChild><Link href="/profile/me">Profile</Link></DropdownMenuItem>
-
-            <DropdownMenuSeparator />
+          
 
                      <div style={{display:"flex"}}>
                       
-                       <DropdownMenuItem asChild><Link href="/messages">Messages</Link>
-
-
-</DropdownMenuItem>
+                    
 
              { unreadCount > 0 && (
               <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
@@ -823,21 +836,7 @@ useEffect(() => {
         ))}
       </ul>
     </nav>
-            <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
-{
 
-   (!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
-           ""
-            :
- (
-               <DropdownMenuItem asChild>
-              <Link href="/admin/inbox">Admin</Link>
-            </DropdownMenuItem>
-            )
-  
-            
-
-          }
 
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild><Button onClick={handleLogout} ><LogOut className="mr-2 h-4 w-4" />Logout</Button></DropdownMenuItem>
