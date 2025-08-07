@@ -404,7 +404,7 @@ const toggleFullscreen = () => {
           videoRef.current?.play();
           setIsPlaying(true);
         setIsActive(true); 
-             const newUrl = `/videos/${video.id}`;
+             const newUrl = `/videos/${video.id}B`;
   window.history.replaceState(null, "", newUrl);
          
  if (userWantsSound.current && videoRef.current) {

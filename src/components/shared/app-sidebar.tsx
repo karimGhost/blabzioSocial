@@ -279,6 +279,8 @@ useEffect(() => {
 {showForumDropdown && (
   <div
     ref={dropdownRef}
+        style={{zIndex:"199", position:"fixed", width:"fit-content", margin:"auto"}}
+
     className="absolute z-50 mt-2 ml-2 w-64 p-3 bg-white dark:bg-zinc-900 border rounded-lg shadow-xl text-sm"
   >
     { myForums.length > 0 && (
@@ -287,8 +289,8 @@ useEffect(() => {
         {myForums.map((f, i) => (
           <Link
             key={i}
-            href={`/forums/${f.name}`}
-            className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+            href={`/forums/${f.slug}`}
+            className="flex items-center gap-2 px-2 hover:text-muted py-1 hover:bg-accent rounded-md"
           >
             <span>{  "💬"}</span> #{f.name}
           </Link>
@@ -302,21 +304,25 @@ useEffect(() => {
         {joinedForums.map((f, i) => (
           <Link
             key={i}
- href={`/forums/${f.name}`}
-             className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+ href={`/forums/${f.slug}`}
+             className="flex items-center gap-2 hover:text-muted px-2 py-1 hover:bg-accent rounded-md"
           >
             <span>{ "🔥"}</span> #{f.name}
           </Link>
         ))}
       </div>
     )}
-
-    <Link
+  <Link
       href="/forums"
-      className="block text-center mt-2 text-blue-600 hover:underline text-xs"
+      className="block text-center mt-2 text-white    hover:underline text-sm"
     >
-      View All Forums
+     <Button className="w-full outline bg-transparent">
+ View All Forums
+ </Button>
     </Link>
+
+
+  
   </div>
 )}
               </>
@@ -767,8 +773,8 @@ useEffect(() => {
 {showForumDropdown && (
   <div
     ref={dropdownRef}
-    style={{zIndex:"199"}}
-    className="absolute z-50 mt-2 ml-2 w-50 p-3 bg-white dark:bg-zinc-900 border rounded-lg shadow-xl text-sm fixed "
+    style={{zIndex:"199", position:"fixed", width:"fit-content", margin:"auto"}}
+    className=" z-50 mt-2 ml-2 w-40 p-2 bg-white dark:bg-zinc-900 border rounded-lg shadow-xl text-sm  "
   >
     { myForums.length > 0 && (
       <div className="mb-3">
@@ -776,8 +782,8 @@ useEffect(() => {
         {myForums.map((f, i) => (
           <Link
             key={i}
-            href={`/forums/${f.name}`}
-            className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+            href={`/forums/${f.slug}`}
+            className="flex items-center gap-2 px-2 py-1 hover:text-muted hover:bg-accent rounded-md"
           >
             <span>{  "💬"}</span> #{f.name}
           </Link>
@@ -791,8 +797,8 @@ useEffect(() => {
         {joinedForums.map((f, i) => (
           <Link
             key={i}
- href={`/forums/${f.name}`}
-             className="flex items-center gap-2 px-2 py-1 hover:bg-accent rounded-md"
+ href={`/forums/${f.slug}`}
+             className="flex items-center gap-2 px-2 py-1 hover:text-muted hover:bg-accent rounded-md"
           >
             <span>{ "🔥"}</span> #{f.name}
           </Link>
@@ -800,11 +806,14 @@ useEffect(() => {
       </div>
     )}
 
-    <Link
+   <Link
       href="/forums"
-      className="block text-center mt-2 text-blue-600 hover:underline text-xs"
+      className="block text-center mt-2 text-white    hover:underline text-sm"
     >
-      View All Forums
+       <Button className="w-full outline bg-transparent">
+ View All Forums
+ </Button>
+    
     </Link>
   </div>
 )}

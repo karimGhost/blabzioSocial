@@ -164,7 +164,7 @@ const {user} = useAuth()
       {videos.length === 0 ? (
         <p className="text-gray-400 text-center mt-12">No videos yet. Upload one to get started!</p>
       ) : (
-<div className="w-full max-w-2xl mx-auto space-y-6 snap-y snap-mandatory overflow-y-auto  your-element h-[calc(100vh-4rem)] pb-16">
+<div style={{ top:"10px", zIndex:"99"}} className="fixed lg:relative  w-full max-w-2xl mx-auto space-y-6 snap-y snap-mandatory overflow-y-auto  your-element h-[calc(100vh-4rem)] pb-16 h-100">
           {videos.map((video) => (
   <VideoItem key={video.id} video={video} containerWidth={640} /> // max-w-2xl = 640px
           ))}
