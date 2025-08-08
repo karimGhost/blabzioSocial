@@ -35,7 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Heart, PlusCircle, UserX, Crown, MoreVertical, LogOutIcon, Pen, Settings, BadgeCheck, Award, Save, X } from 'lucide-react';
+import { MessageSquare, Heart, PlusCircle, UserX, Crown, MoreVertical, LogOutIcon, Pen, Settings, BadgeCheck, Award, Save, X, Loader2 } from 'lucide-react';
 import { DropdownMenuItem,DropdownMenu, DropdownMenuTrigger,DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { dbForums } from '@/lib/firebase';
@@ -49,7 +49,7 @@ export default function ForumPage() {
 const params = useParams();
   const slug = params?.slug as string;
 const router = useRouter();
-const [isAdmin, setIsAdmin] = useState(true);
+const [isAdmin, setIsAdmin] = useState<boolean>(false);;
 const {user, userData} = useAuth();
 const [articles, setArticles] = useState<any[]>([]);
  const [PreviewUrl, setPreviewUrl] = useState();
@@ -90,7 +90,7 @@ useEffect(() => {
       }));
       setArticles(articlesData);
 
-      // 🔹 Attach listeners for each article's comments & reactions
+      // 🔹 Attach listeners for each article's comments & reactions dark
       articlesData.forEach((art) => {
         const commentsRef = collection(
           dbForums,
@@ -172,13 +172,13 @@ useEffect(() => {
       );
 
       // 6. Set admin info
-      const admin = membersData.find((m) => m?.role === "Admin");
+      const admin = (membersData as any).find((m: { adminId: string | undefined; }) => m?.adminId === user?.uid);
       if (admin) {
-        setForum((prev) => ({
+        setForum((prev: any) => ({
           ...prev,
           admin,
         }));
-        setIsAdmin(true);
+        setIsAdmin(admin);
       }
     } catch (error) {
       console.error("Error fetching forum data:", error);
@@ -442,10 +442,11 @@ const handleReaction = async (
   const [formData, setFormData] = useState({
     name: forum?.name || "",
     description: forum?.description || "",
+    isPrivate: forum?.isPrivate || "",
     category: forum?.category || [], // ✅ This should now be an array
   });
 
-const [edited, setedited] = useState(false)
+const [edited, setedited] = useState(false);
 
 useEffect(() => {
 
@@ -457,6 +458,7 @@ if(edited)return;
       name: forum.name || "",
       description: forum.description || "",
       category: Array.isArray(forum.category) ? forum.category : [],
+      isPrivate: forum.isPrivate
     });
   }
 
@@ -484,6 +486,7 @@ console.log("formData", formData)
  name: formData.name,
         description: formData.description,
         category: formData.category,
+
         }));
       
 
@@ -494,6 +497,91 @@ console.log("formData", formData)
 
 
 
+const [exists, setexists] = useState(true)
+const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length < 3 ? prev + "." : ""));
+    }, 500); // speed of dot animation
+    return () => clearInterval(interval);
+  }, []);
+
+useEffect(() =>{
+members.some((i) => i.id === user?.uid) ? setexists(true) :  setexists(false);
+
+}, [members, user]);
+
+const hasRequested =
+  user?.uid && forum?.requests?.includes(user.uid) ? true : false;
+
+
+const handleRequestToJoin = async (forumId: string, userId: string) => {
+  try {
+
+     const Requested = {
+      name: userData?.fullName,
+      userid: user?.uid,
+      avatarUrl: userData?.avatarUrl,
+      role: "member",
+      joinedAt: Date.now(),
+    };
+    await setDoc(
+      doc(dbForums, "forums", forumId, "requests", userId),
+     Requested
+    );
+    toast({ title: "Request Sent", description: "Your request to join has been sent." });
+  } catch (err) {
+    console.error("Error sending join request:", err);
+    toast({ title: "Error", description: "Could not send request. Try again later." });
+  }
+
+}
+function VerifyingMember() {
+  const [dots, setDots] = useState("");
+  useEffect(() => {
+    const t = setInterval(() => setDots((d) => (d.length < 3 ? d + "." : "")), 450);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="mt-6 mx-auto max-w-md rounded-xl bg-gradient-to-r from-gray-900/80 to-black/60 backdrop-blur-md p-5 text-center text-white shadow">
+      <div className="flex items-center justify-center gap-3">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <div className="text-lg font-semibold">Verifying if you are a Member{dots}</div>
+      </div>
+      <p className="mt-2 text-sm text-gray-300">Request status will appear here shortly.</p>
+    </div>
+  );
+}
+
+
+  if ( user && forum && forum?.isPrivate &&  !isAdmin  && !isAdmin  && !exists ) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center bg-gray-900">
+        {/* Blurred background */}
+        <div className="absolute inset-0 backdrop-blur-sm opacity-80 bg-black" />
+
+        {/* Centered content */}
+        <div className="relative z-10 text-center p-6 rounded-xl bg-gray-800 shadow-lg max-w-sm w-full">
+          <h1 className="text-white text-xl font-semibold mb-2">Private Forum</h1>
+          <h2>{forum?.isPrivate &&  !isAdmin  && !exists ?  "Verifying if you are a Member ..." : ""  }</h2>
+   <p className="text-sm font-medium">
+{forum?.isPrivate && !isAdmin && !exists && <VerifyingMember />}
+    </p>
+
+          <p className="text-gray-400 mb-4">
+            This forum is private. You must be a member to view content. 
+          </p>
+          <button
+            onClick={() => handleRequestToJoin(forum.id, user?.uid)}
+            className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-300 transition"
+          >
+          { hasRequested ? "Pending Approval" : "Request to Join"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 if (!forum) return <div className="container py-12">Loading...</div>;
 
   return (
@@ -636,7 +724,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
         
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Create Article
+            Create
           </Button>
         
         </Link> }

@@ -643,18 +643,22 @@ return (
       </div>
 
  
-      <div className="absolute right-2 bottom-1/4 sm:bottom-4 flex flex-col gap-3 items-center text-white">
+      <div style={{zIndex:"299", position:"absolute"}} className="absolute  right-2 bottom-1/4 sm:bottom-4 flex flex-col gap-3 items-center text-white">
   
  {user?.uid !== video.user.uid && (<>
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon"><MoreVertical /></Button>
+      <Button         style={{zIndex:"199"}}
+ variant="ghost" size="icon"><MoreVertical /></Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent>
-     
+ <DropdownMenuContent
+      style={{
+        zIndex: 9999, // now works globally
+        position: "relative",
+      }}
+    >     
 
         <DropdownMenuItem 
-        
           onClick={() => setShowReportModal(video.id)}
         >
   report
@@ -674,8 +678,12 @@ return (
     <DropdownMenuTrigger asChild>
       <Button variant="ghost" size="icon"><MoreVertical /></Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent>
-     
+ <DropdownMenuContent
+      style={{
+        zIndex: 9999, // now works globally
+        position: "relative",
+      }}
+    >        
 {
 (!user || user.email !== "abdulkarimkassimsalim@gmail.com") ?
            ""
@@ -729,7 +737,7 @@ return (
 
 
  {showReportModal ===  video.id && (
-  <Dialog open onOpenChange={() => setShowReportModal(null)}>
+  <Dialog  open onOpenChange={() => setShowReportModal(null)}>
     <DialogContent>
       <DialogHeader>
         <DialogTitle>Report Post</DialogTitle>
@@ -770,8 +778,12 @@ return (
     <DropdownMenuTrigger asChild>
       <Button variant="ghost" size="icon"><MoreVertical /></Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent>
-      {/* <DropdownMenuItem onClick={async () => {
+ <DropdownMenuContent
+      style={{
+        zIndex: 9999, // now works globally
+        position: "relative",
+      }}
+    >         {/* <DropdownMenuItem onClick={async () => {
         try {
           await deleteVideo({
             videoId: video.id,
@@ -802,7 +814,7 @@ return (
     <AlertDialogHeader>
       <AlertDialogTitle>Delete this video?</AlertDialogTitle>
       <AlertDialogDescription>
-        This action cannot be undone. It will permanently delete this video from your account and Cloudinary.
+        This action cannot be undone. It will permanently delete this video from your account .
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
@@ -875,7 +887,12 @@ onClick={(e) => handleLike(e, video.id)}
 
           </DropdownMenuTrigger>
       
-          <DropdownMenuContent align="start">
+         <DropdownMenuContent
+      style={{
+        zIndex: 9999, // now works globally
+        position: "relative",
+      }}
+     align="start">
             <DropdownMenuItem onClick={() => window.open(socialLinks.facebook, "_blank")}>
               <Facebook className="mr-2 h-4 w-4 text-blue-600" />
               Facebook

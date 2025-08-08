@@ -34,6 +34,7 @@ const {toast} = useToast()
   const [forum, setForum] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [allowPublicPosting, setAllowPublicPosting] = useState(false);
+  const [privateForum, setprivateForum] = useState<boolean>(false);
 
   useEffect(() => {
   if (!slug || !user) return;
@@ -61,7 +62,8 @@ const {toast} = useToast()
       }
 
     setForum(forumData);
-    setAllowPublicPosting(forumData.settings?.allowPublicPosting ?? false);
+    setprivateForum((forumData as any)?.isPrivate );
+    setAllowPublicPosting((forumData as any)?.settings?.allowPublicPosting ?? false);
 
     // ✅ Fetch members
     const membersSnap = await getDocs(
@@ -81,6 +83,7 @@ const {toast} = useToast()
   const handleSaveSettings = async () => {
     try {
       await updateDoc(doc(dbForums, 'forums', forum.id), {
+        isPrivate:privateForum,
         settings: {
           ...forum.settings,
           allowPublicPosting,
@@ -110,6 +113,9 @@ const {toast} = useToast()
     }
   };
 
+
+  
+
   if (!forum) return <div className="p-8">Loading...</div>;
 
   return (
@@ -125,13 +131,31 @@ const {toast} = useToast()
 </div>
       {/* --- PUBLIC POSTING TOGGLE --- */}
       <div className="flex items-center justify-between">
-        <span>Allow Public to Create Articles</span>
-        <Switch
+          <div style={{padding:"10px"}}>
+         <span style={{marginRight:"10px"}}>Allow Members to Create</span>
+
+        <Switch 
           checked={allowPublicPosting}
           onCheckedChange={setAllowPublicPosting}
         />
 
+      </div>
+       
               <Button variant="destructive">Delete Forum</Button>
+
+
+      </div>
+        <div className="flex items-center justify-between">
+          <div style={{padding:"10px"}}>
+             <span  style={{textDecorationColor:"turquoise",fontWeight:"bold", color:"muted", textShadow: privateForum ? "1px 1.2px orange" :" ", marginRight:"10px"}}>{privateForum ? "Private Forum" : "Public Forum"}</span>
+        
+     <Switch
+     className='sm'
+  checked={privateForum}
+  onCheckedChange={() =>  setprivateForum((prev) => !prev)}
+/> 
+          </div>
+      
 
 
       </div>
