@@ -30,6 +30,7 @@ export default function ForumSettingsPage() {
   const slug = params.slug as string;
   const router = useRouter();
 const {toast} = useToast()
+const [rules, setRules] = useState<string>('');
 
   const [forum, setForum] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
@@ -64,10 +65,11 @@ const {toast} = useToast()
     setForum(forumData);
     setprivateForum((forumData as any)?.isPrivate );
     setAllowPublicPosting((forumData as any)?.settings?.allowPublicPosting ?? false);
+setRules((forumData as any).rules || "");
 
     // ✅ Fetch members
     const membersSnap = await getDocs(
-      collection(dbForums, "forums", forumData.id, "members")
+      collection(dbForums, "forums", (forumData as any).id, "members")
     );
     const membersData = membersSnap.docs.map((doc) => ({
       id: doc.id,
@@ -87,6 +89,8 @@ const {toast} = useToast()
         settings: {
           ...forum.settings,
           allowPublicPosting,
+            rules: rules, 
+
         },
       });
                       toast({ title: "updated", description: "Settings updated" });
@@ -158,9 +162,20 @@ const {toast} = useToast()
       
 
 
+
+
       </div>
 
-
+<div className="space-y-2">
+  <label className="font-medium">Forum Rules</label>
+  <textarea
+    className="w-full border rounded-md p-2 bg-background"
+    placeholder="Write your forum rules here..."
+    value={rules}
+    onChange={(e) => setRules(e.target.value)}
+    rows={5}
+  />
+</div>
 
       <Button onClick={handleSaveSettings}>Save Settings</Button>
 

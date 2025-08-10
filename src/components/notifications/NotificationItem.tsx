@@ -6,16 +6,15 @@ import { dbe } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Bell, Heart, MessageCircle, Reply, Share, ShieldAlert, UserPlus } from "lucide-react";
+import { Bell, Heart, MessageCircle, MessageCircleMore, Reply, Share, ShieldAlert, UserPlus } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { notification } from "./notifications";
 import { useRouter } from "next/navigation";
 interface Notification {
   id: string;
-  type: "follow" | "like" | "comment" | "shared" | "reply" | "PolicyViolation";
+  type: "follow" | "like" | "comment" | "shared" | "reply" | "PolicyViolation" | "forum"; 
        fullName: string;
     avatarUrl: string;
-
   fromUser:string ;
   postId?: string;
   commentId?: string;
@@ -23,9 +22,15 @@ interface Notification {
   read: boolean;
 }
 
+   
+
+
+
+
 export default function NotificationsPage() {
   const { user } = useAuth();
- const {route} = useRouter()
+ const route = useRouter();
+ 
 const notifications = notification(user?.uid);
 
 
@@ -44,6 +49,8 @@ const notifications = notification(user?.uid);
       return <Reply className="h-4 w-4 text-red-500" />;
     case "PolicyViolation":
       return <ShieldAlert className="h-4 w-4 text-red-600" />;
+      case "forum":
+      return <MessageCircleMore className="h-4 w-4 text-red-600" />;
     default:
       return <Bell className="h-4 w-4" />;
   }
@@ -61,11 +68,12 @@ return (
           {notifications.map((n) => (
 
             <li onClick={() => {
-n.type === "follow"  && route(`/profile/${n.fromUser}`)} } key={n.id} className="flex items-start gap-3 p-3 rounded-md bg-muted">
+n.type === "follow"  && route.push(`/profile/${n.fromUser}`)} } key={n.id} className="flex items-start gap-3 p-3 rounded-md bg-muted">
               <Avatar className="h-9 w-9">
                 <AvatarImage src={n?.avatarUrl} />
                 <AvatarFallback>{n?.fullName?.[0]}</AvatarFallback>
               </Avatar>
+
               <div className="flex-1 text-sm">
               <p>
   <Link href={`/profile/${n.fromUser}`} className="font-medium hover:underline">
@@ -96,6 +104,14 @@ n.type === "follow"  && route(`/profile/${n.fromUser}`)} } key={n.id} className=
                 </>
   )}
 
+ {n.type === "forum"  ?
+              <div className="mt-1"> <Link  href={`/forums/${n.fullName}`} >you have been added to the forum <b>{n.fullName}  </b>  {getIcon(n.type)}  </Link> </div>
+              :
+                            <div className="mt-1">you have been added to the forum {n.fullName}  {getIcon(n.type)}</div>
+
+
+ }
+
   {n.type === "PolicyViolation" && (
                 <>
                   <span className="text-red-600 font-medium">⚠️ Policy Violation</span> — Your content may have violated our community rules.{" "}
@@ -114,6 +130,9 @@ n.type === "follow"  && route(`/profile/${n.fromUser}`)} } key={n.id} className=
                   {formatDistanceToNow(new Date(n.timestamp), { addSuffix: true })}
                 </p>
               </div>
+
+
+
 
  {
 n.type === "follow"  ?

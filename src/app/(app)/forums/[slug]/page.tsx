@@ -16,11 +16,12 @@ import {
   increment,
   onSnapshot,
   arrayUnion,
+  addDoc,
 } from "firebase/firestore";
  import { MultiSelectCategory } from '../create/MultiSelectCategory';
 import CommentThread from './article/CommentThread';
 
-
+import TermsPrompt from './settings/TermsPrompt';
  import { useEffect, useState } from 'react';
  import { useAuth } from "@/hooks/useAuth";
 import {
@@ -38,7 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Heart, PlusCircle, UserX, Crown, MoreVertical, LogOutIcon, Pen, Settings, BadgeCheck, Award, Save, X, Loader2 } from 'lucide-react';
 import { DropdownMenuItem,DropdownMenu, DropdownMenuTrigger,DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { dbForums } from '@/lib/firebase';
+import { Admin, dbForums , dbe} from '@/lib/firebase';
 import { useParams, useRouter } from "next/navigation";
 import ForumMediaSlider from '@/components/feed/ForumMediaSlider';
 import { formatDistanceToNow } from 'date-fns';
@@ -352,7 +353,7 @@ const HandleRequestRemove = async (forumId: string, userId: string) => {
 
 
 
-
+const [userAdded, setUserAdded] = useState <any>([])
 
 
 const handleAddUser = async (forumId: string, userId: any) => {
@@ -362,6 +363,7 @@ const handleAddUser = async (forumId: string, userId: any) => {
       userid: userId?.id,
       avatarUrl: userId?.avatarUrl,
       role: "member",
+      AcceptedTerms:false,
       joinedAt: Date.now(),
     };
 
@@ -370,6 +372,28 @@ const handleAddUser = async (forumId: string, userId: any) => {
       doc(dbForums, "forums", forumId, "members", userId.id),
       userMember
     );
+
+
+       await addDoc(collection(dbe, "notifications"), {
+        type: "forum",
+        fromUser: user?.uid,
+        toUser: userId?.id,
+        forumId,
+         fullName: forum.slug,
+        avatarUrl: forum.headerImageUrl || `https://placehold.co/1200x400.png?text=${forum.name}`,
+        timestamp:  Date.now(),
+        read: false,
+      });
+
+
+
+setUserAdded((prev: any) => [...prev, userId.id]);
+
+setMembers((prev) => {
+  if (prev.some(m => m.id === userId.id)) return prev; // already exists
+  return [...prev, userId];
+});
+setRequests((prev) => prev.filter(user => user.id !== userId.id));
 
     // 2️⃣ Remove from requests
     await deleteDoc(doc(dbForums, "forums", forumId, "requests", userId.id));
@@ -388,6 +412,11 @@ const handleAddUser = async (forumId: string, userId: any) => {
     });
   }
 };
+
+
+// useEffect(() => {
+// console.log("members", members)
+// },[members, user])
 
 
 const [readMoreMap, setReadMoreMap] = useState<{ [postId: string]: number }>({});
@@ -500,6 +529,7 @@ console.log("formData", formData)
 const [exists, setexists] = useState(true)
 const [dots, setDots] = useState("");
 
+
   useEffect(() => {
     const interval = setInterval(() => {
       setDots((prev) => (prev.length < 3 ? prev + "." : ""));
@@ -507,10 +537,29 @@ const [dots, setDots] = useState("");
     return () => clearInterval(interval);
   }, []);
 
+
+const [AcceptedTerms, setAcceptedTerms] = useState <boolean>();
+const [showTerms, setShowTerms] = useState(false);
+ 
+
 useEffect(() =>{
 members.some((i) => i.id === user?.uid) ? setexists(true) :  setexists(false);
 
+setAcceptedTerms(
+  !members.some(
+    (m) => m?.id === user?.uid && m?.AcceptedTerms !== true
+  )
+);
 }, [members, user]);
+
+
+useEffect(() => {
+  if (!AcceptedTerms && forum?.adminId !== user?.uid) {
+    const timer = setTimeout(() => setShowTerms(true), 2000); // 2 second delay
+    return () => clearTimeout(timer);
+  }
+}, [AcceptedTerms, forum, user?.uid]);
+
 
 const hasRequested =
   user?.uid && forum?.requests?.includes(user.uid) ? true : false;
@@ -525,7 +574,9 @@ const handleRequestToJoin = async (forumId: string, userId: string) => {
       avatarUrl: userData?.avatarUrl,
       role: "member",
       joinedAt: Date.now(),
-    };
+      AcceptedTerms: false 
+
+  }
     await setDoc(
       doc(dbForums, "forums", forumId, "requests", userId),
      Requested
@@ -537,6 +588,30 @@ const handleRequestToJoin = async (forumId: string, userId: string) => {
   }
 
 }
+
+
+const HandleRemoveuser = async (forumId: string, userId: any) => {
+
+  try {
+    await deleteDoc(doc(dbForums, "forums", forumId, "requests", userId));
+
+    toast({
+      title: "Success",
+      description: "you are removed from forum for not accepting the terms .",
+    });
+
+    // Optional: Update local state here so UI updates instantly verify
+    // setRequests((prev) => prev.filter(req => req.userid !== userId));
+  } catch (err) {
+    console.error("Error removing request:", err);
+    toast({
+      title: "Failed",
+      variant: "destructive",
+      description: "Failed to remove .",
+    });
+  }
+};
+
 function VerifyingMember() {
   const [dots, setDots] = useState("");
   useEffect(() => {
@@ -555,6 +630,9 @@ function VerifyingMember() {
 }
 
 
+
+
+
   if ( user && forum && forum?.isPrivate &&  !isAdmin  && !isAdmin  && !exists ) {
     return (
       <div className="relative min-h-screen flex items-center justify-center bg-gray-900">
@@ -565,9 +643,9 @@ function VerifyingMember() {
         <div className="relative z-10 text-center p-6 rounded-xl bg-gray-800 shadow-lg max-w-sm w-full">
           <h1 className="text-white text-xl font-semibold mb-2">Private Forum</h1>
           <h2>{forum?.isPrivate &&  !isAdmin  && !exists ?  "Verifying if you are a Member ..." : ""  }</h2>
-   <p className="text-sm font-medium">
+   <div className="text-sm font-medium">
 {forum?.isPrivate && !isAdmin && !exists && <VerifyingMember />}
-    </p>
+    </div>
 
           <p className="text-gray-400 mb-4">
             This forum is private. You must be a member to view content. 
@@ -582,6 +660,57 @@ function VerifyingMember() {
       </div>
     );
   }
+
+const handleUpdateUser = async (forumId: string, userId: any) => {
+  try {
+    await setDoc(
+      doc(dbForums, "forums", forumId, "members", userId),
+      { AcceptedTerms: true }, 
+      { merge: true } 
+    );
+
+setShowTerms(false);
+    console.log("User accepted terms");
+  } catch (error) {
+    console.error("Error updating user terms:", error);
+  }
+};
+
+// if(!AcceptedTerms && forum.adminId !== user?.uid){
+
+//    return (<TermsPrompt
+//   hasAcceptedTerms={AcceptedTerms}
+//   onAccept={() => {
+//    handleUpdateUser(forum.id, user?.uid)
+
+//   }}
+//   onReject={() => {
+//     // remove member from forum
+//     HandleRemoveuser()
+//   }}
+// />
+//    )
+// }
+
+if(showTerms && forum?.isPrivate && forum?.adminId !== user?.uid){
+  return(
+ <TermsPrompt
+    hasAcceptedTerms={AcceptedTerms}
+    terms={forum?.settings?.rules}
+    onAccept={() => handleUpdateUser(forum?.id, user?.uid)}
+    onReject={() =>{ HandleRemoveuser( forum?.id, user?.uid); router.push("/forums")}} 
+  />
+  )
+}
+
+// {showTerms && forum.adminId !== user?.uid &&(
+//   <TermsPrompt
+//     hasAcceptedTerms={AcceptedTerms}
+//     onAccept={() => handleUpdateUser(forum.id, user?.uid)}
+//     onReject={() =>{ HandleRemoveuser( forum.id, user?.uid); router.push("/forums")}} 
+//   />
+// )}
+
 if (!forum) return <div className="container py-12">Loading...</div>;
 
   return (
@@ -677,7 +806,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
 
       </div>
 
-      {/* Admin / Mod Controls (currentUser?.role === "Admin" promote edit || currentUser?.role === "Moderator") settings && */}
+      {/* Admin / Mod Controls (currentUser?.role === "Admin" promote    requests edit || currentUser?.role === "Moderator") settings && */}
      {  forum.adminId === user?.uid  ? (
   <div className="space-x-2 flex-shrink-0">
      {/* Edit Button */}
@@ -717,8 +846,9 @@ if (!forum) return <div className="container py-12">Loading...</div>;
           <TabsTrigger value="members">Members ({members?.length})</TabsTrigger>
           <TabsTrigger value="about">About</TabsTrigger>
 
-          { forum.isPrivate &&  forum.adminId === user?.uid || Mod.some((i) => i.id === user?.uid) && <TabsTrigger value="Requests">Requests</TabsTrigger>}
-
+{forum.isPrivate && ((forum.adminId === user?.uid) || Mod.some(i => i.id === user?.uid)) && (
+  <TabsTrigger value="Requests">Requests</TabsTrigger>
+)}
         </TabsList>
        {canAddArticle && <Link href={`/forums/${forum.slug}/article/create`}>
         
@@ -913,7 +1043,7 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
 
 
        {/* --- MEMBERS Requests TAB Articles --- */}
-       { forum.adminId === user?.uid   || Mod.some((i) => i.id === user?.uid)  &&
+     {forum.isPrivate && ((forum.adminId === user?.uid) || Mod.some(i => i.id === user?.uid)) && 
       <TabsContent value="Requests">
         <Card>
           <CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -950,10 +1080,9 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
                         View Profile
                       </DropdownMenuItem>
                       <DropdownMenuItem className='cursor-pointer' onClick={() => handleAddUser( forum.id,member)}>
-                       AddUser
+                       {userAdded.includes(member.id) ? "added" : "AddUser"}
                       </DropdownMenuItem>
 
- 
 
                       <DropdownMenuItem
                         className="text-destructive"
