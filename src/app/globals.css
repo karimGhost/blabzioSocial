@@ -21,7 +21,7 @@ body {
     --muted: 0 0% 96.1%; /* Very light gray */
     --muted-foreground: 210 5% 55%; /* Softer text color */
  --accent: 26 85% 85%;          /* Light orange accent */
---accent-foreground: 0 0% 10%; /* Dark text on accent class*/ 
+--accent-foreground: 0 0% 10%; /* Dark text on accent dark*/ 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 88%;
@@ -48,7 +48,7 @@ body {
 
 
   .dark {
-    --background: 210 10% 10%; /* Dark Blue/Gray background for dark mode */
+    --background: 210 10% 10%; /* Dark Blue/Gray background for dark mode  outline*/
     --foreground: 0 0% 94%; /* Light Gray text */
     --card: 210 10% 15%; /* Slightly lighter card background */
     --card-foreground: 0 0% 94%;
@@ -66,7 +66,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 210 10% 25%;
     --input: 210 10% 20%;
---ring: 30 95% 55%;                 /* Match Primary Orange */
+--ring: 30 95% 55%;                 /* Match Primary Orange  class*/
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -123,11 +123,23 @@ body {
   }
 }
 
+
+
+
 .focus-glow:focus-visible {
   animation: pulse-ring 1s ease-out;
   outline: none;
 }
 
+.focus-glow{
+   animation: pulse-ring 3s infinite;
+  outline: none;
+}
+
+.focus-glowC{
+   animation: pulse-ring 1s infinite;
+  outline: none;
+}
 @layer base {
   * {
     @apply border-border;

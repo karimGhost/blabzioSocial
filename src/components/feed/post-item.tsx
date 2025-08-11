@@ -289,7 +289,7 @@ const handleShareToFeed = async (post: Post) => {
 
 
 
-    // Step 2: Share the post
+    // Step 2: Share the post dark
     await addDoc(collection(dbb, "posts"), {
       author: {
         name: userData.fullName,
@@ -893,6 +893,8 @@ post.mediaUrl && post.mediaType === "image" ?
 
              { post.content.length > 500 && Array.isArray(post.mediaUrl) && post.mediaUrl.length > 0 && post.mediaType === "image" && (
   <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl} />
+
+
 
 )}
 {

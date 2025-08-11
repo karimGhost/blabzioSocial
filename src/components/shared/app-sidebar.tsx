@@ -76,7 +76,7 @@ interface Forum {
   moderators: any;
   requests?: string[]; // 👈 ADD THIS
 }
-    // { href: "/News", icon: Video, label: "News" create },
+    // { href: "/News", icon: Video, label: "News" create }, dark
 
 
 export function AppSidebar() {
@@ -596,7 +596,7 @@ useEffect(() => {
     try {
       await signOut(auth);
             localStorage.clear();
-      router.push("/"); // or home, wherever you want
+      router.push("/"); // or home, wherever you want dark
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -732,17 +732,7 @@ useEffect(() => {
           <DropdownMenuContent align="end">
           
 
-                     <div style={{display:"flex"}}>
-                      
-                    
-
-             { unreadCount > 0 && (
-              <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
-                {unreadCount > 9 ? "9+" : unreadCount}
-
-              </span>
-
-            )} </div> 
+                  
 
                         {/* <DropdownMenuItem asChild><Link href="/forums">Forum</Link></DropdownMenuItem>  absolute */}
  <nav className="flex-1 overflow-y-auto py-4 px-3 text-sm font-medium">

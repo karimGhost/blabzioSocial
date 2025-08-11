@@ -50,6 +50,7 @@ category: z.array(z.string().min(2)).min(1, "At least one category is required")
   isPrivate: z.boolean().default(false),
   is18Plus: z.boolean().default(false),
   headerImageUrl: z.string().optional(),
+
 });
 
 export default function CreateForumPage() {
@@ -92,9 +93,11 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
       return;
     }
 
-    // 1. Create forum document (without id)
+    // 1. Create forum document (without id) category
     const forumRef = await addDoc(collection(dbForums, "forums"), {
       ...values,
+        searchableName: values.name.toLowerCase(),
+  searchableCategory: values.category?.map(cat => cat.toLowerCase()),
       slug,
           settings: {
   allowPublicPosting: true

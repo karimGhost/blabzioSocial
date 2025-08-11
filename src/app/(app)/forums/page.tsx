@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { collection, getDocs, doc, getDoc , setDoc} from "firebase/firestore";
+import { collection, getDocs, doc, getDoc , setDoc, query, limit, startAfter, where, orderBy} from "firebase/firestore";
 import { dbForums } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
-
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -48,6 +47,8 @@ const sortOptions = [
   { label: "Most Members", value: "members" },
 ];
 
+const PAGE_SIZE = 2; 
+
 export default function Home() {
   const { user, userData } = useAuth();
   const [forums, setForums] = useState<Forum[]>([]);
@@ -57,6 +58,11 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("latest");
   const [visibleCount, setVisibleCount] = useState(6);
+  const [lastDoc, setLastDoc] = useState<any>(null);
+
+    const [loading, setLoading] = useState <boolean>(false);
+  const [hasMore, setHasMore] = useState <boolean>(true);
+
 const {toast} = useToast()
   const [moderator, setmoderator] = useState<Forum[]>([]);
 
@@ -106,7 +112,7 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
       description: "You have joined the forum jjjj.",
     });
 
-    // Optionally update state after joining
+    // Optionally update state after joining dark
   } catch (err) {
     console.error("Error joining forum:", err);
     toast({
@@ -117,81 +123,115 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
 };
 
 
+ const lastDocRef = useRef<any>(null);
+const fetchForums = async (nextPage = false) => {
+  if (loading) return;
+  setLoading(true);
 
+  // Reset pagination state for fresh load
+  if (!nextPage) {
+    setForums([]);         // clear forums
+    setMyForums([]);       // clear my forums
+    setJoinedForums([]);   // clear joined forums
+    setmoderator([]);      // clear moderator forums
+    lastDocRef.current = null;
+    setHasMore(true);
+  }
 
- useEffect(() => {
-  const fetchForums = async () => {
-    const snapshot = await getDocs(collection(dbForums, "forums"));
-
-    const allForums = await Promise.all(
-      snapshot.docs.map(async (docSnap) => {
-        const forumData = docSnap.data() as Forum;
-
-        let requests: string[] = [];
-        let members: any[] = [];
-
-        // Load requests if private forum
-        if (user && forumData.isPrivate) {
-          const requestsSnapshot = await getDocs(
-            collection(dbForums, "forums", docSnap.id, "requests")
-          );
-          requests = requestsSnapshot.docs.map((reqDoc) => reqDoc.id);
-        }
-
-        // Load members for this forum
-        const membersSnapshot = await getDocs(
-          collection(dbForums, "forums", docSnap.id, "members")
-        );
-        members = membersSnapshot.docs.map((mDoc) => ({
-          id: mDoc.id,
-          ...mDoc.data(),
-        }));
-
-        return {
-          id: docSnap.id,
-          ...forumData,
-          requests,
-          members,
-        } as Forum & { members: any[] };
-      })
+  let q;
+  if (nextPage && lastDocRef.current) {
+    q = query(
+      collection(dbForums, "forums"),
+      limit(PAGE_SIZE),
+      startAfter(lastDocRef.current)
     );
+  } else {
+    q = query(collection(dbForums, "forums"), limit(PAGE_SIZE));
+  }
 
-    setForums(allForums);
+  const snapshot = await getDocs(q);
 
-    // Store all members from all forums in a separate state if needed
-  
+  if (snapshot.empty) {
+    setHasMore(false);
+    setLoading(false);
+    return;
+  }
 
-    if (user) {
-      const my = allForums.filter(
-        (forum) => forum.creatorId === user.uid || forum.adminId === user.uid
-      );
+  lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
 
-      const joined: Forum[] = [];
+  const pageForums = await Promise.all(
+    snapshot.docs.map(async (docSnap) => {
+      const forumData = docSnap.data() as Forum;
 
-      for (const forum of allForums) {
-        if (forum.creatorId === user.uid) continue;
+      let requests: string[] = [];
+      let members: any[] = [];
 
-        const memberDoc = await getDoc(
-          doc(dbForums, "forums", forum.id, "members", user.uid)
+      if (user && forumData.isPrivate) {
+        const requestsSnapshot = await getDocs(
+          collection(dbForums, "forums", docSnap.id, "requests")
         );
-
-        if (memberDoc.exists()) joined.push(forum);
+        requests = requestsSnapshot.docs.map((reqDoc) => reqDoc.id);
       }
 
-      const moderator = allForums.filter((forum) =>
-        forum.moderators?.includes(user.uid)
+      const membersSnapshot = await getDocs(
+        collection(dbForums, "forums", docSnap.id, "members")
       );
+      members = membersSnapshot.docs.map((mDoc) => ({
+        id: mDoc.id,
+        ...mDoc.data(),
+      }));
 
+      return {
+        id: docSnap.id,
+        ...forumData,
+        requests,
+        members,
+      };
+    })
+  );
+
+  // Append or replace depending on nextPage
+  if (nextPage) {
+    setForums((prev) => [...prev, ...pageForums]);
+  } else {
+    setForums(pageForums);
+  }
+
+  if (user) {
+    const my = pageForums.filter(
+      (forum) => forum.creatorId === user.uid || forum.adminId === user.uid
+    );
+
+    const joined: Forum[] = [];
+    for (const forum of pageForums) {
+      if (forum.creatorId === user.uid) continue;
+      const memberDoc = await getDoc(
+        doc(dbForums, "forums", forum.id, "members", user.uid)
+      );
+      if (memberDoc.exists()) joined.push(forum);
+    }
+
+    const moderator = pageForums.filter((forum) =>
+      forum.moderators?.includes(user.uid)
+    );
+
+    if (nextPage) {
+      setMyForums((prev) => [...prev, ...my]);
+      setJoinedForums((prev) => [...prev, ...joined]);
+      setmoderator((prev) => [...prev, ...moderator]);
+    } else {
       setMyForums(my);
       setJoinedForums(joined);
       setmoderator(moderator);
     }
-  };
+  }
 
-  fetchForums();
-}, [user]);
+  setLoading(false);
+};
 
-
+  useEffect(() => {
+    fetchForums(false); // initial load
+  }, [user]);
 
   const isNewForum = (createdAt?: { seconds: number }) => {
     if (!createdAt) return false;
@@ -199,6 +239,7 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
     const created = createdAt.seconds * 1000;
     return now - created < 7 * 24 * 60 * 60 * 1000;
   };
+
 
 //isCreator  Articles
   const filteredForums = forums
@@ -230,6 +271,49 @@ forum?.category?.some(cat =>
 
   const use = user?.uid;
 
+
+useEffect(() => {
+  const fetchFromFirestoreIfEmpty = async () => {
+    if (!searchTerm.trim()) return;
+    if (filteredForums.length > 0) return; // local results found
+
+    const termLower = searchTerm.toLowerCase();
+
+    // Search in both name and category (two queries)
+    const nameQuery = query(
+      collection(dbForums, "forums"),
+      orderBy("searchableName"),
+      where("searchableName", ">=", termLower),
+      where("searchableName", "<=", termLower + "\uf8ff"),
+      limit(20)
+    );
+
+    const categoryQuery = query(
+      collection(dbForums, "forums"),
+      orderBy("searchableCategory"), // category array must be indexed
+      where("searchableCategory", ">=", termLower),
+      where("searchableCategory", "<=", termLower + "\uf8ff"),
+      limit(20)
+    );
+
+    const [nameSnap, catSnap] = await Promise.all([
+      getDocs(nameQuery),
+      getDocs(categoryQuery)
+    ]);
+
+    const matching = [...nameSnap.docs, ...catSnap.docs]
+      .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Forum));
+
+    // Merge new results into forums state
+    setForums(prev => {
+      const existingIds = new Set(prev.map(f => f.id));
+      const newOnes = matching.filter(f => !existingIds.has(f.id));
+      return [...prev, ...newOnes];
+    });
+  };
+
+  fetchFromFirestoreIfEmpty();
+}, [searchTerm, filteredForums]);
   const ForumGrid = ({ title, data }: { title: string; data: Forum[] }) => (
     <div className="mt-12">
       <h3 className="text-2xl font-semibold mb-4">{title}</h3>
@@ -427,11 +511,18 @@ console.log("mode", moderator)
         )}
 
         
-        {Object.entries(groupedForums).map(([cat, forums]) => (
-          <ForumGrid key={cat} title={cat + " Forums"} data={forums} />
-        ))}
+       {Object.entries(groupedForums).map(([cat, forums]) => (
+  <ForumGrid key={cat} title={`${cat} Forums`} data={forums} />
+))}
 
+{hasMore && !loading && (
+  <div className="flex justify-center mt-6">
+    <Button onClick={() => fetchForums(true)}>Load More</Button>
+  </div>
+)}
+{loading && <p className="text-center mt-4">Loading...</p>}
       </div>
     </section>
   );
 }
+
