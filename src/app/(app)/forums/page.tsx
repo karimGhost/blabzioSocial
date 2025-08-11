@@ -23,6 +23,7 @@ import { Select } from "@radix-ui/react-select";
 import { SelectGroup } from "@/components/ui/select";
 
 interface Forum {
+  members: any;
   headerImageUrl: string;
   adminId: string | undefined;
   id: string;
@@ -40,6 +41,7 @@ interface Forum {
   moderators: any;
   requests?: string[]; // 👈 ADD THIS
 }
+
 
 const sortOptions = [
   { label: "Latest Created", value: "latest" },
@@ -115,35 +117,56 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
 };
 
 
-  useEffect(() => {
+
+
+ useEffect(() => {
   const fetchForums = async () => {
     const snapshot = await getDocs(collection(dbForums, "forums"));
 
     const allForums = await Promise.all(
-      snapshot.docs.map(async (doc) => {
-        const forumData = doc.data() as Forum;
+      snapshot.docs.map(async (docSnap) => {
+        const forumData = docSnap.data() as Forum;
 
         let requests: string[] = [];
+        let members: any[] = [];
+
+        // Load requests if private forum
         if (user && forumData.isPrivate) {
           const requestsSnapshot = await getDocs(
-            collection(dbForums, "forums", doc.id, "requests")
+            collection(dbForums, "forums", docSnap.id, "requests")
           );
           requests = requestsSnapshot.docs.map((reqDoc) => reqDoc.id);
         }
 
+        // Load members for this forum
+        const membersSnapshot = await getDocs(
+          collection(dbForums, "forums", docSnap.id, "members")
+        );
+        members = membersSnapshot.docs.map((mDoc) => ({
+          id: mDoc.id,
+          ...mDoc.data(),
+        }));
+
         return {
-          id: doc.id,
+          id: docSnap.id,
           ...forumData,
           requests,
-        } as Forum;
+          members,
+        } as Forum & { members: any[] };
       })
     );
 
     setForums(allForums);
 
+    // Store all members from all forums in a separate state if needed
+  
+
     if (user) {
-      const my = allForums.filter((forum) => forum.creatorId === user.uid || forum.adminId === user?.uid);
-      const joined = [] as Forum[];
+      const my = allForums.filter(
+        (forum) => forum.creatorId === user.uid || forum.adminId === user.uid
+      );
+
+      const joined: Forum[] = [];
 
       for (const forum of allForums) {
         if (forum.creatorId === user.uid) continue;
@@ -155,12 +178,10 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
         if (memberDoc.exists()) joined.push(forum);
       }
 
-      const moderator = allForums.filter(
-        (forum) =>
-          forum.moderators?.includes(user.uid)  
-
-
+      const moderator = allForums.filter((forum) =>
+        forum.moderators?.includes(user.uid)
       );
+
       setMyForums(my);
       setJoinedForums(joined);
       setmoderator(moderator);
@@ -169,6 +190,9 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
 
   fetchForums();
 }, [user]);
+
+
+
   const isNewForum = (createdAt?: { seconds: number }) => {
     if (!createdAt) return false;
     const now = Date.now();
@@ -181,14 +205,15 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
     .filter((forum) => {
       const term = searchTerm.toLowerCase();
       const matchesSearch =
-        forum.name.toLowerCase().includes(term) ||
-        forum.category.toLowerCase().includes(term);
-      const matchesCategory = selectedCategory ? forum.category === selectedCategory || selectedCategory === "My Forums" && forum.adminId === user?.uid  : true;
+        forum?.name.toLowerCase().includes(term) ||
+forum?.category?.some(cat =>
+  cat.toLowerCase().includes(term.toLowerCase())
+);      const matchesCategory = selectedCategory ? forum.category === selectedCategory || selectedCategory === "My Forums" && forum.adminId === user?.uid  : true;
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
       if (sortBy === "members") {
-        return (b.memberCount || 0) - (a.memberCount || 0);
+        return (b.members.length || 0) - (a.members.length || 0);
       }
       if (sortBy === "latest") {
         return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
@@ -269,7 +294,7 @@ console.log("mod", forum.moderators?.includes(user?.uid))
             <CardFooter className="flex justify-between items-center bg-muted/50 p-4">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Users className="h-4 w-4 mr-2" />
-                {(forum.memberCount || 0).toLocaleString()} members
+                {(forum?.members?.length || 0).toLocaleString()} members
               </div>
 
         <Link  href= {forum.isPrivate && !isCreator && !isMember && !isModerator  ? '' : `/forums/${forum.slug}`}>
@@ -291,7 +316,7 @@ console.log("mod", forum.moderators?.includes(user?.uid))
       if (forum.isPrivate ) {
         handleRequestToJoin(forum.id, user?.uid); // 👈 Only trigger request
       } else {
-        handleJoinPublicForum(forum.id, user?.uid); // You can define this separately
+        handleJoinPublicForum(forum.id, user?.uid); // You can define this separately Most Members
       }
     }
   }}

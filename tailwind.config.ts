@@ -21,7 +21,7 @@ export default {
   },
       colors: {
  ringColor: {
-        DEFAULT: 'hsl(30, 95%, 55%)', // Orange ring
+        DEFAULT: 'hsl(30, 95%, 55%)', // Orange ring dark
          customOrange: 'hsl(30, 95%, 55%)',
 
       },

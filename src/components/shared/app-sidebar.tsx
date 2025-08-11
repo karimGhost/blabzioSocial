@@ -314,9 +314,9 @@ useEffect(() => {
     )}
   <Link
       href="/forums"
-      className="block text-center mt-2 text-white    hover:underline text-sm"
+      className="block text-center mt-2 text-muted    hover:underline text-sm"
     >
-     <Button className="w-full outline bg-transparent">
+     <Button className="w-full outline  bg-transparent">
  View All Forums
  </Button>
     </Link>
@@ -719,13 +719,13 @@ useEffect(() => {
             <Avatar className="h-9 w-9 cursor-pointer">
                 <AvatarImage src={userData?.avatarUrl} alt="User Avatar" data-ai-hint="user avatar"/>
                 <AvatarFallback>{(userData?.fullName ?? "").substring(0, 2) || "??"}</AvatarFallback>
-                  { unreadCount > 0 && (
+                  {/* { unreadCount > 0 && (
               <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
                 {unreadCount > 9 ? "9+" : unreadCount}
 
               </span>
 
-            )}
+            )} */}
             </Avatar>
           </DropdownMenuTrigger>
 
@@ -821,11 +821,11 @@ useEffect(() => {
 
    <Link
       href="/forums"
-      className="block text-center mt-2 text-white    hover:underline text-sm"
+      className="block text-center mt-2 text-primary    hover:underline "
     >
-       <Button className="w-full outline bg-transparent">
+       <Button  size={"sm"} className="w-full outline text-primary p-1   bg-transparent hover:text-white">
  View All Forums
- </Button>
+ </Button >
     
     </Link>
   </div>
@@ -839,7 +839,7 @@ useEffect(() => {
 
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Button onClick={handleLogout} ><LogOut className="mr-2 h-4 w-4" />Logout</Button></DropdownMenuItem>
+            <DropdownMenuItem asChild><Button style={{width:"100%"}} onClick={handleLogout} ><LogOut className="mr-2 h-4 w-5" />Logout</Button></DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 

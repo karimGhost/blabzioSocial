@@ -37,32 +37,29 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+
+  
+
+
   return (
     <html lang="en">
-      <Head>
-        {/* Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-          rel="stylesheet"
-        />
-        {/* Dark Mode Script */}
-        <Script id="theme-toggle" strategy="beforeInteractive">
-          {`
-            (function () {
-              try {
-                const theme = localStorage.getItem("theme");
-                if (theme === "dark" || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add("dark");
-                } else {
-                  document.documentElement.classList.remove("dark");
-                }
-              } catch (_) {}
-            })();
-          `}
-        </Script>
-      </Head>
+     <head>
+       <script
+    dangerouslySetInnerHTML={{
+      __html: `
+        try {
+          const storedTheme = localStorage.getItem('darkmode');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (_) {}
+      `,
+    }}
+  />
+      </head>
       <body className="font-body antialiased">
         
         <div style={{marginRight:"100px"}}>

@@ -50,7 +50,7 @@ export default function ForumPage() {
 const params = useParams();
   const slug = params?.slug as string;
 const router = useRouter();
-const [isAdmin, setIsAdmin] = useState<boolean>(false);;
+const [isAdmin, setIsAdmin] = useState<boolean>();;
 const {user, userData} = useAuth();
 const [articles, setArticles] = useState<any[]>([]);
  const [PreviewUrl, setPreviewUrl] = useState();
@@ -59,7 +59,7 @@ const [Requests, setRequests] = useState<any[]>([]);
 
 const [Mod, setMod] = useState<any[]>([]);
 
-const [canAddArticle , setcanAddArticle] = useState(true);
+const [canAddArticle , setcanAddArticle] = useState<boolean>();
 useEffect(() => {
   if (!slug) return;
 
@@ -80,7 +80,7 @@ useEffect(() => {
         ...forumDoc.data(),
       };
       setForum(forumData);
-
+setcanAddArticle(forumDoc.data()?.settings.allowPublicPosting)
       // 2. Fetch articles
       const articlesSnapshot = await getDocs(
         collection(dbForums, "forums", forumDoc.id, "articles")
@@ -111,7 +111,7 @@ useEffect(() => {
           "reactions"
         );
 
-        // Listen for comments
+        // Listen for comments admin
         onSnapshot(commentsRef, (snapshot) => {
           setArticles((prev) =>
             prev.map((a) =>
@@ -151,6 +151,7 @@ useEffect(() => {
       );
       const membersData = membersSnapshot.docs.map((doc) => ({
         id: doc.id,
+
         ...doc.data(),
       }));
       setMembers(membersData);
@@ -173,7 +174,7 @@ useEffect(() => {
       );
 
       // 6. Set admin info
-      const admin = (membersData as any).find((m: { adminId: string | undefined; }) => m?.adminId === user?.uid);
+const admin = forumDoc.data()?.creatorId === user?.uid;
       if (admin) {
         setForum((prev: any) => ({
           ...prev,
@@ -181,13 +182,15 @@ useEffect(() => {
         }));
         setIsAdmin(admin);
       }
+              console.log("admin", user?.uid)
+
     } catch (error) {
       console.error("Error fetching forum data:", error);
     }
   };
 
   fetchForumData();
-}, [slug]);
+}, [slug, user]);
 
 const handleToggleReaction = async (
   forumId?: string,
@@ -390,7 +393,7 @@ const handleAddUser = async (forumId: string, userId: any) => {
 setUserAdded((prev: any) => [...prev, userId.id]);
 
 setMembers((prev) => {
-  if (prev.some(m => m.id === userId.id)) return prev; // already exists
+  if (prev.some(m => m.userid === userId.id)) return prev; // already exists create
   return [...prev, userId];
 });
 setRequests((prev) => prev.filter(user => user.id !== userId.id));
@@ -526,7 +529,7 @@ console.log("formData", formData)
 
 
 
-const [exists, setexists] = useState(true)
+const [exists, setexists] = useState <boolean>()
 const [dots, setDots] = useState("");
 
 
@@ -543,15 +546,22 @@ const [showTerms, setShowTerms] = useState(false);
  
 
 useEffect(() =>{
-members.some((i) => i.id === user?.uid) ? setexists(true) :  setexists(false);
 
+setexists(
+   !members.some(
+    (m) => m?.userid === user?.uid
+  )
+);
 setAcceptedTerms(
   !members.some(
-    (m) => m?.id === user?.uid && m?.AcceptedTerms !== true
+    (m) => m?.userid === user?.uid && m?.AcceptedTerms !== true
   )
 );
 }, [members, user]);
 
+useEffect(() =>{
+console.log("userid", exists)
+}, [exists])
 
 useEffect(() => {
   if (!AcceptedTerms && forum?.adminId !== user?.uid) {
@@ -590,6 +600,33 @@ const handleRequestToJoin = async (forumId: string, userId: string) => {
 }
 
 
+
+const ExitForum = async (forumId: string, userId: any) => {
+    if (!confirm("Are you sure you want to leave  forum?")) return;
+
+
+  try {
+    await deleteDoc(doc(dbForums, "forums", forumId, "members", userId));
+
+    toast({
+      title: "Success",
+      description: "you have exited the forum .",
+    });
+
+    router.push("/forums")
+    // Optional: Update local state here so UI updates instantly verify
+    // setRequests((prev) => prev.filter(req => req.userid !== userId));
+  } catch (err) {
+    console.error("Error  request:", err);
+    toast({
+      title: "Failed",
+      variant: "destructive",
+      description: "Failed to remove .",
+    });
+  }
+};
+
+
 const HandleRemoveuser = async (forumId: string, userId: any) => {
 
   try {
@@ -612,54 +649,84 @@ const HandleRemoveuser = async (forumId: string, userId: any) => {
   }
 };
 
+  const [dot, setDot] = useState("");
+
+  const [showVerifying, setShowVerifying] = useState(true);
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setShowVerifying(false);
+  }, 5000); // 5 seconds
+
+  return () => clearTimeout(timer); // cleanup
+}, []);
+
+
+  useEffect(() => {
+    if(exists){
+    const t = setInterval(() => setDot((d) => (d.length < 3 ? d + "!" : "")), 450);
+
+    return () => clearInterval(t);
+    }
+  }, [exists]);
+
 function VerifyingMember() {
-  const [dots, setDots] = useState("");
+    const [dots, setDots] = useState("");
+
   useEffect(() => {
     const t = setInterval(() => setDots((d) => (d.length < 3 ? d + "." : "")), 450);
+
     return () => clearInterval(t);
   }, []);
+
   return (
     <div className="mt-6 mx-auto max-w-md rounded-xl bg-gradient-to-r from-gray-900/80 to-black/60 backdrop-blur-md p-5 text-center text-white shadow">
       <div className="flex items-center justify-center gap-3">
         <Loader2 className="h-5 w-5 animate-spin" />
-        <div className="text-lg font-semibold">Verifying if you are a Member{dots}</div>
+
+      {  <div className="text-lg font-semibold"> Verifying if you are a Member{dots}</div> }
       </div>
-      <p className="mt-2 text-sm text-gray-300">Request status will appear here shortly.</p>
+      <p className="mt-2 text-sm text-gray-300"> Request status will appear here  shortly. </p> 
     </div>
   );
 }
 
+const isMember = members.some((m) => m.id === user?.uid);
 
 
+if (user && forum?.isPrivate && !isAdmin && !isMember) {
+  return (
+    <div className="relative min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="absolute inset-0 backdrop-blur-sm opacity-80 bg-black" />
 
+      <div className="relative z-10 text-center p-6 rounded-xl bg-gray-800 shadow-lg max-w-sm w-full">
+        <h1 className="text-white text-xl font-semibold mb-2">Private Forum</h1>
 
-  if ( user && forum && forum?.isPrivate &&  !isAdmin  && !isAdmin  && !exists ) {
-    return (
-      <div className="relative min-h-screen flex items-center justify-center bg-gray-900">
-        {/* Blurred background */}
-        <div className="absolute inset-0 backdrop-blur-sm opacity-80 bg-black" />
+        <h2>
+          {hasRequested
+            ? `Request pending ${dots}`
+            : `You are not a member ${dot}`}
+        </h2>
 
-        {/* Centered content */}
-        <div className="relative z-10 text-center p-6 rounded-xl bg-gray-800 shadow-lg max-w-sm w-full">
-          <h1 className="text-white text-xl font-semibold mb-2">Private Forum</h1>
-          <h2>{forum?.isPrivate &&  !isAdmin  && !exists ?  "Verifying if you are a Member ..." : ""  }</h2>
-   <div className="text-sm font-medium">
-{forum?.isPrivate && !isAdmin && !exists && <VerifyingMember />}
-    </div>
-
-          <p className="text-gray-400 mb-4">
-            This forum is private. You must be a member to view content. 
-          </p>
-          <button
-            onClick={() => handleRequestToJoin(forum.id, user?.uid)}
-            className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-300 transition"
-          >
-          { hasRequested ? "Pending Approval" : "Request to Join"}
-          </button>
+        <div className="text-sm font-medium">
+    {!isMember && showVerifying && <VerifyingMember />}
         </div>
+
+        <p className="text-gray-400 mb-4">
+          This forum is private. You must be a member to view content.
+        </p>
+{!isMember &&
+        <button
+          onClick={() => handleRequestToJoin(forum.id, user?.uid)}
+          className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-300 transition"
+          disabled={hasRequested}
+        >
+          {hasRequested ? "Pending Approval" : "Request to Join"}
+        </button>}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
 const handleUpdateUser = async (forumId: string, userId: any) => {
   try {
@@ -675,6 +742,9 @@ setShowTerms(false);
     console.error("Error updating user terms:", error);
   }
 };
+
+
+
 
 // if(!AcceptedTerms && forum.adminId !== user?.uid){
 
@@ -826,10 +896,23 @@ if (!forum) return <div className="container py-12">Loading...</div>;
     </Button>
   </div>
 ) : <div className="space-x-2 flex-shrink-0">
-    <Button variant="destructive">Exit Forum
+  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>
+       <Button variant="destructive" onClick={() => ExitForum(forum.id, user?.uid)}>Exit Forum
 
       <LogOutIcon />
     </Button>
+                      </DropdownMenuItem>
+                      
+                      </DropdownMenuContent>
+                      </DropdownMenu>
+                   
   </div>}
 
 
@@ -850,14 +933,40 @@ if (!forum) return <div className="container py-12">Loading...</div>;
   <TabsTrigger value="Requests">Requests</TabsTrigger>
 )}
         </TabsList>
-       {canAddArticle && <Link href={`/forums/${forum.slug}/article/create`}>
+
+
+       { ((forum.adminId === user?.uid) || Mod.some(i => i.id === user?.uid))  ?
+       <Link href={`/forums/${forum.slug}/article/create`}>
         
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create
           </Button>
         
-        </Link> }
+        </Link> 
+:
+      forum.isPrivate ? canAddArticle  && <Link href={`/forums/${forum.slug}/article/create`}>
+        
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create
+          </Button>
+        
+        </Link> 
+        :
+          canAddArticle && <Link href={`/forums/${forum.slug}/article/create`}>
+        
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create
+          </Button>
+        
+        </Link>
+        
+          
+        
+
+      }
       </div>
 
       {/* --- ARTICLES TAB about--- */}
@@ -989,7 +1098,7 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
                   </div>
                 </div>
 
-                {/*(currentUser.isAdmin || currentUser.isModerator) crown && member.role user !== "Admin" settings members &&*/}
+                {/*(currentUser.! || currentUser.isModerator) crown && member.role user !== "Admin" settings members &&*/}
                 { member?.role !== "Admin"  &&(
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1064,7 +1173,7 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
                   </div>
                 </div>
 
-                {/*(currentUser.isAdmin || currentUser.isModerator) && member.role user !== "Admin" &&*/}
+                {/*(currentUser.! || currentUser.isModerator) && member.role user !== "Admin" exit &&*/}
                 { (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

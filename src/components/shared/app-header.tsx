@@ -37,16 +37,7 @@ const {toast} = useToast();
 
 
   
-useEffect(() => {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const storedTheme = localStorage.getItem("darkMode");
 
-  // If no stored theme, match system preference
-  const initialTheme = storedTheme || (prefersDark ? "dark" : "light");
-
-  document.documentElement.classList.toggle("dark", initialTheme === "dark");
-  localStorage.setItem("darkMode", initialTheme);
-}, []);
 
 
   const [timedouts, setTimeouts] = useState(false);
@@ -62,7 +53,7 @@ useEffect(() => {
 
   useEffect(() => {
     if (timedouts) {
-      // Second timeout after 5 seconds when timedouts becomes true
+      // Second timeout after 5 seconds when timedouts becomes true dark
       const secondTimer = setTimeout(() => {
         setTimeouts(false);
       }, 8000);
@@ -125,7 +116,7 @@ const userId = user?.uid;
 {/* 
        <Button variant="outline"  dark size="icon" className="shrink-0 md:hidden" onClick={toggleSidebar}>
         <Menu className="h-5 w-5" />
-        <span className="sr-only">Toggle navigation menu</span>
+        <span className="sr-only">Toggle navigation menu</span> dark
       </Button>
        */}
 

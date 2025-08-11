@@ -16,6 +16,7 @@ export default function CreateArticlePage() {
   const slug = params?.slug as string;
   const router = useRouter();
   const {toast} = useToast();
+const [Mod, setMod] = useState<any[]>([]);
 
   const [forum, setForum] = useState<any>(null);
   const [title, setTitle] = useState('');
@@ -71,9 +72,15 @@ async function uploadToCloudinary(file: File, onProgress?: (percent: number) => 
         router.push('/forums');
         return;
       }
-
-      const forumDoc = forumSnap.docs[0];
+  const forumDoc = forumSnap.docs[0];
+       const ModSnap = await getDocs(
+              collection(dbForums, "forums", forumDoc.id, "moderators")
+            );
+    
       const forumData = { id: forumDoc.id, ...forumDoc.data() };
+
+      
+      setMod(ModSnap.docs.map((doc) => ({ id: doc.id })));
 
       // Get current user's membership info
       const memberDoc = await getDoc(doc(dbForums, 'forums', forumDoc.id, 'members', user.uid));
@@ -149,7 +156,7 @@ variant: "destructive"
 
 
   if (!forum) return <div className="p-8">Loading forum...</div>;
-  if (!isAllowed) return <div className="p-8 text-red-500">You are not allowed to post in this forum.</div>;
+  if (!isAllowed &&  (forum.adminId !== user?.uid) && !Mod.some(i => i.id === user?.uid) )  return <div className="p-8 text-red-500">You are not allowed to post in this forum.</div>;
 
   return (
     <div className="container py-10 max-w-2xl mx-auto space-y-6">

@@ -31,7 +31,7 @@ export default function ForumSettingsPage() {
   const router = useRouter();
 const {toast} = useToast()
 const [rules, setRules] = useState<string>('');
-
+const [Description, setDescription] = useState<string>('');
   const [forum, setForum] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [allowPublicPosting, setAllowPublicPosting] = useState(false);
@@ -65,8 +65,8 @@ const [rules, setRules] = useState<string>('');
     setForum(forumData);
     setprivateForum((forumData as any)?.isPrivate );
     setAllowPublicPosting((forumData as any)?.settings?.allowPublicPosting ?? false);
-setRules((forumData as any).rules || "");
-
+setRules((forumData as any)?.settings?.rules );
+setDescription((forumData as any)?.description );
     // ✅ Fetch members
     const membersSnap = await getDocs(
       collection(dbForums, "forums", (forumData as any).id, "members")
@@ -82,10 +82,17 @@ setRules((forumData as any).rules || "");
 }, [slug, user]);
 
 
+
+useEffect(() => {
+
+console.log("rules", rules)
+}, [rules])
+
   const handleSaveSettings = async () => {
     try {
       await updateDoc(doc(dbForums, 'forums', forum.id), {
         isPrivate:privateForum,
+        description:Description, 
         settings: {
           ...forum.settings,
           allowPublicPosting,
@@ -166,6 +173,18 @@ setRules((forumData as any).rules || "");
 
       </div>
 
+
+<div className="space-y-2">
+  <label className="font-medium">Forum about</label>
+  <textarea
+    className="w-full border rounded-md p-2 bg-background"
+    placeholder="Write your forum description..."
+    value={Description}
+    onChange={(e) => setDescription(e.target.value)}
+    rows={5}
+  />
+</div>
+
 <div className="space-y-2">
   <label className="font-medium">Forum Rules</label>
   <textarea
@@ -176,6 +195,9 @@ setRules((forumData as any).rules || "");
     rows={5}
   />
 </div>
+
+
+
 
       <Button onClick={handleSaveSettings}>Save Settings</Button>
 

@@ -11,7 +11,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
-
+const [theme, setTheme] = useState<any>(null)
 useEffect(() => {
   if (!user) return;
   const docRef = doc(db, "users", user?.uid);
@@ -21,6 +21,11 @@ useEffect(() => {
       setUserData({ uid: user?.uid, ...docSnap.data() });
       console.log("data", docSnap.data())
     }
+
+
+
+    
+    
     setLoading(false);
   });
 

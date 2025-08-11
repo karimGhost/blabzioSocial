@@ -26,22 +26,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
- 
 
  
  type ThemeMode = "light" | "dark";
     
 
-useEffect(() => {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const storedTheme = localStorage.getItem("darkMode");
+// useEffect(() => {
+//   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+//   const storedTheme = localStorage.getItem("darkMode");
 
-  // If no stored theme, match system preference
-  const initialTheme = storedTheme || (prefersDark ? "dark" : "light");
+//   // If no stored theme, match system preference
+//   const initialTheme = storedTheme || (prefersDark ? "dark" : "light");
 
-  document.documentElement.classList.toggle("dark", initialTheme === "dark" );
-  localStorage.setItem("darkMode", initialTheme);
-}, []);
+//   document.documentElement.classList.toggle("dark", initialTheme === "dark" );
+//   localStorage.setItem("darkMode", initialTheme);
+// }, []);
 
 
   useEffect(() => {
