@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   if (loading) return BlabzioLoader(); // Don't show anything while loading
 
-  if (user) return null; // Still avoid flashing form after loading
+  // if (user) return  ; // Still avoid flashing form after loading
 
   return <LoginForm />;
 }
@@ -25,7 +25,7 @@ export default function LoginPage() {
 
 function BlabzioLoader() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-orange-100 animate-fade-in">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-orange-100 animate-fade-in " style={{marginTop:"-10px"}}>
       <div className="animate-pulse text-5xl font-extrabold text-orange-400 drop-shadow-lg">
         <span className="relative text-6xl font-dragon text-orange-400 right-[-1px] top-[2px]">
     B

@@ -12,27 +12,29 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
 const [theme, setTheme] = useState<any>(null)
+
+
+
 useEffect(() => {
   if (!user) return;
-  const docRef = doc(db, "users", user?.uid);
+
+  const docRef = doc(db, "users", user.uid);
 
   const unsubscribe = onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
-      setUserData({ uid: user?.uid, ...docSnap.data() });
-      console.log("data", docSnap.data())
+      setUserData({ uid: user.uid, ...docSnap.data() });
+      console.log("User data:", docSnap.data());
+    } else {
+      
+      setUserData(null);
     }
 
-
-
-    
-    
     setLoading(false);
   });
 
   return () => unsubscribe();
-}, [user]);
 
-
+}, [user]); 
 
 useEffect(() => {
   if (!user?.uid) return;

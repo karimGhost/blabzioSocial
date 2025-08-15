@@ -22,7 +22,7 @@ import { X, Pencil, Trash } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import EmojiPicker from "emoji-picker-react"; // you must install this package
 import { string } from "zod";
-
+import { useRouter } from "next/navigation";
 interface CommentsModalProps {
   videoId: string;
  authorId:string;
@@ -50,6 +50,7 @@ export default function CommentsModal({ videoId, authorId, setCommentComunt, onC
   const [showEmoji, setShowEmoji] = useState(false);
   const commentsRef = collection(dbd, "videos", videoId, "comments");
   const endRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const q = query(commentsRef, orderBy("timestamp", "asc"));
@@ -153,10 +154,19 @@ if(existingSnapshot.empty){
   };
 }, [isOpen]);
 
-  const handleDelete = async (commentId: string) => {
-    await deleteDoc(doc(dbd, "videos", videoId, "comments", commentId));
-  };
+ 
+const handleDelete = async (commentId: string) => {
+  const confirmed = window.confirm("Are you sure you want to delete this comment?");
+  if (!confirmed) return;
 
+  try {
+    // Example: Firestore delete
+    await deleteDoc(doc(dbd, "videos", videoId, "comments", commentId));
+    console.log("Comment deleted");
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+  }
+};
   const handleEdit = (comment: Comment) => {
     setNewComment(comment.text);
     setEditingId(comment.id);
@@ -171,7 +181,7 @@ if(existingSnapshot.empty){
  
  <>
  {isOpen && (
-  <div className="absolute inset-0 z-50 bg-black/60 flex items-end justify-center">
+  <div style={{zIndex:"200"}} className="absolute inset-0 z-200 bg-black/60 flex items-end justify-center">
     {/* Slide-up container */}
     <div
       className={`w-full h-[75%] bg-white rounded-t-2xl flex flex-col p-4 transform transition-transform duration-300 ease-out ${
@@ -179,8 +189,8 @@ if(existingSnapshot.empty){
       }`}
     >
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold">Comments</h2>
-        <Button variant="ghost" size="icon"  onClick={onClose}>
+        <h2 className="text-lg font-semibold text-muted">Comments</h2>
+        <Button variant="outline" style={{marginTop:"-20px", marginRight:"-20px"}} size="icon"  onClick={onClose}>
           <X className="w-5 h-5" />
         </Button>
       </div>
@@ -189,20 +199,22 @@ if(existingSnapshot.empty){
       {comments.map((comment) => (
         <div key={comment.id} className="flex gap-2 items-start">
           <img
+          onClick={() => router.push(`/profile/${comment.uid}`)}
+
             src={comment.avatarUrl}
             alt={comment.name}
             className="h-8 w-8 rounded-full object-cover"
           />
           <div className="flex-1 break-words">
-            <p className="text-sm font-semibold">{comment.name}</p>
-            <p className="text-sm text-gray-800 whitespace-pre-wrap">{comment.text}</p>
+            <p className="text-sm font-semibold text-muted" style={{cursor:"pointer"}} onClick={() => router.push(`/profile/${comment.uid}`)}> {comment.name}</p>
+            <p className="text-sm text-gray-800 whitespace-pre-wrap text-muted">{comment.text}</p>
           </div>
           {user?.uid === comment.uid && (
             <div className="flex gap-1">
-              <Button size="icon" variant="ghost" onClick={() => handleEdit(comment)}>
+              <Button size="icon" className="text-muted" onClick={() => handleEdit(comment)}>
                 <Pencil className="w-4 h-4" />
               </Button>
-              <Button size="icon" variant="ghost" onClick={() => handleDelete(comment.id)}>
+              <Button size="icon" className="" variant="destructive" onClick={() => handleDelete(comment.id)}>
                 <Trash className="w-4 h-4" />
               </Button>
             </div>

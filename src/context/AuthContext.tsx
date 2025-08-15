@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
  type ThemeMode = "light" | "dark";
     
 
+
 // useEffect(() => {
 //   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 //   const storedTheme = localStorage.getItem("darkMode");

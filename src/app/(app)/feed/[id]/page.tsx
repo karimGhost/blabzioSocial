@@ -244,8 +244,10 @@ useEffect(() => {
   };
 
 
-  const handleSendMessage = (post: any) => {
+  const handleSendMessage = (post: Post) => {
   router.push(`/messages/new?postId=${post.id}`);
+localStorage.setItem("feed", `/feed/${post.id}`)
+localStorage.getItem("feed")
 };
 
 const handleMuteUser = async (username: string) => {

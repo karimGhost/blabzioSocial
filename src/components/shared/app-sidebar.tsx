@@ -231,7 +231,7 @@ useEffect(() => {
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-card sm:flex  smflexx">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/feed" className="flex items-center gap-2 font-semibold">
-          <BlabzioLogo className="h-8 w-8" />
+          {/* <BlabzioLogo className="h-8 w-8" /> */}
         <span className="flex items-center font-headline text-xl">
   <b className="text-4xl font-dragon text-orange-400 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
   <span style={{marginBottom:"-4px"}} className="bottom-[-20px]">labzio</span>
@@ -721,7 +721,7 @@ useEffect(() => {
                 <AvatarFallback>{(userData?.fullName ?? "").substring(0, 2) || "??"}</AvatarFallback>
                   {/* { unreadCount > 0 && (
               <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
-                {unreadCount > 9 ? "9+" : unreadCount}
+                {unreadCount input > 9 ? "9+" : toggle input unreadCount}
 
               </span>
 
@@ -734,7 +734,7 @@ useEffect(() => {
 
                   
 
-                        {/* <DropdownMenuItem asChild><Link href="/forums">Forum</Link></DropdownMenuItem>  absolute */}
+                        {/* search <DropdownMenuItem asChild><Link href="/forums">Forum</Link></DropdownMenuItem>  absolute */}
  <nav className="flex-1 overflow-y-auto py-4 px-3 text-sm font-medium">
       <ul className="space-y-1">
         {navItems.map((item) => (
@@ -833,8 +833,39 @@ useEffect(() => {
           </DropdownMenuContent>
         </DropdownMenu>
 
+
+
+
+
+{visible && (
+        <div ref={wrapperRef} className="absolute left-0 right-0 z-50 flex justify-center mt-2">
+          <form  style={{width:"90%",margin:"auto",zIndex:"99", position:"fixed",top:"50px",left:"0", right:"0" }}  onSubmit={handleSearch} className="w-full sm:w-auto">
+            <div className="relative">
+           
+                 {/* Search Input */}
+
+              <Input
+                type="search"
+                value={querys}
+                name="search"
+                onChange={(e) => setQuerys(e.target.value)}
+                placeholder="Search Blabzio..."
+                  autoComplete="off"
+
+className={cn(
+          "bg-muted pl-9 rounded-full transition-all shadow-none",
+          "absolute left-0 top-0 w-full", // mobile
+          "md:static md:w-64 md:opacity-100", // desktop
+          showInput ? "opacity-100" : "opacity-0 pointer-events-none md:opacity-100"
+        )}              />
+            </div>
+          </form>
+        </div>
+      )}
+
 </div>
-                    
+
+
  </div>
                 </header>
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around border-t bg-background p-2 sm:hidden">
@@ -844,11 +875,13 @@ useEffect(() => {
         <span>Feed</span>
       </Link>
 
-      {/* Search */}
-      <Link href="/search" className="flex flex-col items-center text-sm">
-        <Search className="h-6 w-6" />
+      {/* Search href="/search" */}
+      <div onClick={toggleInput} className="flex flex-col items-center text-sm">
+        <Search  className="h-6 w-6" />
         <span>Search</span>
-      </Link>
+      </div>
+
+    
 
       {/* Create Post */}
       <Link href="/create-post" className="flex flex-col items-center text-sm">

@@ -68,7 +68,7 @@ export default function CreateForumPage() {
   });
   const { toast } = useToast();
   const router = useRouter();
- const {user} = useAuth();
+ const {user, userData} = useAuth();
 
 async function onSubmit(values: z.infer<typeof formSchema>) {
   try {
@@ -123,8 +123,8 @@ creatorId:user.uid,
     const memberRef = doc(dbForums, "forums", forumRef.id, "members", user.uid);
     await setDoc(memberRef, {
       id: user.uid,
-      name: user.displayName || "Unknown",
-      avatarUrl: user.photoURL || "",
+      name: userData.fullName || user.displayName || `user${ crypto.randomUUID()}`,
+      avatarUrl: userData.avatarUrl || user.photoURL || "",
       role: "Admin",
       joinedAt: new Date(),
     });

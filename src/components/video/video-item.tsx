@@ -533,7 +533,7 @@ return (
   />
 
 
-  {showControls && (
+  { showControls && (
         <div className="absolute top-5 left-0 right-0 flex justify-between items-center px-6 text-white z-10">
           {/* Play / Pause */}
           <button
@@ -586,7 +586,7 @@ return (
 <>
 
 
-{likeEmoji === video.id && (
+{!commentsOpen  && likeEmoji === video.id && (
   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pop">
     <Heart
       fill="#f97316" // Tailwind's orange-400 hex
@@ -642,7 +642,7 @@ return (
    
       </div>
 
- 
+ {!commentsOpen &&
       <div style={{zIndex:"299", position:"absolute"}} className="absolute  right-2 bottom-1/4 sm:bottom-4 flex flex-col gap-3 items-center text-white">
   
  {user?.uid !== video.user.uid && (<>
@@ -673,7 +673,7 @@ return (
   </DropdownMenu>
 
 
-
+{!user || user.email !== "abdulkarimkassimsalim@gmail.com" ? "" :
  <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <Button variant="ghost" size="icon"><MoreVertical /></Button>
@@ -733,7 +733,7 @@ return (
     
     </DropdownMenuContent>
   </DropdownMenu>
-
+}
 
 
  {showReportModal ===  video.id && (
@@ -913,11 +913,12 @@ onClick={(e) => handleLike(e, video.id)}
           </DropdownMenuContent>
           </DropdownMenu>
       </div>
-
+}
  
 
+<div>
 
-  <CommentsModal
+    <CommentsModal
   width={containerWidth}
 setCommentComunt={setCommentComunt}
         videoId={video.id}
@@ -925,6 +926,8 @@ setCommentComunt={setCommentComunt}
         isOpen={commentsOpen}
         onClose={() => setCommentsOpen(false)}
       />
+</div>
+
 
 
     

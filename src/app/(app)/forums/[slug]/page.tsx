@@ -779,6 +779,7 @@ if(showTerms && forum?.isPrivate && forum?.adminId !== user?.uid){
 //     onAccept={() => handleUpdateUser(forum.id, user?.uid)}
 //     onReject={() =>{ HandleRemoveuser( forum.id, user?.uid); router.push("/forums")}} 
 //   />
+
 // )}
 
 if (!forum) return <div className="container py-12">Loading...</div>;
@@ -880,20 +881,42 @@ if (!forum) return <div className="container py-12">Loading...</div>;
      {  forum.adminId === user?.uid  ? (
   <div className="space-x-2 flex-shrink-0">
      {/* Edit Button */}
-      {!isEditing && (
-        <Button
-          className="outline bg-transparent hover:bg-orange-300"
+     
+  
+   <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+
+                      <DropdownMenuItem>
+                        <div style={{display:"flex", flexDirection:"column", gap:"4px"}}>
+
+                       <Button
+          className=" bg-transparent hover:bg-orange-300"
           onClick={() => setIsEditing(true)}
         >
           Edit Forum
           <Pen className="ml-1 h-4 w-4" />
         </Button>
-      )}
+     
     {/* <Button variant="destructive">Delete Forum</Button> */}
     <Button className=" hover:bg-orange-300" onClick={() => router.push(`/forums/${forum.id}/settings`)}>
       Forum Settings
       <Settings />
-    </Button>
+    </Button>    
+                        </div>
+    
+
+        </DropdownMenuItem>
+                      
+                      </DropdownMenuContent>
+                      </DropdownMenu>
+                   
+    
+    
   </div>
 ) : <div className="space-x-2 flex-shrink-0">
   <DropdownMenu>

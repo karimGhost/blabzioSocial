@@ -229,6 +229,22 @@ const fetchForums = async (nextPage = false) => {
   setLoading(false);
 };
 
+
+
+useEffect(() => {
+  const handleScroll = () => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop >=
+      document.documentElement.offsetHeight - 100
+    ) {
+      if (!loading && hasMore) fetchForums(true);
+    }
+  };
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, [hasMore, loading]);
+
   useEffect(() => {
     fetchForums(false); // initial load
   }, [user]);
@@ -515,11 +531,11 @@ console.log("mode", moderator)
   <ForumGrid key={cat} title={`${cat} Forums`} data={forums} />
 ))}
 
-{hasMore && !loading && (
+{/*{hasMore && !loading && (
   <div className="flex justify-center mt-6">
     <Button onClick={() => fetchForums(true)}>Load More</Button>
   </div>
-)}
+)}*/}
 {loading && <p className="text-center mt-4">Loading...</p>}
       </div>
     </section>

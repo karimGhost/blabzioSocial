@@ -34,7 +34,9 @@ export default function NotificationsPage() {
 const notifications = notification(user?.uid);
 
 
-
+useEffect(()=>{
+console.log("notifications",notifications)
+},[notifications])
  const getIcon = (type: Notification["type"]) => {
   switch (type) {
     case "follow":
@@ -57,32 +59,44 @@ const notifications = notification(user?.uid);
 };
 
 
+
 return (
   <div className="p-4 max-w-xl mx-auto">
-    <h2 className="text-xl font-semibold mb-4">Notifications</h2>
+  <h2 className="text-xl font-semibold mb-4">Notifications</h2>
 
-    {notifications.length === 0 ? (
-      <p className="text-sm text-muted-foreground">No notifications yet.</p>
-    ) : (
-      <ul className="space-y-3">
-          {notifications.map((n) => (
+  {notifications.length === 0 ? (
+    <p className="text-sm text-muted-foreground">No notifications yet.</p>
+  ) : (
+    <ul className="space-y-3">
+      {notifications.map((n) => (
+        <li
+          key={n.id}
+          onClick={() => {
+            if (n.type === "follow") route.push(`/profile/${n.fromUser}`);
+          }}
+          className="flex items-start gap-3 p-3 rounded-md bg-muted"
+        >
+          {/* Avatar */}
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={n?.avatarUrl} />
+            <AvatarFallback>{n?.fullName?.[0]}</AvatarFallback>
+          </Avatar>
 
-            <li onClick={() => {
-n.type === "follow"  && route.push(`/profile/${n.fromUser}`)} } key={n.id} className="flex items-start gap-3 p-3 rounded-md bg-muted">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={n?.avatarUrl} />
-                <AvatarFallback>{n?.fullName?.[0]}</AvatarFallback>
-              </Avatar>
+          {/* Notification Content */}
+          <div className="flex-1 text-sm">
+            <p>
+              {/* User Link */}
+              <Link
+                href={`/profile/${n.fromUser}`}
+                className="font-medium hover:underline"
+              >
+                {n.fullName}
+              </Link>{" "}
 
-              <div className="flex-1 text-sm">
-              <p>
-  <Link href={`/profile/${n.fromUser}`} className="font-medium hover:underline">
-    {n.fullName}
-  </Link>{" "}
+              {/* Notification Message by Type */}
+              {n.type === "follow" && "followed you"}
 
-  {n.type === "follow" && "followed you"}
-
-  {n.type === "like" && (
+              {n.type === "like" && (
                 <>
                   liked your post{" "}
                   {n.postId && (
@@ -91,9 +105,9 @@ n.type === "follow"  && route.push(`/profile/${n.fromUser}`)} } key={n.id} class
                     </Link>
                   )}
                 </>
-  )}
+              )}
 
-  {n.type === "comment" && (
+              {n.type === "comment" && (
                 <>
                   commented on your post{" "}
                   {n.postId && (
@@ -102,53 +116,42 @@ n.type === "follow"  && route.push(`/profile/${n.fromUser}`)} } key={n.id} class
                     </Link>
                   )}
                 </>
-  )}
+              )}
 
- {n.type === "forum"  ?
-              <div className="mt-1"> <Link  href={`/forums/${n.fullName}`} >you have been added to the forum <b>{n.fullName}  </b>  {getIcon(n.type)}  </Link> </div>
-              :
-                            <div className="mt-1">you have been added to the forum {n.fullName}  {getIcon(n.type)}</div>
-
-
- }
-
-  {n.type === "PolicyViolation" && (
+              {n.type === "forum" && (
                 <>
-                  <span className="text-red-600 font-medium">⚠️ Policy Violation</span> — Your content may have violated our community rules.{" "}
+                  you have been added to the forum{" "}
+                  <b>{n.fullName}</b> {getIcon(n.type)}
+                </>
+              )}
+
+              {n.type === "PolicyViolation" && (
+                <>
+                  <span className="text-red-600 font-medium">
+                    ⚠️ Policy Violation
+                  </span>{" "}
+                  — Your content may have violated our community rules.{" "}
                   {n.postId && (
                     <Link href={`/feed/${n.postId}`} className="underline">
                       view post
                     </Link>
                   )}
                 </>
+              )}
+            </p>
+
+            {/* Timestamp */}
+            <p className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(n.timestamp), { addSuffix: true })}
+            </p>
+          </div>
+
+          {/* Icon on the Right */}
+          <div className="mt-1">{getIcon(n.type)}</div>
+        </li>
+      ))}
+    </ul>
   )}
-</p>
-
-
-
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(n.timestamp), { addSuffix: true })}
-                </p>
-              </div>
-
-
-
-
- {
-n.type === "follow"  ?
-              <div className="mt-1"> <Link  href={`/profile/${n.fromUser}`} > {getIcon(n.type)}  </Link> </div>
-              :
-                            <div className="mt-1"> {getIcon(n.type)}</div>
-
-
- }
-
-
-
-            </li>
-          ))}
-      </ul>
-    )}
-  </div>
+</div>
 );
 }
