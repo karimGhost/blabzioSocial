@@ -1136,17 +1136,17 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
                       } className='pointer-cursor hover:text-primary' onClick={() => handleViewProfile(member.id)}>
                         View Profile
                       </DropdownMenuItem>
-                   {!Mod.some((i) => i.id === member.id) && (
+                   {forum.adminId === user?.uid && ( 
   <DropdownMenuItem
     className="cursor-pointer hover:text-primary"
     onClick={() => handlePromoteToMod(forum.id, member.id)}
   >
     Promote to Mod
   </DropdownMenuItem>
+
 )}
 
-{/* If member IS a mod → show remove button */}
-{Mod.some((i) => i.id === member.id) && (
+{forum.adminId === user?.uid&& ( 
   <DropdownMenuItem
     className="cursor-pointer hover:text-primary"
     onClick={() => handleRemoveMod(forum.id, member.id)}
@@ -1154,7 +1154,7 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
     Remove Mod
   </DropdownMenuItem>
 )}
-                      <DropdownMenuItem
+                   {((forum.adminId === user?.uid) || Mod.some(i => i.id === user?.uid))   &&   <DropdownMenuItem
                       style={
                         
                         {cursor:"pointer", borderRadius:"5px"}
@@ -1163,6 +1163,7 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
                       >
                         Remove User
                       </DropdownMenuItem>
+}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}

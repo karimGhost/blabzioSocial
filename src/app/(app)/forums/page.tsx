@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Lock, Earth } from "lucide-react";
 import { Select } from "@radix-ui/react-select";
 import { SelectGroup } from "@/components/ui/select";
-
+import { useRouter } from "next/navigation";
 interface Forum {
   members: any;
   headerImageUrl: string;
@@ -59,7 +59,7 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("latest");
   const [visibleCount, setVisibleCount] = useState(6);
   const [lastDoc, setLastDoc] = useState<any>(null);
-
+const router = useRouter()
     const [loading, setLoading] = useState <boolean>(false);
   const [hasMore, setHasMore] = useState <boolean>(true);
 
@@ -348,7 +348,7 @@ console.log("mod", forum.moderators?.includes(user?.uid))
 
 }, [forum])
   return (
-    <Card key={forum.id} style={{cursor:"pointer"}} className="...">
+    <Card onClick={() => router.push(`/forums/${forum.slug}`)} key={forum.id} style={{cursor:"pointer"}} className="...">
       
             <CardHeader className="p-0">
               <div className="relative h-48 w-full">
