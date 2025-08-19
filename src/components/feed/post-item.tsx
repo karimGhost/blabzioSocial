@@ -112,10 +112,12 @@ function RepliesList({ postId, commentId }: RepliesListProps) {
 
 interface PostItemProps {
   post: Post;
+    selectedPosts?: Post | null; 
+
 
 }
 
-export function PostItem({ post }: PostItemProps) {
+export function PostItem({ post, selectedPosts }: PostItemProps) {
   const router = useRouter();
 const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
@@ -268,7 +270,7 @@ const handleShareToFeed = async (post: Post) => {
   if (!user) return;
 
   try {
-    // Step 1: Check if the user already shared this post
+    // Step 1: Check if the user already shared this post reply
     const sharedQuery = query(
       collection(dbb, "posts"),
       where("originalPostId", "==", post.id),
@@ -289,7 +291,7 @@ const handleShareToFeed = async (post: Post) => {
 
 
 
-    // Step 2: Share the post dark
+    // Step 2: Share the post dark send in
     await addDoc(collection(dbb, "posts"), {
       author: {
         name: userData.fullName,
@@ -699,12 +701,19 @@ const shouldShowMore = post.content.length > visibleChars;
 const handleReadMore = (postId: string, contentLength: number) => {
   setReadMoreMap((prev) => {
     const current = prev[postId] || 500;
-    const next = Math.min(current + 800, contentLength); // Don't exceed total length
+    const next = Math.min(current + 800, contentLength); // Don't exceed total length send in 
     return { ...prev, [postId]: next };
   });
 };
+
+// useEffect(() => {
+// console.log("selectedPost", selectedPosts ? "true" : "false")
+// },[selectedPosts])
+
+
   return (
-    <Card className={` overflow-hidden shadow-lg     ${post?.isprofile && 'w-full  object-cover'} `  }  style={{height: post?.isprofile && "250px"}}>
+    <Card className={` overflow-hidden shadow-lg     ${post?.isprofile && 'w-full  object-cover'} `   } style={{ height: post.isprofile ?  selectedPosts ? "" : "250px" : "" }}
+  >
       <CardHeader className="flex flex-row items-center gap-3 p-4">
         <Link href={`/profile/${post.author.uid}`}>
           <Avatar className="h-11 w-11 border-2 border-primary">
@@ -892,7 +901,7 @@ post.mediaUrl && post.mediaType === "image" ?
       <CardContent className="p-4 pt-0">
 
              { post.content.length > 500 && Array.isArray(post.mediaUrl) && post.mediaUrl.length > 0 && post.mediaType === "image" && (
-  <PostMediaSlider post={post} setPreviewUrl={setPreviewUrl} />
+  <PostMediaSlider  postisprofile={post?.isprofile} post={post} setPreviewUrl={setPreviewUrl} />
 
 
 
@@ -905,7 +914,8 @@ post.mediaUrl && post.mediaType === "image" ?
    <p className="whitespace-pre-wrap text-sm">{""}</p>
 
         :
-         <p className="whitespace-pre-wrap text-sm">{   post.isprofile ?   post.content.length > 30 ?  post.content.slice(0, 30 ) + "..." : post.content
+         <p className="whitespace-pre-wrap text-sm">{   post.isprofile &&  selectedPosts  ?    post.content :  post.content.length > 30 ? post.content.slice(0, 30 ) + "..." 
+          
         :  post.content }</p>
          )
       
@@ -1049,7 +1059,7 @@ post.mediaUrl && post.mediaType === "image" ?
                     value={replyMap[comment.id] || ""}
                     onChange={(e) => setReplyMap((prev) => ({ ...prev, [comment.id]: e.target.value }))}
                     placeholder="Write a reply..."
-                    className="w-full px-2 py-1 text-sm border rounded"
+                    className="w-full px-2 py-1 text-sm border rounded text-"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleReplySubmit( comment.id, comment.uid, replyMap[comment.id]);
                     }}

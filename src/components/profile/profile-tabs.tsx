@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { VideoItem } from "../video/video-item";
 import { formatDistanceToNow } from "date-fns";
+import { isObject } from "util";
 interface ProfileTabsProps {
   Blocked: boolean;
   userData: User;
@@ -145,7 +146,7 @@ console.log("user", userVids)
                 }}
               >
                 {isPost ? (
-                  <PostItem post={item.data} />
+                  <PostItem   selectedPosts={selectedPost || selectedVideo} post={item.data} />
                 ) : (
                   <>
                     <video
@@ -175,7 +176,7 @@ console.log("user", userVids)
             >
               ×
             </button>
-            <PostItem post={selectedPost} />
+            <PostItem  selectedPosts={selectedPost || selectedVideo} post={selectedPost} />
           </div>
         </div>
       )}

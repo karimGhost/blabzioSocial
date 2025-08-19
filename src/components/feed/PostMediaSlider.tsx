@@ -9,12 +9,12 @@ import 'swiper/css/mousewheel';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import CustomVideoPlayer from '../customVideo/CustomVideoPlayer';
-export default function PostMediaSlider({ post, setPreviewUrl } : any) {
+export default function PostMediaSlider({selectedPosts, post, setPreviewUrl } : any) {
   const [currentSlide, setCurrentSlide] = useState(1);
 const totalSlides =  Array.isArray(post.mediaUrl) ?  post?.mediaUrl?.length || 0 : 0 
 
 
-function isMediaUrl(url: string, extensions: string[] = ['.mp4', '.m4a', '.webm', '.mov', '.ogg']) {
+function isMediaUrl(  url: string, extensions: string[] = ['.mp4', '.m4a', '.webm', '.mov', '.ogg']) {
   return extensions.some(ext => url.toLowerCase().endsWith(ext));
 }
 
@@ -43,7 +43,7 @@ function isMediaUrl(url: string, extensions: string[] = ['.mp4', '.m4a', '.webm'
           alt={`Post image ${index + 1}`}
           fill
           className="object-cover"
-          onClick={() => setPreviewUrl(url)}
+          onClick={(e)=> {e.preventDefault(); setPreviewUrl(url)}}
         />
       }
       </div>

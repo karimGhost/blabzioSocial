@@ -45,6 +45,7 @@ import ForumMediaSlider from '@/components/feed/ForumMediaSlider';
 import { formatDistanceToNow } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ConfirmDialog } from './ConfirmDialog';
 export default function ForumPage() {
   const [forum, setForum] = useState<any>(null);
 const params = useParams();
@@ -156,7 +157,7 @@ setcanAddArticle(forumDoc.data()?.settings.allowPublicPosting)
       }));
       setMembers(membersData);
 
-      // 4. Fetch moderators
+      // 4. Fetch moderators exit
       const ModSnap = await getDocs(
         collection(dbForums, "forums", forumDoc.id, "moderators")
       );
@@ -602,18 +603,17 @@ const handleRequestToJoin = async (forumId: string, userId: string) => {
 
 
 const ExitForum = async (forumId: string, userId: any) => {
-    if (!confirm("Are you sure you want to leave  forum?")) return;
 
 
   try {
     await deleteDoc(doc(dbForums, "forums", forumId, "members", userId));
-
+  router.push("/forums");
     toast({
       title: "Success",
       description: "you have exited the forum .",
     });
 
-    router.push("/forums")
+  
     // Optional: Update local state here so UI updates instantly verify
     // setRequests((prev) => prev.filter(req => req.userid !== userId));
   } catch (err) {
@@ -625,6 +625,11 @@ const ExitForum = async (forumId: string, userId: any) => {
     });
   }
 };
+
+
+
+
+
 
 
 const HandleRemoveuser = async (forumId: string, userId: any) => {
@@ -761,6 +766,9 @@ setShowTerms(false);
 // />
 //    )
 // }
+
+
+  
 
 if(showTerms && forum?.isPrivate && forum?.adminId !== user?.uid){
   return(
@@ -926,11 +934,28 @@ if (!forum) return <div className="container py-12">Loading...</div>;
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem>
-       <Button variant="destructive" onClick={() => ExitForum(forum.id, user?.uid)}>Exit Forum
+                      <DropdownMenuItem >
 
-      <LogOutIcon />
-    </Button>
+   <ConfirmDialog
+      title="Leave Forum"
+  description="Are you sure you want to leave this forum? You’ll lose access to all discussions."
+  confirmText="Leave Forum"
+  cancelText="Stay"
+      trigger={
+         <button
+    
+      className="flex px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+    >
+      Exit Forum <LogOutIcon />
+    </button>
+       
+      }
+  onConfirm={() => ExitForum(forum?.id, user?.uid)}  // ✅ wrap it
+          
+
+    />
+
+
                       </DropdownMenuItem>
                       
                       </DropdownMenuContent>
@@ -1112,7 +1137,8 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
     { member?.role === "Moderator"  &&   <Badge className="h-3 w-3 text-amber-500" /> }
 <div className='flex'>
 
-   <p className="text-xs text-muted-foreground">{  Mod.some((i) => i.id === member.id)   ? "Moderator" : "Member"}</p>
+   <p className="text-xs text-muted-foreground">{member?.id === forum?.adminId  ? "Admin " :  Mod.some(i => i.id === member?.id) ? "Moderator"  : "Member"}</p>
+
                  { Mod.some((i) => i.id === member.id) &&   <Award className="h-3 w-3 text-amber-500" />}
 </div>
                    
@@ -1197,7 +1223,7 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
                   </div>
                 </div>
 
-                {/*(currentUser.! || currentUser.isModerator) && member.role user !== "Admin" exit &&*/}
+                {/*(currentUser.! || currentUser.isModerator) && member.role exit user !== "Admin" exit &&*/}
                 { (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1246,12 +1272,12 @@ onClick={() => handleToggleReaction(forum?.id, article?.id, "like")}
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6">
                   <AvatarImage
-                    src={forum.admin?.avatarUrl}
-                    alt={forum?.admin?.name}
+                    src={members.find((i) => i.id === forum.adminId)?.avatarUrl}
+                    alt={members.find((i) => i.id === forum.adminId)?.name}
                   />
-                  <AvatarFallback>{forum?.admin?.name?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{ members.find((i) => i.id === forum.adminId)?.name.charAt(0) }</AvatarFallback>
                 </Avatar>
-                <span>{forum.admin?.name}</span>
+                <span style={{cursor:"pointer"}} onClick={() => router.push(`/profile/${members.find((i) => i.id === forum.adminId).id}`)}>  {members.find((i) => i.id === forum.adminId)?.name }</span>
               </div>
             </div>
             <div>
