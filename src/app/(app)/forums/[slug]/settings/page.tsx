@@ -96,13 +96,14 @@ console.log("rules", rules)
         settings: {
           ...forum.settings,
           allowPublicPosting,
-            rules: rules, 
+            rules: rules || "", 
 
         },
       });
                       toast({ title: "updated", description: "Settings updated" });
 
     } catch (err) {
+      console.log("err", err)
                       toast({ title: "Failed",variant:"destructive", description: "Failed to update settings." });
 
     }
@@ -125,6 +126,40 @@ console.log("rules", rules)
   };
 
 
+
+  const deleteSubcollection = async (forumId: string, subcollection: string) => {
+    const snap = await getDocs(collection(dbForums, "forums", forumId, subcollection));
+    const deletions = snap.docs.map((d) => deleteDoc(d.ref));
+    await Promise.all(deletions);
+  };
+  
+  const TerminateForum = async (forumId: string) => {
+   const confirmed = window.confirm("Are you sure you want to delete the forum?");
+  if (!confirmed) return;
+    try {
+      // Delete subcollections if needed
+      await deleteSubcollection(forumId, "members");
+      await deleteSubcollection(forumId, "requests");
+      await deleteSubcollection(forumId, "posts");
+  
+      // Finally delete the forum doc
+      await deleteDoc(doc(dbForums, "forums", forumId));
+  
+      toast({
+        title: "Success",
+        description: "The forum and its data have been permanently deleted.",
+      });
+  
+      // Update local state
+    } catch (err) {
+      console.error("Error deleting forum:", err);
+      toast({
+        title: "Failed",
+        variant: "destructive",
+        description: "Failed to delete forum.",
+      });
+    }
+  };
   
 
   if (!forum) return <div className="p-8">Loading...</div>;
@@ -152,7 +187,7 @@ console.log("rules", rules)
 
       </div>
        
-              <Button variant="destructive">Delete Forum</Button>
+              <Button onClick={() => TerminateForum(forum.id)} variant="destructive">Delete Forum</Button>
 
 
       </div>

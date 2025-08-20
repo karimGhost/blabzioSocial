@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Heart, PlusCircle, UserX, Crown, MoreVertical, LogOutIcon, Pen, Settings, BadgeCheck, Award, Save, X, Loader2 } from 'lucide-react';
+import { MessageSquare, Heart, PlusCircle, UserX, Crown, MoreVertical, LogOutIcon, Pen, Settings, BadgeCheck, Award, Save, X, Loader2, FileWarning } from 'lucide-react';
 import { DropdownMenuItem,DropdownMenu, DropdownMenuTrigger,DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Admin, dbForums , dbe} from '@/lib/firebase';
@@ -601,6 +601,42 @@ const handleRequestToJoin = async (forumId: string, userId: string) => {
 }
 
 
+const deleteSubcollection = async (forumId: string, subcollection: string) => {
+  const snap = await getDocs(collection(dbForums, "forums", forumId, subcollection));
+  const deletions = snap.docs.map((d) => deleteDoc(d.ref));
+  await Promise.all(deletions);
+};
+
+const TerminateForum = async (forumId: string) => {
+  try {
+    // Delete subcollections if needed
+    await deleteSubcollection(forumId, "members");
+    await deleteSubcollection(forumId, "requests");
+    await deleteSubcollection(forumId, "posts");
+
+    // Finally delete the forum doc
+    await deleteDoc(doc(dbForums, "forums", forumId));
+
+    toast({
+      title: "Success",
+      description: "The forum and its data have been permanently deleted.",
+    });
+
+    // Update local state
+  } catch (err) {
+    console.error("Error deleting forum:", err);
+    toast({
+      title: "Failed",
+      variant: "destructive",
+      description: "Failed to delete forum.",
+    });
+  }
+};
+
+
+
+
+
 
 const ExitForum = async (forumId: string, userId: any) => {
 
@@ -663,7 +699,7 @@ useEffect(() => {
     setShowVerifying(false);
   }, 5000); // 5 seconds
 
-  return () => clearTimeout(timer); // cleanup
+  return () => clearTimeout(timer); // cleanup delete
 }, []);
 
 
@@ -699,7 +735,7 @@ function VerifyingMember() {
 const isMember = members.some((m) => m.id === user?.uid);
 
 
-if (user && forum?.isPrivate && !isAdmin && !isMember) {
+if (user && forum?.isPrivate && !isAdmin && !isMember &&  user?.email !== "abdulkarimkassimsalim@gmail.com") {
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gray-900">
       <div className="absolute inset-0 backdrop-blur-sm opacity-80 bg-black" />
@@ -770,7 +806,7 @@ setShowTerms(false);
 
   
 
-if(showTerms && forum?.isPrivate && forum?.adminId !== user?.uid){
+if(showTerms && forum?.isPrivate && forum?.adminId !== user?.uid && forum?.settings?.rules.length > 0){
   return(
  <TermsPrompt
     hasAcceptedTerms={AcceptedTerms}
@@ -885,7 +921,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
 
       </div>
 
-      {/* Admin / Mod Controls (currentUser?.role === "Admin" promote    requests edit || currentUser?.role === "Moderator") settings && */}
+      {/* Admin / Mod Controls (currentUser?.role === "Admin" promote  remove   requests edit || currentUser?.role === "Moderator") settings && */}
      {  forum.adminId === user?.uid  ? (
   <div className="space-x-2 flex-shrink-0">
      {/* Edit Button */}
@@ -935,7 +971,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem >
-
+{user?.email !== "abdulkarimkassimsalim@gmail.com" &&
    <ConfirmDialog
       title="Leave Forum"
   description="Are you sure you want to leave this forum? You’ll lose access to all discussions."
@@ -954,10 +990,36 @@ if (!forum) return <div className="container py-12">Loading...</div>;
           
 
     />
-
+    }
 
                       </DropdownMenuItem>
                       
+{user?.email === "abdulkarimkassimsalim@gmail.com" &&
+      <DropdownMenuItem >
+
+   <ConfirmDialog
+      title="Remove Forum"
+  description="Are you sure you want to Remove this forum? ."
+  confirmText="Remove Forum"
+  cancelText="dismiss"
+      trigger={
+         <button
+    
+      className="flex px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+    >
+      Remove Forum <FileWarning />
+    </button>
+       
+      }
+  onConfirm={() => TerminateForum(forum?.id)}  // ✅ wrap it
+          
+
+    />
+
+
+                      </DropdownMenuItem>
+}
+
                       </DropdownMenuContent>
                       </DropdownMenu>
                    

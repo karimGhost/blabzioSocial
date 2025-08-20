@@ -38,7 +38,7 @@ interface Forum {
   creatorId?: string;
   createdAt?: { seconds: number };
   moderators: any;
-  requests?: string[]; // 👈 ADD THIS
+  requests?: any[]; // 👈 ADD THIS
 }
 
 
@@ -65,10 +65,11 @@ const router = useRouter()
 
 const {toast} = useToast()
   const [moderator, setmoderator] = useState<Forum[]>([]);
-
-
-
+const [request, setrequest] = useState(false)
+let hasRequested = false;
+// const [hasRequested, sethasRequested] = useState <any>()
 const handleRequestToJoin = async (forumId: string, userId: string) => {
+
   try {
 
      const Requested = {
@@ -82,9 +83,23 @@ const handleRequestToJoin = async (forumId: string, userId: string) => {
       doc(dbForums, "forums", forumId, "requests", userId),
      Requested
     );
+
+ setForums((prev) =>
+      prev.map((forum) =>
+        forum.id === forumId
+          ? {
+              ...forum,
+              requests: [...(forum.requests || []), Requested],
+            }
+          : forum
+      )
+    );
+        //  sethasRequested(true)
     toast({ title: "Request Sent", description: "Your request to join has been sent." });
   } catch (err) {
     console.error("Error sending join request:", err);
+        setrequest(false)
+
     toast({ title: "Error", description: "Could not send request. Try again later." });
   }
 
@@ -124,8 +139,10 @@ const handleJoinPublicForum = async (forumId: string, userId: string) => {
 
 
  const lastDocRef = useRef<any>(null);
+
 const fetchForums = async (nextPage = false) => {
   if (loading) return;
+  if(!user) return;
   setLoading(true);
 
   // Reset pagination state for fresh load
@@ -140,15 +157,19 @@ const fetchForums = async (nextPage = false) => {
 
   let q;
   if (nextPage && lastDocRef.current) {
-    q = query(
-      collection(dbForums, "forums"),
-      limit(PAGE_SIZE),
-      startAfter(lastDocRef.current)
-    );
-  } else {
-    q = query(collection(dbForums, "forums"), limit(PAGE_SIZE));
-  }
-
+  q = query(
+    collection(dbForums, "forums"),
+    orderBy("createdAt", "desc"),
+    startAfter(lastDocRef.current),
+    limit(PAGE_SIZE)
+  );
+} else {
+  q = query(
+    collection(dbForums, "forums"),
+    orderBy("createdAt", "desc"),
+    limit(PAGE_SIZE)
+  );
+}
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
@@ -163,40 +184,53 @@ const fetchForums = async (nextPage = false) => {
     snapshot.docs.map(async (docSnap) => {
       const forumData = docSnap.data() as Forum;
 
-      let requests: string[] = [];
+      let requests: any[] = [];
       let members: any[] = [];
 
-      if (user && forumData.isPrivate) {
+      if ( forumData.isPrivate) {
         const requestsSnapshot = await getDocs(
           collection(dbForums, "forums", docSnap.id, "requests")
         );
-        requests = requestsSnapshot.docs.map((reqDoc) => reqDoc.id);
+          requests = requestsSnapshot.docs.map((reqDoc) => ({
+        id: reqDoc.id,
+        ...reqDoc.data(),
+      }));
+console.log("unique", requests)
+
       }
 
       const membersSnapshot = await getDocs(
         collection(dbForums, "forums", docSnap.id, "members")
       );
+
       members = membersSnapshot.docs.map((mDoc) => ({
         id: mDoc.id,
         ...mDoc.data(),
       }));
 
+
       return {
+                ...forumData,
         id: docSnap.id,
-        ...forumData,
         requests,
         members,
       };
     })
   );
 
+  const mergeUnique = (prev: Forum[], next: Forum[]) => {
+  const map = new Map();
+  [...prev, ...next].forEach(f => map.set(f.id, f));
+  return Array.from(map.values());
+};
   // Append or replace depending on nextPage
-  if (nextPage) {
-    setForums((prev) => [...prev, ...pageForums]);
-  } else {
-    setForums(pageForums);
-  }
+if (nextPage) {
+  setForums(prev => mergeUnique(prev, pageForums));
 
+
+} else {
+  setForums(pageForums);
+}
   if (user) {
     const my = pageForums.filter(
       (forum) => forum.creatorId === user.uid || forum.adminId === user.uid
@@ -215,10 +249,13 @@ const fetchForums = async (nextPage = false) => {
       forum.moderators?.includes(user.uid)
     );
 
+
+
     if (nextPage) {
       setMyForums((prev) => [...prev, ...my]);
       setJoinedForums((prev) => [...prev, ...joined]);
       setmoderator((prev) => [...prev, ...moderator]);
+
     } else {
       setMyForums(my);
       setJoinedForums(joined);
@@ -320,7 +357,7 @@ useEffect(() => {
     const matching = [...nameSnap.docs, ...catSnap.docs]
       .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Forum));
 
-    // Merge new results into forums state
+    // Merge new results into forums state private
     setForums(prev => {
       const existingIds = new Set(prev.map(f => f.id));
       const newOnes = matching.filter(f => !existingIds.has(f.id));
@@ -338,17 +375,59 @@ useEffect(() => {
 const isCreator = forum.creatorId === user?.uid || forum.adminId === user?.uid;
   const isMember = joinedForums.some(f => f.id === forum.id);
 
-const hasRequested =
-  user?.uid && forum.requests?.includes(user.uid) ? true : false;
+
+
+  
 
 const isModerator = forum.moderators?.includes(user?.uid) ? true : false;
 
-useEffect(() => {
-console.log("mod", forum.moderators?.includes(user?.uid))
+// useEffect(() => {
+// // console.log("mod", forum.moderators?.includes(user?.uid))
+// if(!user?.uid ) return;
+// if(request) return;
 
-}, [forum])
+//   if(  forum.requests?.filter((i) => i.userid === user.uid)   ){
+//        sethasRequested(true)
+// console.log("usser", true)
+//   }else{
+
+// sethasRequested(false)
+//   }
+//     console.log("usser", forums)
+
+
+// }, [forums, request, user])
+
+const handlePrivateRestriction = () => {
+  toast({
+    title: "Restricted - Private Forum",
+    description:
+      "This forum is private. You can't access it unless you request to join and get approved.",
+    variant: "destructive", // optional: makes it red
+    duration: 4000, // auto dismiss after 4s
+    
+  });
+};
+
+ hasRequested = !!(
+
+  user?.uid &&
+  forum.requests?.some((i) => i.userid === user.uid)
+);
+
   return (
-    <Card onClick={() => router.push(`/forums/${forum.slug}`)} key={forum.id} style={{cursor:"pointer"}} className="...">
+    <Card  onClick={() => {
+    if (
+      user?.email === "abdulkarimkassimsalim@gmail.com" || 
+      (!forum.isPrivate || isCreator || isMember || isModerator)
+    ) {
+      router.push(`/forums/${forum.slug}`);
+    }else{
+    
+     handlePrivateRestriction()
+    }
+
+  }} key={forum.id} style={{cursor:"pointer"}} className="...">
       
             <CardHeader className="p-0">
               <div className="relative h-48 w-full">
@@ -397,7 +476,7 @@ console.log("mod", forum.moderators?.includes(user?.uid))
                 {(forum?.members?.length || 0).toLocaleString()} members
               </div>
 
-        <Link  href= {forum.isPrivate && !isCreator && !isMember && !isModerator  ? '' : `/forums/${forum.slug}`}>
+        <Link  href= {forum.isPrivate && !isCreator || !isMember || !isModerator  ? '' : `/forums/${forum.slug}`}>
          <Button
 
          variant={
