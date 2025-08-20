@@ -350,7 +350,7 @@ const handleMuteUser = async (username: string) => {
   const getSender = (senderId: string): User => senderId === user?.uid ? user : conversation.participant;
 
   return (
-    <div className="flex flex-col h-full bg-background" style={{ overflow: "scroll" }}>
+    <div className="flex fixed lg:relative flex-col h-full bg-background top-[70px] lg:top-[0px]  pb-[140px]  lg:pb-[30px] overflow-y-scroll lg:overflow-none" style={{  bottom:"0" }}>
       <header className="flex items-center gap-3 border-b p-3 h-16">
         <Link href="/messages" className="sm:hidden">
           <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
@@ -402,7 +402,7 @@ const handleMuteUser = async (username: string) => {
         </div>
       </header>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 p-4 " style={{height:"100vh"}} ref={scrollAreaRef}>
         <div className="space-y-2">
           {messages.map((msg) => (
          <MessageItem
@@ -418,7 +418,7 @@ const handleMuteUser = async (username: string) => {
         </div>
       </ScrollArea>
 
-      <footer className="border-t p-3 bg-card">
+      <footer className="border-t p-3 bg-card -ml-[60px]  lg:ml-[0px]">
         {isBlocked ? (
           <p>{`You have been blocked by ${conversation?.participant?.fullName}`}</p>
         ) : Blocked ? (
@@ -432,7 +432,7 @@ const handleMuteUser = async (username: string) => {
                 <Button variant="ghost" size="icon" onClick={() => setReplyTo(null)}><X className="w-4 h-4" /></Button>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2  w-full">
               <Button variant="ghost" size="icon" type="button" onClick={() => setShowEmojiPicker((prev) => !prev)}>
                 <Smile className="h-5 w-5 text-muted-foreground" />
               </Button>

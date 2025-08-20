@@ -62,7 +62,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [translateX, setTranslateX] = useState(0);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [bubbleKey, setBubbleKey] = useState(0); //  force rerender
-  const [Dropdown,setDropdown] =useState<string | null>(null);
+  const [Dropdown,setDropdown] =useState<any | null>(null);
 const touchStartYRef = useRef<number | null>(null); // track Y for scroll
 
   const TRIGGER_THRESHOLD = 60;
@@ -73,17 +73,17 @@ const touchStartYRef = useRef<number | null>(null); // track Y for scroll
   const TRIGGER = 60;
 const [Touch,setTouch] = useState(true)
   const handleStart = (e: React.TouchEvent | React.MouseEvent) => {
-const timer = setTimeout(() => {
-  Dropdown === null &&
-    setDropdown(message.conversationId)
-}, 600);
-  setLongPressTimer(timer);
+
+
 
     setTouch(false)
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
     startXRef.current = x;
     startYRef.current = y;
+
+   
+
     triggeredRef.current = false;
     if (ref.current) ref.current.style.transition = 'none';
   };
@@ -263,6 +263,12 @@ const doubleClicked = (mess : any) => {
    setOpen(mess)
     triggeredRef.current = true;
 
+     const timer = setTimeout(() => {
+  Dropdown === null &&
+    setDropdown(mess)
+}, 600);
+
+  setLongPressTimer(timer);
 }
 
 
@@ -323,7 +329,7 @@ const doubleClicked = (mess : any) => {
 
 {!isOwnMessage &&
 
-    <DropdownMenu            
+    <DropdownMenu          
  open={Dropdown === message.conversationId}
  onOpenChange={(isOpen) =>
     setDropdown(isOpen ? message.conversationId : null)
@@ -335,7 +341,7 @@ const doubleClicked = (mess : any) => {
       className="w-0 h-0 p-0 m-0"
     />
   </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" style={{position:"absolute"}}>
+        {   <DropdownMenuContent align="center" style={{position:"absolute"}}>
         
 <DropdownMenuItem
   onSelect={(e) => {
@@ -347,6 +353,7 @@ const doubleClicked = (mess : any) => {
            <Heart  className={`h-4 w-4  fill-destructive  `} />
 
 </DropdownMenuItem>
+
 <DropdownMenuItem
 onSelect={(e) => {
         e.preventDefault(); // ✅ Prevent dropdown from reopening
@@ -356,7 +363,8 @@ onSelect={(e) => {
   reply 
   <LucideReply />
 </DropdownMenuItem>
-            </DropdownMenuContent>
+
+            </DropdownMenuContent>}
           </DropdownMenu>
 
 
@@ -401,13 +409,13 @@ onSelect={(e) => {
 }
   {!isOwnMessage &&
      <div style={{position:"absolute",left:"20px", bottom:"-20px"}}>
-         <p className="text-muted text-dark " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>hold to react . slide to reply</p>
+         <p className="text-foreground/20 " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>hold to react . slide to reply</p>
 
      </div>}
 
       {isOwnMessage &&
      <div style={{position:"absolute",left:"20px", bottom:"-20px"}}>
-         <p className="text-muted text-dark " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>double tap to delete</p>
+         <p className="text-foreground/30 " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>double tap to delete</p>
 
      </div>}
 {message.type === "image" ? (

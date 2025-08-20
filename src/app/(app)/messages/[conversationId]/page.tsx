@@ -70,7 +70,8 @@ console.log("convo", otherUserId)
       <div className="sm:hidden relative h-full">
         {!conversationId && (
           <div
-            className={`fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out ${
+          style={{top:"0", bottom:"0"}}
+            className={`fixed  inset-0 z-50 bg-white transition-transform duration-300 ease-in-out ${
               sidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
           >

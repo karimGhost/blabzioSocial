@@ -15,7 +15,7 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  if (loading) return BlabzioLoader(); // Don't show anything while loading
+  if (loading && !user) return BlabzioLoader(); // Don't show anything while loading
 
   // if (user) return  ; // Still avoid flashing form after loading
 

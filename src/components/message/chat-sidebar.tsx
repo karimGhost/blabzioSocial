@@ -236,7 +236,7 @@ const handleUserClick = async (userId: string | undefined) => {
 
 
   return (
-    <div className="flex flex-col border-r bg-muted/20 h-full">
+    <div  className="flex   flex-col border-r bg-muted/20 h-full">
       <div className="p-4 border-b">
         <h2 className="text-xl font-headline">Messages</h2>
         <div className="relative mt-2">
