@@ -137,7 +137,7 @@ const filteredConversations = conversations.filter((conv) =>
 const listToRender = searchTerm.length > 0 ? filteredConversations : conversations;
 
 
-const [users, setUsers] = useState<{ id: string; fullName?: string; photoURL?: string }[]>([]);
+const [users, setUsers] = useState<any>([]);
 
 useEffect(() => {
 
@@ -190,7 +190,7 @@ const generateConversationId = (uid1: string | undefined, uid2: any) => {
   return [uid1, uid2].sort().join("_");
 };
 
-const handleUserClick = async (userId: string | undefined) => {
+const handleUserClick = async (userId: any | undefined) => {
   if (!user?.uid || !userId) return;
 
   try {

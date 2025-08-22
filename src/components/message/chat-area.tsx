@@ -26,7 +26,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { uploadToCloudinary } from "@/lib/cloudinary-upload";
 import { formatDistanceToNow } from 'date-fns';
 import { getDatabase, onValue, ref  } from "firebase/database";
-import { Message } from "postcss";
 
 
 interface ChatAreaProps {
@@ -36,9 +35,9 @@ interface ChatAreaProps {
 export function ChatArea({ conversation }: ChatAreaProps) {
   const { user, userData } = useAuth();
   const { toast } = useToast();
-  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [replyTo, setReplyTo] = useState<any | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<any []>([]);
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -48,7 +47,20 @@ export function ChatArea({ conversation }: ChatAreaProps) {
   const [Blocked, setBlocked] = useState(false);
 const [isOnline, setIsOnline] = useState(false);
 const [lastSeen, setLastSeen] = useState<number | null>(null);
+const [tId,setId] =useState <any>("")
 
+
+
+useEffect(() => {
+  if (!tId) return;
+
+  const timer = setTimeout(() => {
+    setId(null);
+  }, 8000);
+
+  // ✅ cleanup old timers if tId changes before 8s
+  return () => clearTimeout(timer);
+}, [tId]);
   const checkBlockedStatus = async (viewerId: string, profileId: string) => {
     const [blockedByThem, youBlockedThem] = await Promise.all([
       getDoc(doc(db, "users", profileId, "blocked", viewerId)),
@@ -351,6 +363,14 @@ const handleMuteUser = async (username: string) => {
 
   return (
     <div className="flex fixed lg:relative flex-col h-full bg-background top-[70px] lg:top-[0px]  pb-[140px]  lg:pb-[30px] overflow-y-scroll lg:overflow-none" style={{  bottom:"0" }}>
+        <div className="flex h-16 items-center border-b px-6" style={{position:"fixed", left:"0", top:"0"}} >
+             <Link href="/feed" className="flex items-center gap-2 font-semibold">
+             <span className="flex items-center font-headline text-xl">
+       <b className="text-4xl font-dragon text-orange-400 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
+       <span style={{marginBottom:"-4px"}} className="bottom-[-20px]">labzio</span>
+     </span>
+             </Link>
+           </div>
       <header className="flex items-center gap-3 border-b p-3 h-16">
         <Link href="/messages" className="sm:hidden">
           <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
@@ -381,7 +401,7 @@ const handleMuteUser = async (username: string) => {
 
 
   <div className="flex items-center gap-1">
-     {   /*  <Button variant="ghost" size="icon"><Phone className="h-5 w-5" /></Button>     reminder to add video and call online
+     {   /*  <Button variant="ghost" size="icon"><Phone className="h-5 w-5" /></Button>    hold  reminder to add video and call online
           <Button variant="ghost" size="icon"><VideoIcon className="h-5 w-5" /></Button> */ }
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -403,17 +423,24 @@ const handleMuteUser = async (username: string) => {
       </header>
 
       <ScrollArea className="flex-1 p-4 " style={{height:"100vh"}} ref={scrollAreaRef}>
-        <div className="space-y-2">
+        <div className="space-y-2" >
           {messages.map((msg) => (
+            <div id={msg.id} className={tId === msg.id ?  "focus-glow" : ""}>
+
          <MessageItem
+               id={msg.id}
+tId={tId}
+setId={setId}
   key={msg.id}
   message={msg}
+  otheruser={conversation.participant}
   sender={msg.senderId === user?.uid ? user : conversation.participant}
   isOwnMessage={msg.senderId === user?.uid}
   repliesMap={repliesMap}
   onReply={(msg) => setReplyTo(msg)}
    setReplyTo={ setReplyTo}
 />
+</div>
           ))}
         </div>
       </ScrollArea>

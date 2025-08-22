@@ -15,6 +15,7 @@ CoverPhoto:string;
 };
 
 export type Post = {
+  isprofile: any;
   isPremium: any;
   ispremium: any;
   comments: any;
@@ -47,8 +48,11 @@ export type Video = {
 };
 
 export type Message = {
+  likes: any;
+  conversationId: any;
   replyToId: any;
   type: string;
+  reaction: any;
   id: string;
   senderId: string;
   receiverId: string;

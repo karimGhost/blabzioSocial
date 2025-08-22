@@ -29,10 +29,13 @@ import { dbc } from "@/lib/firebase";
 interface MessageItemProps {
   message: Message;
   sender: User;
+  otheruser: any;
   isOwnMessage: boolean;
   onReply?: (message: Message) => void;
   repliesMap?: Map<string, Message>;
    setReplyTo: any;
+   tId:any;
+   setId: any;
 }
 
 
@@ -40,7 +43,10 @@ export function MessageItem({
   message,
   sender,
   isOwnMessage,
+  otheruser,
   onReply,
+  tId,
+  setId,
   repliesMap,
    setReplyTo,
 }: MessageItemProps) {
@@ -126,7 +132,7 @@ const [Touch,setTouch] = useState(true)
     } else if (isOwnMessage && offset < TRIGGER && !triggeredRef.current) {
       triggeredRef.current = true;
        setOpen(null)
-//  if (onReply) onReply(message);
+//  if (onReply) onReply(message);hold
 
 
 }
@@ -150,28 +156,56 @@ const [Touch,setTouch] = useState(true)
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
-async function setLikeit(conversationId: string, messageId: string) {
+// async function setLikeit(conversationId: string, messageId: string, reaction: any) {
+//   const messageRef = doc(dbc, "conversations", conversationId, "messages", messageId);
+
+//   try {
+//     const docSnap = await getDoc(messageRef);
+//     if (!docSnap.exists()) {
+//       console.error("Message not found");
+//       return;
+//     }
+
+//     const currentLikes = docSnap.data().likes;
+
+//     await updateDoc(messageRef, {
+//       likes: !currentLikes,
+//        reaction // toggle like
+//     });
+
+//     console.log("Message liked/unliked successfully");
+//   } catch (error) {
+//     console.error("Error toggling like:", error);
+//   }
+// }
+async function setLikeit(
+  conversationId: string,
+  messageId: string,
+  reaction: string
+) {
   const messageRef = doc(dbc, "conversations", conversationId, "messages", messageId);
 
   try {
-    const docSnap = await getDoc(messageRef);
-    if (!docSnap.exists()) {
+    const snap = await getDoc(messageRef);
+    if (!snap.exists()) {
       console.error("Message not found");
       return;
     }
 
-    const currentLikes = docSnap.data().likes;
+    const data = snap.data();
+
+    // ✅ Toggle reaction: if same emoji, remove it
+    const newReaction = data.reaction === reaction ? null : reaction;
 
     await updateDoc(messageRef, {
-      likes: !currentLikes, // toggle like
+      reaction: newReaction,
     });
 
-    console.log("Message liked/unliked successfully");
-  } catch (error) {
-    console.error("Error toggling like:", error);
+    console.log("Reaction updated ✅", newReaction);
+  } catch (err) {
+    console.error("Error updating reaction:", err);
   }
 }
-
 function extractUrl(text: string): string | null {
   const match = text.match(/https?:\/\/[^\s]+/);
   return match ? match[0] : null;
@@ -248,8 +282,7 @@ async function deleteMessageAndUpdateLast(conversationId: string, messageId: str
   }
 }
 
-
-  // const formattedTime =
+  // const formattedTime = onClick
   //   messageDate && isValid(messageDate) ? format(messageDate, "p") : "";
 const formattedTime = new Date(message?.timestamp).toLocaleTimeString([], {
   hour: '2-digit',
@@ -257,6 +290,9 @@ const formattedTime = new Date(message?.timestamp).toLocaleTimeString([], {
 });
 
 
+useEffect(() => {
+console.log("tId", tId)
+}, [tId])
 const doubleClicked = (mess : any) => {
     setReplyTo(null)
     open === null &&
@@ -271,8 +307,19 @@ const doubleClicked = (mess : any) => {
   setLongPressTimer(timer);
 }
 
+useEffect(() =>{
+console.log("messaged", message.id) 
+ console.log("messag", repliedTo?.id) 
 
+}, [message])
 
+const reactions = [
+  { emoji: "❤️", value: "like" },
+  { emoji: "😂", value: "laugh" },
+  { emoji: "😮", value: "wow" },
+  { emoji: "😢", value: "sad" },
+  { emoji: "👍", value: "thumbs" },
+];
 
   return (
   <div
@@ -280,8 +327,10 @@ const doubleClicked = (mess : any) => {
       style={{position:"relative"}}
       className={cn(
         "flex items-end gap-2 py-2 select-none  touch-pan-y", 
-        isOwnMessage ? "justify-end" : "justify-start"
+        isOwnMessage ? "justify-end" : "justify-start",
+
       )}
+      
       onDoubleClick={() => doubleClicked(message.conversationId)}
     
     onScroll={() => setTouch(true)}
@@ -296,7 +345,7 @@ const doubleClicked = (mess : any) => {
        {!isOwnMessage && (
         <Avatar className="h-8 w-8 self-start">
           <AvatarImage src={sender.avatarUrl} alt={sender.name} />
-          <AvatarFallback>{sender?.fullName?.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{sender?.name?.charAt(0)}</AvatarFallback>
         </Avatar>
       )}
 
@@ -343,22 +392,43 @@ const doubleClicked = (mess : any) => {
   </DropdownMenuTrigger>
         {   <DropdownMenuContent align="center" style={{position:"absolute"}}>
         
-<DropdownMenuItem
+
+        <DropdownMenuItem
+  onSelect={(e) => e.preventDefault()} // ✅ prevent default closing
+  className="flex gap-2"
+>
+  {reactions.map((r) => (
+    <button 
+      key={r.value}
+      onClick={(e) => {
+        e.preventDefault();
+        setLikeit(message.conversationId, message.id, r.value); // save reaction
+        setDropdown(null); // close dropdown
+      }}
+      className="hover:scale-110 transition-transform"
+    >
+      <span className="text-lg">{r.emoji}</span>
+    </button>
+  ))}
+</DropdownMenuItem>
+
+{/* <DropdownMenuItem
   onSelect={(e) => {
-        e.preventDefault(); // ✅ Prevent dropdown from reopening
+        e.preventDefault(); // ✅ Prevent dropdown from reopening slide
         setLikeit(message.conversationId, message.id);
         setDropdown(null); // ✅ Close the dropdown
       }}>
-  like 
+  react 
            <Heart  className={`h-4 w-4  fill-destructive  `} />
 
-</DropdownMenuItem>
+</DropdownMenuItem> */}
 
 <DropdownMenuItem
 onSelect={(e) => {
-        e.preventDefault(); // ✅ Prevent dropdown from reopening
+        e.preventDefault(); // ✅ Prevent dropdown from reopening you
+
        onReply && onReply(message)
-        setDropdown(null); // ✅ Close the dropdown
+        setDropdown(null); // ✅ Close the dropdown  par heart
       }}>
   reply 
   <LucideReply />
@@ -370,22 +440,23 @@ onSelect={(e) => {
 
         }
 
-        
+        {/* onClick={(e) => e.preventDefault()} */}
 
 {isOwnMessage &&
-<Link href={`#${message?.conversationId}`} onClick={(e) => e.preventDefault()}>
+<a href={`#${repliedTo?.id}`}  onClick={() => setId(repliedTo?.id)}>
+
      <div className="flex flex-col max-w-[70%]" >
         {repliedTo && (
           <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mb-1 bg-muted rounded-md" style={{float:"right"}}>
             <span className="font-semibold">
-              {repliedTo.senderId === sender.id ? sender.fullName : "You"}
+                      { repliedTo.senderId === user?.uid  ? "you" : otheruser?.fullName }
             </span>: {repliedTo.type === "image" ?   "image"  :  linkify(repliedTo.content.slice(0, 14)) }
           </div>
         )}
 
 
      </div>
-     </Link>
+     </a>
 }
 
 
@@ -402,14 +473,27 @@ onSelect={(e) => {
 
       >
 
-{ !isOwnMessage && message.likes &&
+{ !isOwnMessage && message.reaction &&
  <div  style={{position:"absolute", borderBottomLeftRadius:"100%", borderBottomRightRadius:"100%" }} className={`${ isOwnMessage ? "right-0 -bottom-4 bg-primary" : " text-card-foreground left-0 -bottom-4 bg-card" }`}>
-         <Heart onClick={() =>  setLikeit(message.conversationId, message.id)}  className={`h-4 w-4  fill-destructive  `} />
+
+ <span onClick={() =>  setLikeit(message.conversationId, message.id, message.reaction)}>
+   {reactions.find(r =>  r?.value == message.reaction)?.emoji}
+
+ </span>
+
+     </div>
+}
+
+
+{ isOwnMessage && message.reaction  &&
+ <div  style={{position:"absolute", borderBottomLeftRadius:"100%", borderBottomRightRadius:"100%" }} className={`${ isOwnMessage ? "right-0 -bottom-3  " : " text-card-foreground left-0 -bottom-4 bg-card" }`}>
+ {reactions.find(r =>  r?.value == message.reaction)?.emoji}
+
      </div>
 }
   {!isOwnMessage &&
      <div style={{position:"absolute",left:"20px", bottom:"-20px"}}>
-         <p className="text-foreground/20 " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>hold to react . slide to reply</p>
+         <p className="text-foreground/20 " style={{  fontSize:"13px", whiteSpace:"nowrap"}}>double-tap to react . slide to reply</p>
 
      </div>}
 
@@ -437,7 +521,8 @@ onSelect={(e) => {
   {repliedTo && user?.uid && (
     <div className="mb-1 p-2 border-l-4 border-blue-500 bg-background rounded text-sm text-muted-foreground">
       <p className="font-semibold">
-        {repliedTo.senderId === sender.id ? sender.fullName : "You"}
+                      { repliedTo.senderId === user?.uid  ? "you" : otheruser?.fullName }
+
       </p>
 
 { repliedTo.type === "image" ? (
@@ -534,14 +619,14 @@ onSelect={(e) => {
 )}
 
 {!isOwnMessage &&
-<Link href={`#${message?.conversationId}`}>
+<a href={`#${repliedTo?.id}`} onClick={() => setId(repliedTo?.id)}>
 
-   <div className="flex flex-col max-w-[70%]">
+   <div className="flex flex-col max-w-[70%]" onClick={() => setId(repliedTo?.id)}>
         {repliedTo && (
           <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mb-1 bg-muted rounded-md" style={{float:"right"}}>
          
             <span className="font-semibold">
-              {repliedTo.senderId === sender.id ? sender.fullName : "You"}
+                      { repliedTo.senderId === user?.uid  ? "you" : otheruser?.fullName }
             </span> : {repliedTo.type === "image" ?   "image"  :  linkify(repliedTo.content.slice(0, 14)) }
 
           </div>
@@ -549,7 +634,7 @@ onSelect={(e) => {
 
 
      </div>
-     </Link>
+     </a>
 }
 
     </div>

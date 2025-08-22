@@ -136,6 +136,12 @@ body {
   outline: none;
 }
 
+.focus-glo{
+   animation: pulse-ring 1s  ease-out;
+  outline: none;
+}
+
+
 .focus-glowC{
    animation: pulse-ring 1s infinite;
   outline: none;

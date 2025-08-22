@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import OccupationPopup from "@/components/OccupationPopup";
 type AuthContextType = {
@@ -21,8 +22,9 @@ const AuthContext = createContext<AuthContextType>({
 
  
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+  // const [user, setUser] = useState<User | null>(null);
+  // const [userData, setUserData] = useState<any>(null);
+const {user,userData } = useAuth();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -44,27 +46,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 // }, []);
 
 
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+  // useEffect(() => {
+  //   const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+  //     setUser(firebaseUser);
+  //     setLoading(false);
 
-      if (firebaseUser) {
-        const unsubUserDoc = onSnapshot(doc(db, "users", firebaseUser.uid), (docSnap) => {
-          setUserData(docSnap.data());
-        });
+  //     if (firebaseUser) {
+  //       const unsubUserDoc = onSnapshot(doc(db, "users", firebaseUser.uid), (docSnap) => {
+  //         setUserData(docSnap.data());
+  //       });
 
      
-        return () => unsubUserDoc();
-      } else {
-        setUserData(null);
+  //       return () => unsubUserDoc();
+  //     } else {
+  //       setUserData(null);
 
 
-      }
-    });
+  //     }
+  //   });
 
-    return () => unsubscribeAuth();
-  }, []);
+  //   return () => unsubscribeAuth();
+  // }, []);
 
 
 
@@ -84,4 +86,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// export const useAuth = () => useContext(AuthContext);
