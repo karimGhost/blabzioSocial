@@ -802,9 +802,25 @@ setShowTerms(false);
 // />
 //    )
 // }
+const handleDelete = async (forumId: string, articleId: string) => {
 
+  try {
+    await deleteDoc(doc(dbForums, "forums", forumId, "articles", articleId));
 
-  
+    toast({
+      title: "Article deleted!",
+    });
+
+    // Optionally redirect back to forum page
+    setArticles((prev) => prev.filter((article) => article.id !== articleId));
+  } catch (error) {
+    console.error(error);
+    toast({
+      title: "Failed to delete article.",
+      variant: "destructive",
+    });
+  }
+};
 
 if(showTerms && forum?.isPrivate && forum?.adminId !== user?.uid && forum?.settings?.rules.length > 0){
   return(
@@ -833,6 +849,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
   {/* --- HERO SECTION WITH ADMIN CONTROLS --- */}
 <div className="container py-6">
   <Card className="overflow-hidden">
+ 
     {/* Top banner image */}
     <div className="relative h-40 md:h-56 w-full">
       <Image
@@ -921,7 +938,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
 
       </div>
 
-      {/* Admin / Mod Controls (currentUser?.role === "Admin" promote  remove   requests edit || currentUser?.role === "Moderator") settings && */}
+      {/* Admin / Mod Controls (currentUser?.role slug === "Admin" promote  remove   requests edit || currentUser?.role === "Moderator") settings && */}
      {  forum.adminId === user?.uid  ? (
   <div className="space-x-2 flex-shrink-0">
      {/* Edit Button */}
@@ -1087,12 +1104,51 @@ if (!forum) return <div className="container py-12">Loading...</div>;
   .sort((a, b) => {
     const dateA = a.createdAt?.seconds ? a.createdAt.seconds : 0;
     const dateB = b.createdAt?.seconds ? b.createdAt.seconds : 0;
-    return dateB - dateA; // newest first
+    return dateB - dateA; // newest first forum.id
   })
   .map((article) => (      <Card
         key={article.id}
         className="hover:bg-caprimarytransition-colors"
       >
+{(
+  article.author.id === user?.uid ||
+  forum?.adminId === user?.uid ||
+  Mod.some(i => i.id === user?.uid)
+) && (<div style={{float:"right"}}>
+
+    <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+
+                      <DropdownMenuItem>
+  <ConfirmDialog
+      title="delete post"
+  description="Are you sure you want to delete post? ."
+  confirmText="Delete"
+  cancelText="dismiss"
+      trigger={
+         <button
+    
+      className="flex px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+    >
+   {forum?.adminId === user?.uid  ||
+  Mod.some(i => i.id === user?.uid) ?   "Remove Post" :"Delete" } <FileWarning />
+    </button>
+       
+      }
+  onConfirm={() => handleDelete( forum?.id, article.id)}  // ✅ wrap it
+          
+
+    />
+                      </DropdownMenuItem>
+                      </DropdownMenuContent>
+                      </DropdownMenu>
+</div>)}
+          
         <CardHeader>
           <Link href={`/forums/${forum.slug}/article/${article.slug}`}>
             <CardTitle className="font-headline text-xl hover:text-primaryy transition-colors">
@@ -1116,7 +1172,7 @@ if (!forum) return <div className="container py-12">Loading...</div>;
     ? formatDistanceToNow(
         article.createdAt.toDate
           ? article.createdAt.toDate() // Firestore Timestamp
-          : new Date(article.createdAt), // Already a string/number
+          : new Date(article.createdAt), // Already a string/number confirm admin
         { addSuffix: true }
       )
     : ""}

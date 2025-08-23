@@ -25,7 +25,7 @@ export default function LoginPage() {
 // Animated Blabzio Loader
 function BlabzioLoader() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-orange-100 animate-fade-in">
+    <div   className="flex flex-col items-center  justify-center min-h-screen bg-orange-100 animate-fade-in">
       <div className="animate-pulse text-5xl font-extrabold text-orange-600 drop-shadow-lg ">
        <b  style={{marginRight:"-7px"}} className="text-4xl font-dragon text-orange-500 mr--4">
   B

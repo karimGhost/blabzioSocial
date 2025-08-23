@@ -226,12 +226,12 @@ useEffect(() => {
 }, [user]);
 
 
+          {/* <BlabzioLogo className="h-8 w-8" /> */}
 
   return (
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-card sm:flex  smflexx">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/feed" className="flex items-center gap-2 font-semibold">
-          {/* <BlabzioLogo className="h-8 w-8" /> */}
         <span className="flex items-center font-headline text-xl">
   <b className="text-4xl font-dragon text-orange-400 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
   <span style={{marginBottom:"-4px"}} className="bottom-[-20px]">labzio</span>
@@ -316,7 +316,8 @@ useEffect(() => {
       href="/forums"
       className="block text-center mt-2 text-muted    hover:underline text-sm"
     >
-     <Button className="w-full outline  bg-transparent">
+             <Button  size={"sm"} className="w-full outline text-primary p-1   bg-transparent hover:text-white">
+
  View All Forums
  </Button>
     </Link>
@@ -506,7 +507,7 @@ export function MobileAppHeader() {
       })
     );
 
-    // setForums(allForums);
+    // setForums(allForums); view all
 
     if (user) {
       const my = allForums.filter((forum) => forum.creatorId === user.uid || forum.adminId === user?.uid);
