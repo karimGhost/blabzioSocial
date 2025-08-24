@@ -707,7 +707,7 @@ const handleReadMore = (postId: string, contentLength: number) => {
 };
 
 // useEffect(() => {
-// console.log("selectedPost", selectedPosts ? "true" : "false")
+// console.log("selectedPost", selectedPosts ? "true" : "false") like
 // },[selectedPosts])
 
 
@@ -717,7 +717,16 @@ const handleReadMore = (postId: string, contentLength: number) => {
       <CardHeader className="flex flex-row items-center gap-3 p-4">
         <Link href={`/profile/${post.author.uid}`}>
           <Avatar className="h-11 w-11 border-2 border-primary">
-            <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
+            <AvatarImage   src={
+      post.author.avatarUrl
+        ? post.author.avatarUrl.replace(
+            "/upload/",
+            "/upload/w_80,h_80,c_fill,f_auto,q_auto/"
+          )
+        : "/default-avatar.png"
+    }     alt={post.author.name} />
+
+           
             <AvatarFallback>{post.author.name.substring(0, 3)}</AvatarFallback>
           </Avatar>
         </Link>
@@ -926,8 +935,9 @@ post.mediaUrl && post.mediaType === "image" ?
   {shouldShowMore && (
     <button
       onClick={() => handleReadMore(post.id, post.content.length)}
-      className="text-blue-500 underline ml-1"
-      style={{ cursor: 'pointer' }}
+      
+      className="text-orange-500 underline ml-1 "
+      style={{ cursor: 'pointer', textDecoration:"none" }}
     >
       ...Read More
     </button>

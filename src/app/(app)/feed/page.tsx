@@ -50,7 +50,7 @@ if(showPost){
     <div className="max-w-2xl mx-auto w-full space-y-6">
       <Card className="shadow-md">
         <CardHeader style={{padding:"0px", margin:"0px", marginBottom:"10px"}}>
-          {/* <CardTitle className="font-headline text-lg">Create Post</CardTitle>    router.push("/create-post");  dark*/}
+          {/* <CardTitle className="font-headline text-lg">Create Post</CardTitle>    router.push("/create-post"); Read More  dark*/}
         </CardHeader>
         <CardContent className="space-y-3 p-1 "  onClick={() => {
               setShowPost(true)
@@ -59,8 +59,14 @@ if(showPost){
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage
-                src={userData?.avatarUrl}
-                alt={userData?.fullName}
+ src={
+      userData?.avatarUrl
+        ? userData.avatarUrl.replace(
+            "/upload/",
+            "/upload/w_80,h_80,c_fill,f_auto,q_auto/"
+          )
+        : "/default-avatar.png"
+    }                alt={userData?.fullName}
                 data-ai-hint="profile avatar"
               />
               <AvatarFallback>{userData?.fullName.charAt(0)}</AvatarFallback>

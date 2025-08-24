@@ -13,7 +13,8 @@ import {
 } from "firebase/firestore";
 import { db, dbb } from "@/lib/firebase";
 import type { Post } from "@/lib/dummy-data";
-export function useFilteredPosts(user: any, pageSize = 20) {
+
+export function useFilteredPosts(user: any, pageSize = 5) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -25,7 +26,12 @@ export function useFilteredPosts(user: any, pageSize = 20) {
   const blockedUidsRef = useRef<Set<string>>(new Set());
   const followingUidsRef = useRef<Set<string>>(new Set());
 
-  // Fetch blocked + following UIDs for current user  
+  /** 🔹 Author cache: avoid duplicate fetches */
+  const authorCacheRef = useRef<
+    Record<string, { isPrivate: boolean; isPremium: boolean; terminated: boolean }>
+  >({});
+
+  /** 🔹 Fetch blocked + following UIDs once */
   const fetchUserLists = useCallback(async () => {
     if (!user?.uid) return;
 
@@ -38,7 +44,30 @@ export function useFilteredPosts(user: any, pageSize = 20) {
     followingUidsRef.current = new Set(followingSnap.docs.map((d) => d.id));
   }, [user?.uid]);
 
-  // Main fetch function
+  /** 🔹 Get author data (with cache) */
+  const getAuthorData = useCallback(async (uid: string) => {
+    if (authorCacheRef.current[uid]) {
+      return authorCacheRef.current[uid];
+    }
+
+    const userDoc = await getDoc(doc(db, "users", uid));
+    if (!userDoc.exists()) {
+      authorCacheRef.current[uid] = { isPrivate: false, isPremium: false, terminated: true }; // treat missing user as terminated
+      return authorCacheRef.current[uid];
+    }
+
+    const data = userDoc.data();
+    const authorData = {
+      isPrivate: data?.privacySettings?.privateAccount ?? false,
+      isPremium: data?.isPremium ?? false,
+      terminated: data?.terminated ?? false,
+    };
+
+    authorCacheRef.current[uid] = authorData;
+    return authorData;
+  }, []);
+
+  /** 🔹 Main fetch function */
   const fetchPostsPage = useCallback(
     async (nextPage = false) => {
       if (!user?.uid || fetchingRef.current || !hasMore) return;
@@ -53,6 +82,7 @@ export function useFilteredPosts(user: any, pageSize = 20) {
           unsubscribeRef.current();
           unsubscribeRef.current = null;
         }
+        authorCacheRef.current = {}; // clear cache on full reload
       }
 
       try {
@@ -69,54 +99,38 @@ export function useFilteredPosts(user: any, pageSize = 20) {
         }
 
         const rawPosts = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Post[];
+
+        /** 🔹 Get unique author IDs */
         const authorUids = Array.from(new Set(rawPosts.map((p) => p.author?.uid).filter(Boolean)));
 
-        const authorDocs = await Promise.all(
-          authorUids.map(async (uid) => {
-            const userDoc = await getDoc(doc(db, "users", uid));
-            const blockedSnap = await getDocs(collection(doc(db, "users", uid), "blocked"));
-            return {
-              uid,
-              exists: userDoc.exists(),
-              data: userDoc.data(),
-              blockedUids: blockedSnap.docs.map((d) => d.id),
-            };
-          })
+        /** 🔹 Fetch missing authors (skip cached) */
+        const authorEntries = await Promise.all(
+          authorUids.map(async (uid) => [uid, await getAuthorData(uid)] as const)
         );
 
-        const authorMap: Record<
-          string,
-          { isPrivate: boolean; isPremium: boolean; blockedUids: string[]; terminated: boolean }
-        > = {};
-        authorDocs.forEach((a) => {
-          if (a.exists) {
-            const data = a.data;
-            authorMap[a.uid] = {
-              isPrivate: data?.privacySettings?.privateAccount ?? false,
-              isPremium: data?.isPremium ?? false,
-              blockedUids: a.blockedUids,
-              terminated: data?.terminated ?? false,
-            };
-          }
-        });
+        const authorMap = Object.fromEntries(authorEntries);
 
+        /** 🔹 Filter posts dynamically */
         const visiblePosts = rawPosts
           .filter((post) => {
             const authorId = post.author?.uid;
             if (!authorId) return false;
             if (blockedUidsRef.current.has(authorId)) return false;
-            if (authorMap[authorId]?.blockedUids.includes(user.uid)) return false;
-            if (authorMap[authorId]?.terminated) return false;
-            if (user.uid === authorId) return true;
-            if (!authorMap[authorId]?.isPrivate) return true;
-            return followingUidsRef.current.has(authorId);
+
+            const authorInfo = authorMap[authorId];
+            if (authorInfo?.terminated) return false;
+
+            if (user.uid === authorId) return true; // self
+            if (!authorInfo?.isPrivate) return true; // public
+            return followingUidsRef.current.has(authorId); // private but following
           })
           .map((post) => {
             const authorId = post.author?.uid;
             const isPremium = authorMap[authorId ?? ""]?.isPremium ?? false;
-            return { ...post, isPremium, ispremium: isPremium, author: { ...post.author, isPremium } };
+            return { ...post, isPremium, author: { ...post.author, isPremium } };
           });
 
+        /** 🔹 Update pagination reference */
         if (visiblePosts.length > 0) {
           const lastVisibleId = visiblePosts[visiblePosts.length - 1].id;
           const lastVisibleDoc = snapshot.docs.find((d) => d.id === lastVisibleId);
@@ -127,38 +141,22 @@ export function useFilteredPosts(user: any, pageSize = 20) {
 
         setPosts((prev) => (nextPage ? [...prev, ...visiblePosts] : visiblePosts));
 
-        // Attach real-time listener for new posts
+        /** 🔹 Real-time listener for new posts */
         if (!nextPage && visiblePosts.length > 0 && !unsubscribeRef.current) {
           const latestTimestamp = visiblePosts[0].createdAt;
           const newPostsQ = query(postsRef, where("createdAt", ">", latestTimestamp), orderBy("createdAt", "desc"));
+
           unsubscribeRef.current = onSnapshot(newPostsQ, async (snapNew) => {
             const newRaw = snapNew.docs.map((d) => ({ id: d.id, ...d.data() })) as Post[];
             if (!newRaw.length) return;
 
             const newAuthorUids = Array.from(new Set(newRaw.map((p) => p.author?.uid).filter(Boolean)));
-            const newAuthorDocs = await Promise.all(
-              newAuthorUids.map(async (uid) => {
-                const userDoc = await getDoc(doc(db, "users", uid));
-                const blockedSnap = await getDocs(collection(doc(db, "users", uid), "blocked"));
-                return {
-                  uid,
-                  exists: userDoc.exists(),
-                  data: userDoc.data(),
-                  blockedUids: blockedSnap.docs.map((d) => d.id),
-                };
-              })
+            const newAuthorEntries = await Promise.all(
+              newAuthorUids.map(async (uid) => [uid, await getAuthorData(uid)] as const)
             );
 
-            newAuthorDocs.forEach((a) => {
-              if (a.exists) {
-                const data = a.data;
-                authorMap[a.uid] = {
-                  isPrivate: data?.privacySettings?.privateAccount ?? false,
-                  isPremium: data?.isPremium ?? false,
-                  blockedUids: a.blockedUids,
-                  terminated: data?.terminated ?? false,
-                };
-              }
+            newAuthorEntries.forEach(([uid, data]) => {
+              authorCacheRef.current[uid] = data;
             });
 
             const filteredNew = newRaw
@@ -166,16 +164,18 @@ export function useFilteredPosts(user: any, pageSize = 20) {
                 const authorId = post.author?.uid;
                 if (!authorId) return false;
                 if (blockedUidsRef.current.has(authorId)) return false;
-                if (authorMap[authorId]?.blockedUids.includes(user.uid)) return false;
-                if (authorMap[authorId]?.terminated) return false;
+
+                const authorInfo = authorCacheRef.current[authorId];
+                if (authorInfo?.terminated) return false;
+
                 if (user.uid === authorId) return true;
-                if (!authorMap[authorId]?.isPrivate) return true;
+                if (!authorInfo?.isPrivate) return true;
                 return followingUidsRef.current.has(authorId);
               })
               .map((post) => {
                 const authorId = post.author?.uid;
-                const isPremium = authorMap[authorId ?? ""]?.isPremium ?? false;
-                return { ...post, isPremium, ispremium: isPremium, author: { ...post.author, isPremium } };
+                const isPremium = authorCacheRef.current[authorId ?? ""]?.isPremium ?? false;
+                return { ...post, isPremium, author: { ...post.author, isPremium } };
               });
 
             if (filteredNew.length) {
@@ -190,7 +190,7 @@ export function useFilteredPosts(user: any, pageSize = 20) {
         setLoading(false);
       }
     },
-    [user, pageSize, hasMore]
+    [user, pageSize, hasMore, getAuthorData]
   );
 
   useEffect(() => {

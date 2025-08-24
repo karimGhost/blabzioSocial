@@ -540,11 +540,23 @@ src={CoverPhoto || `https://placehold.co/1200x400.png?text=${userData?.username}
         
 <div className="relative">
   {/* Avatar with click and upload loader overlay message */}
-  <Avatar
-    className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-background rounded-full shadow-lg cursor-pointer "
-    onClick={isCurrentUserProfile ? triggerFileSelect : undefined}
-  >
-    <AvatarImage src={avatarUrl} alt={userData?.fullName} data-ai-hint="user avatar" />
+<Avatar
+  className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-background rounded-full shadow-lg cursor-pointer"
+  onClick={isCurrentUserProfile ? triggerFileSelect : undefined}
+>
+  <AvatarImage
+    src={
+      avatarUrl
+        ? avatarUrl.replace(
+            "/upload/",
+            "/upload/w_320,h_320,c_fill,f_auto,q_auto/"
+          )
+        : "/default-avatar.png"
+    }
+    alt={userData?.fullName || "User avatar"}
+    className="object-cover"
+  />
+  
     <AvatarFallback className="text-4xl">
       {(userData?.fullName ?? "").substring(0, 2) || "??"}
     </AvatarFallback>

@@ -718,11 +718,23 @@ useEffect(() => {
    <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="h-9 w-9 cursor-pointer">
-                <AvatarImage src={userData?.avatarUrl} alt="User Avatar" data-ai-hint="user avatar"/>
+                <AvatarImage  
+ src={
+      userData?.avatarUrl
+        ? userData.avatarUrl.replace(
+            "/upload/",
+            "/upload/w_80,h_80,c_fill,f_auto,q_auto/"
+          )
+        : "/default-avatar.png"
+    }    
+
+ alt={`${userData?.fullName  || "User"}'s avatar`}
+ data-ai-hint={`${userData?.fullName + 'avatar' || "User"}'s avatar`}/>
                 <AvatarFallback>{(userData?.fullName ?? "").substring(0, 2) || "??"}</AvatarFallback>
                   {/* { unreadCount > 0 && (
               <span className=" right-4 top-3 flex h-4 w-4 items-center mt-1 mr-2 justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
-                {unreadCount input > 9 ? "9+" : toggle input unreadCount}
+                {unreadCount input > 9 ? "9+" : toggle input unreadCount} liked
+https://res.cloudinary.com/.../image/upload/w_200,h_200,c_fill,q_auto,f_auto/yourimage.jpg
 
               </span>
 

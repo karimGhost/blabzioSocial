@@ -27,6 +27,8 @@ import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
+import { updateDoc, doc } from "firebase/firestore";
+import { dbb } from '@/lib/firebase';
 export function AppHeader() {
   const { isInstallable, promptInstall } = useInstallPrompt();
 
@@ -107,7 +109,77 @@ const userId = user?.uid;
 };
 
 
+//universal function to add missing values
+const addMissingFieldsInsideAuthor = async () => {
+  try {
+    const postsRef = collection(dbb, "posts");
+    const snapshot = await getDocs(postsRef);
 
+    for (const postDoc of snapshot.docs) {
+      const data = postDoc.data();
+
+      // Get the existing author object (fallback empty if missing)
+      const author = data.author || {};
+
+      if (
+        author.isPremium === undefined ||
+        author.isPrivate === undefined ||
+        author.terminated === undefined
+      ) {
+        await updateDoc(doc(dbb, "posts", postDoc.id), {
+          author: {
+            ...author,
+            isPremium: author.isPremium ?? true,
+            isPrivate: author.isPrivate ?? false,
+            terminated: author.terminated ?? false,
+          },
+        });
+
+        console.log(`✅ Updated author for post ${postDoc.id}`);
+      }
+    }
+
+    alert("All posts updated with missing fields inside author!");
+  } catch (err) {
+    console.error("Error bulk updating posts:", err);
+  }
+};
+
+/// uni remove data from data...
+
+
+const removeFieldsInsideAuthor = async () => {
+  try {
+    const postsRef = collection(dbb, "posts");
+    const snapshot = await getDocs(postsRef);
+
+    for (const postDoc of snapshot.docs) {
+      const data = postDoc.data();
+
+      // Get the existing author object
+      const author = data.author || {};
+
+      // If any of the unwanted fields exist, remove them
+      if (
+        "isPremium" in author ||
+        "isPrivate" in author ||
+        "terminated" in author
+      ) {
+        const { isPremium, isPrivate, terminated, ...cleanAuthor } = author;
+
+        await updateDoc(doc(dbb, "posts", postDoc.id), {
+          author: cleanAuthor,
+        });
+
+        console.log(`🗑️ Removed flags from author in post ${postDoc.id}`);
+      }
+    }
+
+    alert("✅ All posts updated — unwanted fields removed from author!");
+  } catch (err) {
+    console.error("Error bulk updating posts:", err);
+  }
+};
 
   return (
     <header className=" sticky top-0 z-30 flex  h-16 items-center gap-4 border-b bg-background px-4 md:px-6  " style={{zIndex:"1"}}>
@@ -148,14 +220,16 @@ const userId = user?.uid;
         </form>
       </div>
 
+
+{/* <Button onClick={() => removeFieldsInsideAuthor()}>Update</Button> */}
       {/* Right side: Notifications & User Menu */}
       <div className="flex items-center gap-4 ml-auto">
          <Button onClick={() => markAllAsRead()} variant="ghost" size="icon" className="relative rounded-full">
   <Link href="/notification" className="relative inline-block">
-    <Bell className="h-5 w-5" />
+<Bell fill="orange"  color="orange" className=" text-orange-500 h-5 w-5 md:h-6 md:w-6" />
     <span className="sr-only">Notifications</span>
 
-    {/* {notifications.length > 0 && (
+    {/* {notifications.length > 0 && ( notification
       <span className="absolute top-0 right-0 block h-4 w-4 animate-ping rounded-full bg-red-500 opacity-75"></span>
     )} */}
     {notifications.some((i) => i.read === false) && notifications.length > 0 && (

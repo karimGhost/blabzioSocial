@@ -4,6 +4,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import FeedPage from "./(app)/feed/page";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -17,7 +18,7 @@ export default function LoginPage() {
 
   if (loading && !user) return BlabzioLoader(); // Don't show anything while loading
 
-  if (user) return  ; // Still avoid flashing form after loading
+  if (user) return  router.push("/feed")  ; // Still avoid flashing form after loading
 
   return <LoginForm />;
 }
