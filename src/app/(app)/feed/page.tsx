@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { collection, query, orderBy, onSnapshot, getDocs, getDoc, doc, where, startAfter, limit } from "firebase/firestore";
-import { dbb , db} from "@/lib/firebase"; // your Firestore instance
+import { dbb , db, auth} from "@/lib/firebase"; // your Firestore instance
 import { PostItem } from "@/components/feed/post-item";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { CreatePostForm } from "@/components/forms/create-post-form";
 import { useFilteredPosts } from "./useFilteredPosts";
 import PostSkeleton from "./PostSkeleton";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function FeedPage() {
   const router = useRouter();
-const {user,userData} = useAuth();
+const {userData, loadings} = useAuth();
 
+ const [ user] = useAuthState(auth);
+
+
+
+  
+    useEffect(() => {
+  if(!user && !loadings){
+    router.push("/")
+  }
+
+        console.log("loading", loadings)
+
+},[user, loadings]);
 
 
 const { posts, loading, hasMore, loadPosts } = useFilteredPosts(user);

@@ -10,6 +10,8 @@ import { getDatabase, ref, onDisconnect, set, serverTimestamp } from "firebase/d
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+    const [loadings, setLoadings] = useState(true);
+
   const [userData, setUserData] = useState<any>(null);
 const [theme, setTheme] = useState<any>(null)
 
@@ -30,6 +32,8 @@ useEffect(() => {
     }
 
     setLoading(false);
+        setLoadings(false);
+
   });
 
   return () => unsubscribe();
@@ -56,11 +60,13 @@ useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
+          setLoadings(false);
+
     });
 
     return () => unsubscribe();
   }, []);
 
   const userD =  userData;
-  return { user, loading, userData ,userD, setUserData};
+  return { user, loading,loadings, userData ,userD, setUserData};
 }

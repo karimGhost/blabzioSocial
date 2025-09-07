@@ -367,7 +367,7 @@ const CommentTexts = commentText.trim();
 // 1. Check if a similar notification already exists report
 const existingQuery = query(
   notificationsRef,
-  where("type", "==", "like"),
+  where("type", "==", "comment"),
   where("fromUser", "==", fromUser),
   where("content", "==", "post"),
   where("toUser", "==", toUser),
@@ -376,7 +376,8 @@ const existingQuery = query(
 
 const existingSnapshot = await getDocs(existingQuery);
 
-// 2. Only add if not already exists
+// 2. Only add if not already exists   const postLike = otherUserSnap?.data()?.notificationSettings?.postLike;
+
 if (existingSnapshot.empty) {
        await addDoc(notificationsRef, {
     type: "comment",
@@ -450,7 +451,7 @@ const toUser = post.author.uid;
 
 const existingQuery = query(
   notificationsRef,
-  where("type", "==", "like"),
+  where("type", "==", "reply"),
   where("fromUser", "==", fromUser),
     where("content", "==", "post"),
   where("toUser", "==", toUser),
@@ -499,6 +500,7 @@ if (recipientFCMToken && replies) {
 
       }),
     });
+setReplyMap((prev) => ({ ...prev, [commentId]: "" }))
     console.log("📩 Notification sent to:", recipientFCMToken);
   } catch (err) {
     console.error("🔥 Failed to send notification:", err);
@@ -667,7 +669,7 @@ const CommentTexts = post.content;
                   const recipientFCMToken = otherUserSnap?.data()?.fcmToken;
                   const postLike = otherUserSnap?.data()?.notificationSettings?.postLike;
 
-if (recipientFCMToken && postLike) {
+if (recipientFCMToken ) {
   try {
 
     await fetch("/api/send-notification", {
@@ -701,7 +703,7 @@ const shouldShowMore = post.content.length > visibleChars;
 const handleReadMore = (postId: string, contentLength: number) => {
   setReadMoreMap((prev) => {
     const current = prev[postId] || 500;
-    const next = Math.min(current + 800, contentLength); // Don't exceed total length send in 
+    const next = Math.min(current + 800, contentLength); // Don't exceed total length send in write a reply
     return { ...prev, [postId]: next };
   });
 };
@@ -1065,15 +1067,46 @@ post.mediaUrl && post.mediaType === "image" ?
                 <RepliesList postId={post.id} commentId={comment.id} />
 
                 <div className="pl-10">
-                  <input
-                    value={replyMap[comment.id] || ""}
-                    onChange={(e) => setReplyMap((prev) => ({ ...prev, [comment.id]: e.target.value }))}
-                    placeholder="Write a reply..."
-                    className="w-full px-2 py-1 text-sm border rounded text-"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleReplySubmit( comment.id, comment.uid, replyMap[comment.id]);
-                    }}
-                  />
+               <div className="flex items-center gap-2 w-full">
+  <input
+    value={replyMap[comment.id] || ""}
+    onChange={(e) =>
+      setReplyMap((prev) => ({ ...prev, [comment.id]: e.target.value }))
+    }
+    placeholder="Write a reply..."
+    className="flex-1 px-3 py-2 text-sm border rounded-lg text-foreground bg-muted"
+    enterKeyHint="send"
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleReplySubmit(comment.id, comment.uid, replyMap[comment.id]);
+      }
+    }}
+  />
+
+  <button
+    onClick={() =>
+      handleReplySubmit(comment.id, comment.uid, replyMap[comment.id])
+    }
+    disabled={!replyMap[comment.id]?.trim()}
+    className="p-2 rounded-full bg-primary text-primary-foreground disabled:opacity-50"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 12L3 21l18-9L3 3l3 9zm0 0l7.5-3M6 12l7.5 3"
+      />
+    </svg>
+  </button>
+</div>
                 </div>
               </div>
             ))}
