@@ -3,9 +3,15 @@
   "short_name": "Blabzio",
   "id": "/?source=pwa",
   "start_url": "/",
+    "dir": "ltr",
+     
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
+"display_override": [
+  "window-controls-overlay",
+  "standalone"
+],
+"orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#0f0f0f",
   "description": "Chat, connect, and socialize with Blabzio.",
@@ -35,6 +41,21 @@
       ]
     }
   ],
-  "categories": ["social", "communication", "messaging"],
-  "prefer_related_applications": false
+"categories": [
+    "books",
+    "business",
+    "education",
+    "entertainment",
+    "finance",
+    "food",
+    "lifestyle",
+    "magazines",
+    "personalization",
+    "photo",
+    "productivity",
+    "social",
+    "utilities"
+  ],
+  "prefer_related_applications": true,
+   "lang": "en"
 }

@@ -3,10 +3,12 @@ declare module 'next-pwa' {
 
   type PWAOptions = {
     dest: string;
+    name: string;
     register?: boolean;
     skipWaiting?: boolean;
     disable?: boolean;
     scope?: string;
+    
    sw?: string;
     runtimeCaching?: any[];
     buildExcludes?: string[];
