@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "app.vercel.blabzio_social.twa",
-        "sha256_cert_fingerprints": ["83:9B:A6:C1:62:70:E5:65:6A:42:47:60:18:B2:A6:61:03:64:70:EA:73:D8:27:FE:90:13:CF:AF:93:20:59:83"]
+        "sha256_cert_fingerprints": ["9E:7C:1C:75:0A:C1:ED:7D:7E:1A:80:54:FD:FD:63:62:87:8C:C2:FE:4D:EF:DF:E7:64:BB:42:5F:B1:6D:9A:73"]
       }
     }]
