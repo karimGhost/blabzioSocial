@@ -56,7 +56,18 @@ export default function RootLayout({
           } else {
             document.documentElement.classList.remove('dark');
           }
-        } catch (_) {}
+        } catch (_) {};
+
+
+         if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/pwabuilder-sw.js')
+            .then(() => console.log('✅ Service Worker registered successfully'))
+            .catch(err => console.error('❌ Service Worker registration failed:', err));
+        });
+      } else {
+        console.log('Service Worker not registered (development mode)');
+      }
       `,
     }}
   />
