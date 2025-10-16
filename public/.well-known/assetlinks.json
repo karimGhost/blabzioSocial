@@ -1,9 +1,8 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "app.vercel.blabzio_social.twa"
-    }
-  }
-]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.blabzio_social.twa",
+        "sha256_cert_fingerprints": ["83:9B:A6:C1:62:70:E5:65:6A:42:47:60:18:B2:A6:61:03:64:70:EA:73:D8:27:FE:90:13:CF:AF:93:20:59:83"]
+      }
+    }]
