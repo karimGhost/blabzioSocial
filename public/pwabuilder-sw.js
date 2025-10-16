@@ -12,7 +12,7 @@ self.addEventListener("message", (event) => {
   }
 });
 
-// 🗂️ Assets to pre-cache (adjust as needed)
+// 🗂️ Assets to pre-cache (adjust as needed) 
 const PRECACHE_ASSETS = [
   "/",                // Home page
   "/offline.html",    // Offline fallback
