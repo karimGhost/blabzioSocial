@@ -281,7 +281,7 @@ function BlabzioLoader() {
             <BlabzioLogo className="h-16 w-16" />
           </div>
           <CardTitle className="text-3xl font-headline">Welcome to {" "}
-  <span className="relative text-4xl font-dragon text-orange-400 right-[-1px] top-[2px]">
+  <span className="relative text-4xl font-dragon text-orange-500 right-[-1px] top-[2px]">
     B
   </span>
   <span className="ml-0.5 font-semibold">labzio</span>

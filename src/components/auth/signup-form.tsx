@@ -322,7 +322,7 @@ if(terms){
           <CardTitle className="text-3xl font-headline">Create an Account</CardTitle>
   <CardDescription className="text-base">
   Join{" "}
-  <span className="relative text-3xl font-dragon text-orange-400 right-[-2px] top-[2px]">
+  <span className="relative text-3xl font-dragon text-orange-500 right-[-2px] top-[2px]">
     B
   </span>
   <span className="ml-0.5 font-semibold">labzio today!</span>

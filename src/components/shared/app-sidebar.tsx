@@ -233,7 +233,7 @@ useEffect(() => {
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/feed" className="flex items-center gap-2 font-semibold">
         <span className="flex items-center font-headline text-xl">
-  <b className="text-4xl font-dragon text-orange-400 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
+  <b className="text-4xl font-dragon text-orange-500 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
   <span style={{marginBottom:"-4px"}} className="bottom-[-20px]">labzio</span>
 </span>
         </Link>
@@ -685,7 +685,7 @@ useEffect(() => {
 
   <Link href="/feed" className="flex items-center gap-2 font-semibold">
         <span className="flex items-center font-headline text-xl">
-  <b className="text-4xl font-dragon text-orange-400 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
+  <b className="text-4xl font-dragon text-orange-500 m[] leading-none right-[-5px] bottom-[20px] top-[-10px]">B</b>
   <span style={{marginBottom:"-4px"}} className="bottom-[-20px]">labzio</span>
 </span>
         </Link>
