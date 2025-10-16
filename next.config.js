@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
+
+const withPWA = require('next-pwa')({
+  dest: 'public'
+})
+
+module.exports = withPWA({
+    reactStrictMode: true,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -29,6 +34,6 @@ const nextConfig = {
     ],
   },
   
-};
+});
 
-module.exports = nextConfig;
+// module.exports = nextConfig;
