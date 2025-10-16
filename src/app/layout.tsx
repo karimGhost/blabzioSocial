@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Titlebar from '@/components/Titlebar';
 import Script from 'next/script';
 import Head from 'next/head';
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 export const metadata: Metadata = {
   title: 'Blabzio',
   description: 'Connect and Share with Blabzio',
@@ -38,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
 
-  
+
 
 
   return (
@@ -61,7 +62,8 @@ export default function RootLayout({
   />
       </head>
       <body className="font-body antialiased">
-        
+                <ServiceWorkerRegister />
+
         <div style={{marginRight:"100px"}}>
          <Titlebar />
 
