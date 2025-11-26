@@ -1,5 +1,7 @@
+import { addDays, format, subDays } from 'date-fns';
 import { type Post } from './types';
-
+import type {  ContentPost, ScheduledPost } from './types';
+import { User } from 'firebase/auth';
 const posts: Post[] = [
   {
     id: '1',
@@ -7,10 +9,10 @@ const posts: Post[] = [
     title: 'Future of Urban Mobility: Flying Taxis Take Flight',
     content:
       'In a landmark event, the first commercially certified flying taxi completed its maiden voyage over Dubai. The autonomous electric vehicle represents a giant leap in urban transportation, promising to alleviate traffic congestion and reduce carbon emissions. Experts predict a fleet of these vehicles could be operational in major cities within the next five years.',
-    mediaUrl: 'https://placehold.co/600x400.png',
+    mediaUrl: '/',
     author: {
       name: 'Jane Doe',
-      avatarUrl: 'https://placehold.co/40x40.png',
+      avatarUrl: '/',
     },
     createdAt: '2024-07-21T10:00:00Z',
     tags: ['Technology', 'Innovation', 'Transportation', 'Smart Cities'],
@@ -25,7 +27,7 @@ const posts: Post[] = [
     mediaUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Placeholder video
     author: {
       name: 'John Smith',
-      avatarUrl: 'https://placehold.co/40x40.png',
+      avatarUrl: '/',
     },
     createdAt: '2024-07-20T14:30:00Z',
     tags: ['Food', 'Baking', 'Lifestyle', 'DIY'],
@@ -102,3 +104,81 @@ export function getPostById(id: string): Post | undefined {
 export function getTrendingTags(): string[] {
   return trendingTags;
 }
+
+
+
+
+export const contentPosts: ContentPost[] = [
+  {
+    id: 'post_1',
+    author: { name: 'Alex Ray', avatar: '/' },
+    platform: 'Instagram',
+    content: 'Just enjoyed a beautiful hike in the mountains! #nature #hiking',
+    mediaUrl: '/',
+    timestamp: subDays(new Date(), 1).toISOString(),
+    status: 'Pending',
+  },
+  {
+    id: 'post_2',
+    author: { name: 'Sarah Bell', avatar: '/' },
+    platform: 'Twitter',
+    content: 'This new cafe has the best coffee. Highly recommend!',
+    timestamp: subDays(new Date(), 2).toISOString(),
+    status: 'Pending',
+  },
+  {
+    id: 'post_3',
+    author: { name: 'Alex Ray', avatar: '/' },
+    platform: 'Facebook',
+    content: 'My dog is being extra cute today. Here is the proof.',
+    mediaUrl: '/',
+    timestamp: new Date().toISOString(),
+    status: 'Pending',
+  },
+  {
+    id: 'post_4',
+    author: { name: 'Jane Doe', avatar: '/' },
+    platform: 'Instagram',
+    content: 'City lights and late night vibes. #cityscape #nightlife',
+    mediaUrl: '/',
+    timestamp: subDays(new Date(), 4).toISOString(),
+    status: 'Approved',
+  },
+];
+
+export const scheduledPosts: ScheduledPost[] = [
+  {
+    id: 'sch_1',
+    platform: 'Twitter',
+    content: 'Big announcement coming tomorrow! Stay tuned. #excited',
+    scheduledTime: addDays(new Date(), 1),
+    status: 'Scheduled',
+  },
+  {
+    id: 'sch_2',
+    platform: 'Facebook',
+    content: 'Join our webinar next week to learn about the future of social media. Link in bio!',
+    scheduledTime: addDays(new Date(), 3),
+    status: 'Scheduled',
+  },
+  {
+    id: 'sch_3',
+    platform: 'Instagram',
+    content: 'A behind-the-scenes look at our team hard at work.',
+    scheduledTime: addDays(new Date(), 5),
+    status: 'Scheduled',
+  },
+];
+
+
+export const users: User[] = [
+  {
+    id: 'usr_1',
+    name: 'Jane Doe',
+    email: 'jane.doe@example.com',
+    avatar: '/',
+    role: 'Admin',
+    status: 'Active',
+    lastLogin: format(subDays(new Date(), 1), 'yyyy-MM-dd HH:mm'),
+  },
+]

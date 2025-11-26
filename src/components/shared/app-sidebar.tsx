@@ -27,6 +27,10 @@ import {
   ChevronUp,
   ChevronDown,
   Group,
+  LayoutDashboard,
+  Users,
+  CalendarClock,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,6 +51,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { collection,doc, getDocs, orderBy, query, where, writeBatch } from "firebase/firestore";
 import { dbe } from '@/lib/firebase';
 import { CreatePostForm } from "../forms/create-post-form";
+import { NavItem } from "@/lib/types";
 const navItems = [
   { href: "/feed", icon: Home, label: "Feed" },
     { href: "/forums", icon:Group  , label: "Forums" },
@@ -57,6 +62,15 @@ const navItems = [
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
+
+const AdminnavItems: NavItem[] = [
+  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/content', label: 'Content', icon: ShieldCheck },
+  { href: '/admin/schedule', label: 'Schedule', icon: CalendarClock },
+  { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
+];
 
 interface Forum {
   headerImageUrl: string;
@@ -226,6 +240,9 @@ useEffect(() => {
 }, [user]);
 
 
+
+const navi = user?.email === "abdulkarimkassimsalim@gmail.com" ? AdminnavItems : navItems;
+
           {/* <BlabzioLogo className="h-8 w-8" /> */}
 
   return (
@@ -240,7 +257,7 @@ useEffect(() => {
       </div>
    <nav className="flex-1 overflow-y-auto py-4 px-4 text-sm font-medium">
       <ul className="space-y-1">
-        {navItems.map((item) => (
+        { navi.map((item) => (
           <li key={item.label} className="relative">
             {item.label !== "Forums" ? (
               <Link
@@ -658,6 +675,7 @@ const userId = user?.uid;
     },[user]);
 
   const [showForumDropdown, setShowForumDropdown] = useState(false);
+const navi = user?.email === "abdulkarimkassimsalim@gmail.com" ? AdminnavItems : navItems;
 
 
 const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -750,7 +768,7 @@ https://res.cloudinary.com/.../image/upload/w_200,h_200,c_fill,q_auto,f_auto/you
                         {/* search <DropdownMenuItem asChild><Link href="/forums">Forum</Link></DropdownMenuItem>  absolute */}
  <nav className="flex-1 overflow-y-auto py-4 px-3 text-sm font-medium">
       <ul className="space-y-1">
-        {navItems.map((item) => (
+        {navi.map((item) => (
           <li key={item.label} className="relative">
             {item.label !== "Forums" ? (
               <Link

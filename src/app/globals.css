@@ -289,3 +289,10 @@ z-index: 300;
   cursor: pointer;
   color: white;
 }
+
+
+.truncate {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: break-spaces !important ;
+}

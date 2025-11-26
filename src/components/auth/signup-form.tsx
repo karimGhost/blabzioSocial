@@ -120,6 +120,8 @@ if (!querySnapshot.empty) {
         bio:"",
         DOB:"",
         fcmToken:"",
+  status: "",
+
         terminated: false,
 terminationReason: "",
 terminatedAt: "",
@@ -237,6 +239,7 @@ const handleGoogleSignup = async () => {
 
       await setDoc(userRef, {
         uid: user.uid,
+        status:"",
         fullName: user.displayName || "",
         email: user.email || "",
         username: useis,
