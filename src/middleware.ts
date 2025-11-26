@@ -24,7 +24,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // 🔐 Handle admin session check for /admin/inbox
-  if (pathname.startsWith("/admin/inbox")) {
+  if (pathname.startsWith("/admin")) {
     const session = req.cookies.get("session")?.value;
     if (!session) {
       return NextResponse.redirect(new URL("/unauthorized", req.url));
@@ -53,5 +53,5 @@ export async function middleware(req: NextRequest) {
 
 // 👇 Only match what we care about
 export const config = {
-  matcher: ["/admin/inbox/:path*", "/feed/:path*"],
+  matcher: ["/admin/:path*", "/feed/:path*"],
 };

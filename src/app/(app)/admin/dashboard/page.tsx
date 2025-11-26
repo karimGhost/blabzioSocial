@@ -9,6 +9,8 @@ import { Users, ThumbsUp, PenSquare, Eye } from "lucide-react";
 import StatCard from "@/components/dashboard/stat-card";
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 import { useUsersList } from "../users/useUsersList";
+import { useAuth } from "@/hooks/useAuth";
+import { useContentMod } from "../contentMod/useContentMod";
 
 export interface User {
   id: string;
@@ -32,7 +34,14 @@ export interface ContentPost {
 }
 
 export default function DashboardPage() {
+  const {user} = useAuth()
   const { users, contentPosts, loading } = useUsersList();
+
+const  { reports,  messages, payments, reportedUsers, Postsreports } = useContentMod();
+
+  if (!user || user.email !== "abdulkarimkassimsalim@gmail.com") {
+    return <p className="text-red-500 p-4 text-center">Access denied</p>;
+  }
 
 
    if (loading) return <div>Loading...</div>;
@@ -40,7 +49,7 @@ export default function DashboardPage() {
  
   const totalUsers = users.length;
   const totalPosts = contentPosts.length;
-  const pendingContent = contentPosts.filter((p) => p.status === "Pending").length;
+  const pendingContent = Postsreports.length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -55,14 +64,18 @@ export default function DashboardPage() {
           description="+5% from last month"
         />
 
+      
         <StatCard title="Total Posts" value={totalPosts.toString()} icon={<PenSquare />} />
 
-        <StatCard
+
+   <StatCard
           title="Content to Review"
           value={pendingContent.toString()}
           icon={<Eye />}
           variant="warning"
         />
+
+       
       </div>
 
       {/* Charts + Recent Activity */}

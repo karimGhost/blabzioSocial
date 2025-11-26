@@ -1,6 +1,7 @@
+import { db } from "@/lib/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
-export async function saveVideoToFirestore(videoUrl: string, user: User, description: string) {
+export async function saveVideoToFirestore(videoUrl: string, user: any, description: string) {
   const videoDoc = {
     url: videoUrl,
     description,
