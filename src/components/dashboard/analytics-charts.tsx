@@ -10,6 +10,13 @@ const chartData = [
   { month: 'April', engagement: 273 },
   { month: 'May', engagement: 209 },
   { month: 'June', engagement: 214 },
+    { month: 'July', engagement: 214 },
+  { month: 'August', engagement: 214 },
+  { month: 'September', engagement: 214 },
+  { month: 'October', engagement: 214 },
+  { month: 'November', engagement: 214 },
+  { month: 'December', engagement: 214 },
+
 ];
 
 const chartConfig = {
