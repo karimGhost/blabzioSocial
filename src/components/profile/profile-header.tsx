@@ -415,6 +415,8 @@ const handleTerminateAccount = async (uid: string) => {
       terminationReason: "Violated community guidelines", // optional
       deactivated: true, // optional if you want to prevent login
       isPremium: false,
+      status: "Banned",
+
     });
   toast({
         title: "Terminated",
@@ -495,7 +497,7 @@ const shouldRestrictAccess = isprivate && isNotOwner && isNotFollowing;
 
   return (
     <div className="relative">
-      {/* Cover Photo orange */}
+      {/* Cover Photo orange terminate */}
       <div className="h-48 sm:h-64 bg-muted rounded-t-lg overflow-hidden relative"
                   onClick={isCurrentUserProfile && isEditable ? triggerFileCSelect : undefined}
 

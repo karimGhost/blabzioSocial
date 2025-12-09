@@ -568,6 +568,8 @@ const handleDeactivateAccount = async () => {
   const userRef = doc(db, "users", user?.uid as string);
   await updateDoc(userRef, {
     deactivation: true,
+          status: "Pending",
+
   });
 
   alert("Account deactivated (simulate)");

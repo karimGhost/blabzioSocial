@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { ref } from 'firebase/database';
+import { onDisconnect, onValue, ref } from 'firebase/database';
 import { db, rtdb } from '@/lib/firebase';
 import { DialogHeader,DialogContent,Dialog, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
@@ -26,10 +26,11 @@ import {
   FormControl,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 export interface User {
   notificationSettings(notificationSettings: any, arg1: null, arg2: number): import("react").ReactNode;
   forumsCreated(forumsCreated: any, arg1: null, arg2: number): import("react").ReactNode;
@@ -58,6 +59,8 @@ export interface User {
 
 }
 
+
+
 export const columns:  ColumnDef<User, unknown>[]  = [
   {
     accessorKey: 'name',
@@ -83,44 +86,94 @@ export const columns:  ColumnDef<User, unknown>[]  = [
       );
     },
   },
-  {
-    accessorKey: 'role',
-    header: 'Role',
-  },
+
   {
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
       const user = row.original;
+
       const status = user.status;
 
-    
-      
+  
 
       return (
+
         <Badge
           variant="outline"
           className={cn({
             'border-green-600 bg-green-50 text-orange-500': status === 'Active',
             'border-red-600 bg-red-50 text-red-700': status === 'Banned',
-            'border-yellow-600 bg-yellow-50 text-yellow-700': status === 'Pending',
+            'border-yellow-600 bg-yellow-50 text-yellow-700': status === 'Deactivated',
           })}
         >
           {status}
           
         </Badge>
+
+      
       );
     },
   },
+
   {
     accessorKey: 'lastLogin',
     header: 'Last Login',
+    cell: ({ row }) => {
+      const user = row.original;
+const [statusData, setStatusData] = useState<any>(null);
+    
+      
+
+useEffect(() => {
+  if (!user.uid) return;
+
+  const onlineStatusRef = ref(rtdb, `/onlineStatus/${user.uid}`);
+
+
+  let unsubscribe: (() => void) | undefined;
+
+  // Wrap everything in an async IIFE Last seen
+  (async () => {
+    try {
+
+
+      
+      // Subscribe to Realtime DB
+      unsubscribe = onValue(onlineStatusRef, (snapshot) => {
+        const data = snapshot.val();
+
+        if (data ) {
+          setStatusData(data.state === "online");
+        } else {
+          setStatusData(false);
+        }
+              setStatusData(data.last_changed);
+
+      });
+    } catch (err) {
+      console.error("Error fetching privacy or online status:", err);
+    }
+  })();
+
+  return () => {
+    if (unsubscribe) unsubscribe();
+  };
+}, [user.uid]);
+
+
+
+      return <span>{ formatDistanceToNow(new Date(statusData))  ?? 'N/A'}</span>;
+    },
   },
+
+
+
   {
     id: 'actions',
     cell: ({ row }) => {
       const user = row.original;
-
+    
       const [open, setOpen] = useState(false);
   
       
@@ -140,6 +193,8 @@ const reactivateAccount = async (uid: string) => {
     terminatedAt: "",
     terminationReason: "",
     deactivated: false,
+          status: "Active",
+
   });
 };
 
@@ -172,8 +227,9 @@ const handleTerminateAccount = async (uid: string) => {
       reason: "Violated community guidelines",
       terminatedAt: serverTimestamp(),
       terminationReason: "Violated community guidelines", // optional
-      deactivated: true, // optional if you want to prevent login
+      deactivated: true, // optional if you want to prevent login lastseen
       isPremium: false,
+      status: "Banned",
     });
   toast({
         title: "Terminated",
@@ -236,7 +292,7 @@ const handleTerminateAccount = async (uid: string) => {
             <div>
               <p className="font-semibold">CoverPhoto</p>
               <img src={user?.CoverPhoto} className="w-50 rounded" />
-              {/* <p style={{whiteSpace:"break-spaces"}} className="text-gray-500">{user.CoverPhoto}</p> */}
+              {/* <p style={{whiteSpace: Active "break-spaces"}} Active className="text-gray-500">{user.CoverPhoto}</p> */}
             </div>
 
             <div>
@@ -306,11 +362,13 @@ const handleTerminateAccount = async (uid: string) => {
             </>
 
             <DropdownMenuItem>Edit user</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTerminateAccount(user?.uid)} className="text-destructive">Ban user</DropdownMenuItem>
-
-            <DropdownMenuItem onClick={() => handleDeleteUser(user?.uid)} className="text-destructive">Delete user</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => reactivateAccount(user?.uid)} className="text-destructive">Active user</DropdownMenuItem>
-
+                 {   user.status === "Banned"  ?      <DropdownMenuItem onClick={() => reactivateAccount(user?.uid)} className="text-destructive">Active user</DropdownMenuItem>
+ 
+:   <DropdownMenuItem onClick={() => handleTerminateAccount(user?.uid)} className="text-destructive">Ban user</DropdownMenuItem>
+}
+        
+        <DropdownMenuItem onClick={() => handleDeleteUser(user?.uid)} className="text-destructive">Delete user</DropdownMenuItem> 
+    
           </DropdownMenuContent>
         </DropdownMenu>
       );

@@ -88,7 +88,8 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
       }
 
       if (userData.deactivation === true) {
-        await updateDoc(userDocRef, { deactivation: false });
+        await updateDoc(userDocRef, { deactivation: false , status: "Active"});
+
 
         toast({
           title: "Account Activated",
@@ -214,7 +215,7 @@ const handleGoogleLogin = async () => {
     });
 
     if (userData?.deactivation === true) {
-      await updateDoc(userDocRef, { deactivation: false });
+      await updateDoc(userDocRef, { deactivation: false,           status: "Active" });
       toast({
         title: "Account Activated",
         description: "Welcome back!",
