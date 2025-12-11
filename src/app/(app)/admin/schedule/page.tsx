@@ -49,7 +49,7 @@ export default function SchedulePage() {
               onChange={(e) => setPostContent(e.target.value)}
             />
             <div className="flex flex-col sm:flex-row gap-4">
-              <Select defaultValue="Twitter">
+              {/* <Select defaultValue="Twitter">
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Platform" />
                 </SelectTrigger>
@@ -58,7 +58,7 @@ export default function SchedulePage() {
                   <SelectItem value="Facebook">Facebook</SelectItem>
                   <SelectItem value="Instagram">Instagram</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -92,7 +92,7 @@ export default function SchedulePage() {
             <div className="space-y-4">
               {scheduledPosts.map((post) => (
                 <div key={post.id} className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                   <PlatformIcon platform={post.platform} />
+                   {/* <PlatformIcon platform={post.platform} /> */}
                   <div className="flex-1">
                     <p className="text-sm">{post.content}</p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">

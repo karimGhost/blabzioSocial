@@ -42,7 +42,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="admin@socialsphere.io" />
+                  <Input id="email" type="email" defaultValue="admin@.com" />
                 </div>
                 <Button>Save Changes</Button>
               </CardContent>

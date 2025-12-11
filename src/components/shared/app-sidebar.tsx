@@ -66,7 +66,7 @@ const navItems = [
 const AdminnavItems: NavItem[] = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/content', label: 'Content', icon: ShieldCheck },
+  // { href: '/admin/content', label: 'Content', icon: ShieldCheck },
   { href: '/admin/schedule', label: 'Schedule', icon: CalendarClock },
   { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
