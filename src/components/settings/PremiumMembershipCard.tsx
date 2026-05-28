@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import { Sparkles, CheckCircle } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -10,10 +10,11 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import clsx from "clsx";
-
+// process
 const plans = [
   { label: "1 Month", value: "1", price: "5.00" },
   { label: "3 Months", value: "3", price: "12.00" },
@@ -21,24 +22,34 @@ const plans = [
   { label: "12 Months", value: "12", price: "35.00" },
 ];
 
+
 export function PremiumMembershipCard({
   userId,
   isPremium,
   activePlan,
+    paypalClientId
+
 }: {
   userId: string;
   isPremium: boolean;
   activePlan?: string;
+    paypalClientId: string;
+
 }) {
   const [selectedPlan, setSelectedPlan] = useState("1");
-  const [showPayPal, setShowPayPal] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
-
+const {toast} = useToast()
   const current = plans.find((p) => p.value === selectedPlan)!;
+  const router = useRouter();
+
 
 const handleStartMpesaPayment = async () => {
   if (!userId || !phoneNumber) {
-    toast.error("Please login and enter a phone number");
+     toast({
+      title: "Login first",
+      description: "message",
+      variant: "destructive",
+    });
     return;
   }
 
@@ -52,15 +63,28 @@ const handleStartMpesaPayment = async () => {
     const data = await res.json();
 
     if (res.ok && data.checkoutRequestID) {
-      toast.info("M-Pesa prompt sent! Complete payment on your phone.");
-
+ toast({
+      title: "M-Pesa prompt sent! Complete payment on your phone.",
+      description: "message",
+      variant: "destructive",
+    });
       // Optionally, you can poll your backend or listen for confirmation
       // Or you just wait for the callback to update premium status automatically
     } else {
-      toast.error(`STK Push failed: ${data.error || JSON.stringify(data)}`);
+   
+       toast({
+      title: `STK Push failed: ${data.error || JSON.stringify(data)}`,
+      description: "message",
+      variant: "destructive",
+    });
     }
   } catch (error) {
-    toast.error("Network error with M-Pesa payment.");
+ 
+     toast({
+      title: "Network error with M-Pesa payment.",
+      description: "message",
+      variant: "destructive",
+    });
   }
 };
 
@@ -81,14 +105,28 @@ const handleStartMpesaPayment = async () => {
     });
 
     if (res.ok) {
-      toast.success("✅ You are now a Premium Member!");
+     
+         toast({
+      title: "✅ You are now a Premium Member!",
+      description: "message",
+    });
       window.location.reload();
     } else {
       const error = await res.json();
-      toast.error(`❌ M-Pesa verification failed: ${error.error || "Unknown error"}`);
+
+          toast({
+      title: `❌ M-Pesa verification failed: ${error.error || "Unknown error"}`,
+      description: "message",
+      variant: "destructive",
+    });
     }
   } catch (err) {
-    toast.error("❌ Network or server error during verification.");
+  
+        toast({
+      title: "❌ Network or server error during verification.",
+      description: "message",
+      variant: "destructive",
+    });
   }
 };
 
@@ -161,46 +199,117 @@ onClick={handleMpesaPayment}>Enter M-Pesa Receipt Manually</Button> </div> */}
             
 
               <div className="pt-4">
+                {!paypalClientId ? (
+  <p className="text-sm text-red-500">
+    PayPal client ID is missing. Check your .env.local file.
+  </p>
+) : (
                 <PayPalScriptProvider
                   options={{
-                    "client-id": process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!,
+                    clientId: paypalClientId!,
                     currency: "USD",
                   }}
                 >
-                  <PayPalButtons
-                    style={{ layout: "vertical" }}
-                    createOrder={(data, actions) =>
-                      actions.order.create({
-                        purchase_units: [
-                          {
-                            amount: {
-                              value: current.price,
-                            },
-                          },
-                        ],
-                      })
-                    }
-                    onApprove={async (data, actions) => {
-                      const details = await actions.order!.capture();
-                      const res = await fetch("/api/verify-paypal", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          paypalPaymentId: details.id,
-                          userId,
-                          subscriptionMonths: current.value,
-                        }),
-                      });
+                <PayPalButtons
+  style={{ layout: "vertical" }}
+  createOrder={async (data, actions) => {
+    return actions.order.create({
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          amount: {
+            currency_code: "USD",
+            value: Number(current.price).toFixed(2), // Safe formatting
+          },
+        },
+      ],
+    });
+  }}
+  onApprove={async (data, actions) => {
+    // 1. Check if actions.order exists before using it
+    if (!actions.order) {
+      
+          toast({
+      title: "❌ PayPal initialization failed.",
+      description: "message",
+      variant: "destructive",
+    });
+      return;
+    }
 
-                      if (res.ok) {
-                        toast.success("✅ You are now a Premium Member!");
-                        window.location.reload();
-                      } else {
-                        toast.error("❌ PayPal verification failed.");
-                      }
-                    }}
-                  />
+    try {
+      // 2. Capture the funds from the user
+      const details = await actions.order.capture();
+      
+      // 3. Double-check that the capture actually succeeded
+      if (details.status !== "COMPLETED") {
+     
+          toast({
+      title: "❌ Payment was not successfully completed.",
+      description: "message",
+      variant: "destructive",
+    });
+        return;
+      }
+
+      if (!userId) {
+  
+    toast({
+      title: "Please login before paying!!.",
+      description: "message",
+      variant: "destructive",
+    });
+  return;
+}
+
+console.log("Sending to backend:", {
+  paypalPaymentId: details.id,
+  userId,
+  subscriptionMonths: current.value,
+});
+      // 4. Send the correct capture ID (details.id) to your backend
+      const res = await fetch("/api/verify-paypal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paypalPaymentId: details.id, // This is the Order/Capture ID
+          userId,
+          subscriptionMonths: current.value,
+        }),
+      });
+
+      if (res.ok) {
+         toast({
+      title: "✅ You are now a Premium Member!.",
+      description: "message",
+    });
+
+    router.refresh()
+        // Optional: Replace reload with router.refresh() if using Next.js App Router
+        // window.location.reload(); 
+      } else {
+      
+
+    toast({
+      title: "❌ Backend verification failed. Please contact support.",
+      description: "message",
+      variant: "destructive",
+    });
+      }
+    } catch (error) {
+      console.error("PayPal Capture Error:", error);
+      
+
+    toast({
+      title: "❌ An error occurred during payment processing.",
+      description: "message",
+      variant: "destructive",
+    });
+    }
+  }}
+/>
                 </PayPalScriptProvider>
+)}
               </div>
           
           </>

@@ -1,10 +1,9 @@
 "use client";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { db , dbForums} from "@/lib/firebase";
+import { db ,auth, dbForums} from "@/lib/firebase";
 import Link from "next/link";
 import { onSnapshot } from "firebase/firestore";
 import { useUnreadMessages } from "./useUnreadMessages";
@@ -517,7 +516,7 @@ export function MobileAppHeader() {
         }
 
         return {
-          id: doc.id,
+          id: doc?.id,
           ...forumData,
           requests,
         } as Forum;

@@ -60,7 +60,9 @@ type ThemeMode = "light" | "dark";
 
 const [theme, setTheme] = useState<ThemeMode>("light");
 
-
+useEffect(() =>{
+console.log("userData", userData)
+},[userData])
 
 type PrivacySettingKey = "privateAccount" | "activityStatus";
 
@@ -100,6 +102,8 @@ const handleReactivateAccount = async () => {
   alert("Account reactivated!");
   // Optionally reload user data or redirect
 };
+
+
 
 
 useEffect(() => {
@@ -1042,7 +1046,11 @@ if (changedTwice && updatedRecently) {
   </CardContent>
  
 </Card>
-<PremiumMembershipCard userId={userData?.id} isPremium={userData?.isPremium} />
+<PremiumMembershipCard
+ userId={userData?.uid}
+       paypalClientId={process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ""}
+
+ isPremium={userData?.isPremium} />
 
 
 

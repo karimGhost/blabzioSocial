@@ -57,12 +57,13 @@ const firebaseConfig4 = {
 
 
 const firebaseConfig5 = {
-  apiKey: "AIzaSyBZilD5pYSi0wst-p8BpEC0A0aN0nCiG90",
-  authDomain: "global-tongue.firebaseapp.com",
-  projectId: "global-tongue",
-  storageBucket: "global-tongue.firebasestorage.app",
-  messagingSenderId: "204343555001",
-  appId: "1:204343555001:web:dec0a1628f1403c6a37c68"
+ apiKey: "AIzaSyBT51H9ZlMK064iDIoyQ8jcPdADLl_-fWs",
+  authDomain: "invid-f2de2.firebaseapp.com",
+  projectId: "invid-f2de2",
+  storageBucket: "invid-f2de2.firebasestorage.app",
+  messagingSenderId: "436955006446",
+  appId: "1:436955006446:web:bbe9352ed6c2fdbc14faff",
+  measurementId: "G-XYJ7JVR8J0"
 };
 
 const firebaseConfig6 = {
